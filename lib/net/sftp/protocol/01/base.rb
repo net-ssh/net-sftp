@@ -14,10 +14,6 @@ module Net; module SFTP; module Protocol; module V01
     F_TRUNC  = 0x00000010
     F_EXCL   = 0x00000020
 
-    def create_attributes(options={})
-      V01::Attributes.new(options)
-    end
-
     def parse_handle_packet(packet)
       { :handle => packet.read_string }
     end
@@ -30,7 +26,11 @@ module Net; module SFTP; module Protocol; module V01
       { :data => packet.read_string }
     end
 
-    def open(path, flags, mode=0600)
+    def parse_attrs_packet(packet)
+      { :attrs => attribute_factory.from_buffer(packet) }
+    end
+
+    def open(path, flags, options)
       if String === flags
         case flags.tr("b", "")
         when "r"  then flags = IO::RDONLY
@@ -52,7 +52,7 @@ module Net; module SFTP; module Protocol; module V01
       sftp_flags |= F_TRUNC if flags & IO::TRUNC != 0
       sftp_flags |= F_EXCL  if flags & IO::EXCL  != 0
 
-      attributes = create_attributes(:permissions => mode)
+      attributes = attribute_factory.new(options)
 
       send_request(FXP_OPEN, :string, path, :long, sftp_flags, :raw, attributes)
     end
@@ -68,6 +68,28 @@ module Net; module SFTP; module Protocol; module V01
     def write(handle, offset, data)
       send_request(FXP_WRITE, :string, handle, :int64, offset, :string, data)
     end
+
+    def lstat(path, flags=nil)
+      send_request(FXP_LSTAT, :string, path)
+    end
+
+    def fstat(handle, flags=nil)
+      send_request(FXP_FSTAT, :string, handle)
+    end
+
+    def setstat(path, attrs)
+      send_request(FXP_SETSTAT, :string, path, :raw, attribute_factory.new(attrs))
+    end
+
+    def fsetstat(handle, attrs)
+      send_request(FXP_FSETSTAT, :string, handle, :raw, attribute_factory.new(attrs))
+    end
+
+    protected
+
+      def attribute_factory
+        V01::Attributes
+      end
   end
 
 end; end; end; end

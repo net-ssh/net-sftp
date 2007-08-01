@@ -25,9 +25,11 @@ module Net; module SFTP
     end
 
     def respond_to(packet)
-      data = session.protocol.parse(packet)
-      data[:type] = packet.type
-      callback.call(Response.new(self, data))
+      if callback
+        data = session.protocol.parse(packet)
+        data[:type] = packet.type
+        callback.call(Response.new(self, data))
+      end
     end
   end
 

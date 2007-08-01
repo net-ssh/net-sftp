@@ -1,32 +1,6 @@
 module Net; module SFTP
 
   class Response
-    attr_reader :request
-    attr_reader :data
-    attr_reader :code
-    attr_reader :message
-
-    def initialize(request, data={})
-      @request, @data = request, data
-      @code, @message = data[:code] || FX_OK, data[:message]
-    end
-
-    def [](key)
-      data[key.to_sym]
-    end
-
-    def to_s
-      if message && !message.empty? && message.downcase != MAP[code]
-        "#{message} (#{MAP[code]} #{code})"
-      else
-        "#{MAP[code]} #{code}"
-      end
-    end
-
-    def ok?
-      code == FX_OK
-    end
-
     FX_OK                     = 0
     FX_EOF                    = 1
     FX_NO_SUCH_FILE           = 2
@@ -50,10 +24,38 @@ module Net; module SFTP
     FX_INVALID_FILENAME       = 20
     FX_LINK_LOOP              = 21
 
-    MAP = Constants.constants.inject({}) do |memo, name|
-      next unless name =~ /^FX_(.*)/
+    MAP = constants.inject({}) do |memo, name|
+      next memo unless name =~ /^FX_(.*)/
       memo[const_get(name)] = $1.downcase.tr("_", " ")
       memo
+    end
+
+    attr_reader :request
+    attr_reader :data
+    attr_reader :code
+    attr_reader :message
+
+    def initialize(request, data={})
+      @request, @data = request, data
+      @code, @message = data[:code] || FX_OK, data[:message]
+    end
+
+    def [](key)
+      data[key.to_sym]
+    end
+
+    def to_s
+      if message && !message.empty? && message.downcase != MAP[code]
+        "#{message} (#{MAP[code]} #{code})"
+      else
+        "#{MAP[code]} (#{code})"
+      end
+    end
+
+    alias :to_str :to_s
+
+    def ok?
+      code == FX_OK
     end
   end
 

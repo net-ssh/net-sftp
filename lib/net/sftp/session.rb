@@ -61,8 +61,8 @@ module Net; module SFTP
         pending_requests[request.id] = request
       end
 
-      def open(path, flags=IO::RDONLY, mode=0640, &callback)
-        request :open, path, flags, mode, &callback
+      def open(path, flags="r", options={}, &callback)
+        request :open, path, flags, options, &callback
       end
 
       def close(handle, &callback)
@@ -75,6 +75,22 @@ module Net; module SFTP
 
       def write(handle, offset, data, &callback)
         request :write, handle, offset, data, &callback
+      end
+
+      def lstat(path, flags=0, &callback)
+        request :lstat, path, flags, &callback
+      end
+
+      def fstat(handle, flags=0, &callback)
+        request :fstat, handle, flags, &callback
+      end
+
+      def setstat(path, attrs, &callback)
+        request :setstat, path, attrs, &callback
+      end
+
+      def fsetstat(handle, attrs, &callback)
+        request :fsetstat, handle, attrs, &callback
       end
 
     private

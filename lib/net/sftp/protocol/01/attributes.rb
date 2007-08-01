@@ -67,8 +67,8 @@ module Net; module SFTP; module Protocol; module V01
       @uid         = options[:uid]
       @gid         = options[:gid]
       @permissions = options[:permissions]
-      @atime       = options[:atime]
-      @mtime       = options[:mtime]
+      @atime       = options[:atime] && Time.at(options[:atime])
+      @mtime       = options[:mtime] && Time.at(options[:mtime])
       @extended    = options[:extended]
     end
 
@@ -87,7 +87,7 @@ module Net; module SFTP; module Protocol; module V01
       buffer.write_int64 @size if @size
       buffer.write_long @uid, @gid if @uid && @gid
       buffer.write_long @permissions if @permissions
-      buffer.write_long @atime, @mtime if @atime && @mtime
+      buffer.write_long @atime.to_i, @mtime.to_i if @atime && @mtime
 
       if @extended
         buffer.write_long @extended.size
