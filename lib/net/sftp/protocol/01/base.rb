@@ -108,6 +108,26 @@ module Net; module SFTP; module Protocol; module V01
       send_request(FXP_READDIR, :string, handle)
     end
 
+    def remove(filename)
+      send_request(FXP_REMOVE, :string, filename)
+    end
+
+    def mkdir(path, attrs)
+      send_request(FXP_MKDIR, :string, path, :raw, attribute_factory.new(attrs))
+    end
+
+    def rmdir(path)
+      send_request(FXP_RMDIR, :string, path)
+    end
+
+    def realpath(path)
+      send_request(FXP_REALPATH, :string, path)
+    end
+
+    def stat(path, flags=nil)
+      send_request(FXP_STAT, :string, path)
+    end
+
     protected
 
       def attribute_factory

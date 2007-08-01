@@ -101,6 +101,26 @@ module Net; module SFTP
         request :readdir, handle, &callback
       end
 
+      def remove(filename, &callback)
+        request :remove, filename, &callback
+      end
+
+      def mkdir(path, attrs={}, &callback)
+        request :mkdir, path, attrs, &callback
+      end
+
+      def rmdir(path, &callback)
+        request :rmdir, path, &callback
+      end
+
+      def realpath(path, &callback)
+        request :realpath, path, &callback
+      end
+
+      def stat(path, flags=0, &callback)
+        request :stat, path, flags, &callback
+      end
+
     private
 
       def when_channel_confirmed(channel)
