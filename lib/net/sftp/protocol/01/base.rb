@@ -19,15 +19,15 @@ module Net; module SFTP; module Protocol; module V01
     end
 
     def parse_handle_packet(packet)
-      packet.read_string
+      { :handle => packet.read_string }
     end
 
     def parse_status_packet(packet)
-      packet.read_long
+      { :code => packet.read_long }
     end
 
     def parse_data_packet(packet)
-      packet.read_string
+      { :data => packet.read_string }
     end
 
     def open(path, flags, mode=0600)

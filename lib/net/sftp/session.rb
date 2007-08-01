@@ -3,6 +3,7 @@ require 'net/sftp/constants'
 require 'net/sftp/errors'
 require 'net/sftp/packet'
 require 'net/sftp/protocol'
+require 'net/sftp/request'
 require 'net/sftp/response'
 
 module Net; module SFTP
@@ -55,28 +56,25 @@ module Net; module SFTP
 
     public
 
+      def request(type, *args, &callback)
+        request = Request.new(self, type, protocol.send(type, *args), &callback)
+        pending_requests[request.id] = request
+      end
+
       def open(path, flags=IO::RDONLY, mode=0640, &callback)
-        id = protocol.open(path, flags, mode)
-        pending_requests[id] = callback
-        id
+        request :open, path, flags, mode, &callback
       end
 
       def close(handle, &callback)
-        id = protocol.close(handle)
-        pending_requests[id] = callback
-        id
+        request :close, handle, &callback
       end
 
       def read(handle, offset, length, &callback)
-        id = protocol.read(handle, offset, length)
-        pending_requests[id] = callback
-        id
+        request :read, handle, offset, length, &callback
       end
 
       def write(handle, offset, data, &callback)
-        id = protocol.write(handle, offset, data)
-        pending_requests[id] = callback
-        id
+        request :write, handle, offset, data, &callback
       end
 
     private
@@ -108,14 +106,6 @@ module Net; module SFTP
         @state = :closed
       end
 
-      MAP = {
-        FXP_STATUS  => :status,
-        FXP_HANDLE  => :handle,
-        FXP_DATA    => :data,
-        FXP_NAME    => :name,
-        FXP_ATTRS   => :attrs
-      }
-
       def when_channel_polled(channel)
         while input.length > 0
           if @packet_length.nil?
@@ -133,10 +123,8 @@ module Net; module SFTP
 
           if packet.type == FXP_VERSION
             do_version(packet)
-          elsif MAP.key?(packet.type)
-            dispatch_request(MAP[packet.type], packet)
           else
-            raise Net::SFTP::Exception, "unhandled packet #{packet.type}"
+            dispatch_request(packet)
           end
         end
       end
@@ -164,16 +152,10 @@ module Net; module SFTP
         @on_ready.call(self) if @on_ready
       end
 
-      def dispatch_request(type, packet)
+      def dispatch_request(packet)
         id = packet.read_long
-        callback = pending_requests.delete(id) or raise Net::SFTP::Exception, "no such request `#{id}'"
-        parameters = protocol.send("parse_#{type}_packet", packet)
-
-        if type == :status
-          callback.call(Response.new(id, *parameters))
-        else
-          callback.call(Response.ok(id), *parameters)
-        end
+        request = pending_requests.delete(id) or raise Net::SFTP::Exception, "no such request `#{id}'"
+        request.respond_to(packet)
       end
   end
 

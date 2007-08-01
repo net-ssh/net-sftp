@@ -1,18 +1,18 @@
 module Net; module SFTP
 
   class Response
-    def self.ok(id)
-      new(id, FX_OK, "Success")
-    end
-
-    attr_reader :id
+    attr_reader :request
+    attr_reader :data
     attr_reader :code
     attr_reader :message
-    attr_reader :language
 
-    def initialize(id, code, message=nil, language=nil)
-      @id = id
-      @code, @message, @language = code, message, language
+    def initialize(request, data={})
+      @request, @data = request, data
+      @code, @message = data[:code] || FX_OK, data[:message]
+    end
+
+    def [](key)
+      data[key.to_sym]
     end
 
     def to_s

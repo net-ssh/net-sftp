@@ -15,7 +15,26 @@ module Net; module SFTP; module Protocol
       @request_id_counter = -1
     end
 
+    def parse(packet)
+      case packet.type
+      when FXP_STATUS then parse_status_packet(packet)
+      when FXP_HANDLE then parse_handle_packet(packet)
+      when FXP_DATA   then parse_data_packet(packet)
+      when FXP_NAME   then parse_name_packet(packet)
+      when FXP_ATTRS  then parse_attrs_packet(packet)
+      else raise NotImplementedError, "unknown packet type: #{packet.type}"
+      end
+    end
+
     private
+
+      MAP = {
+        FXP_STATUS  => :status,
+        FXP_HANDLE  => :handle,
+        FXP_DATA    => :data,
+        FXP_NAME    => :name,
+        FXP_ATTRS   => :attrs
+      }
 
       def send_request(type, *args)
         @request_id_counter += 1
