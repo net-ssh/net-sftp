@@ -125,6 +125,14 @@ module Net; module SFTP
         request :rename, name, new_name, flags, &callback
       end
 
+      def readlink(path, &callback)
+        request :readlink, path, &callback
+      end
+
+      def symlink(path, target, &callback)
+        request :symlink, path, target, &callback
+      end
+
     private
 
       def when_channel_confirmed(channel)
