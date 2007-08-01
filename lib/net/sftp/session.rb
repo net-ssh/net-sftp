@@ -121,6 +121,10 @@ module Net; module SFTP
         request :stat, path, flags, &callback
       end
 
+      def rename(name, new_name, flags=0, &callback)
+        request :rename, name, new_name, flags, &callback
+      end
+
     private
 
       def when_channel_confirmed(channel)
