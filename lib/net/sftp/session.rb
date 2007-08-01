@@ -93,6 +93,14 @@ module Net; module SFTP
         request :fsetstat, handle, attrs, &callback
       end
 
+      def opendir(path, &callback)
+        request :opendir, path, &callback
+      end
+
+      def readdir(handle, &callback)
+        request :readdir, handle, &callback
+      end
+
     private
 
       def when_channel_confirmed(channel)

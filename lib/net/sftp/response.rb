@@ -57,6 +57,10 @@ module Net; module SFTP
     def ok?
       code == FX_OK
     end
+
+    def eof?
+      code == FX_EOF
+    end
   end
 
 end; end

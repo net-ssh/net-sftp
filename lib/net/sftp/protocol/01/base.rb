@@ -14,6 +14,8 @@ module Net; module SFTP; module Protocol; module V01
     F_TRUNC  = 0x00000010
     F_EXCL   = 0x00000020
 
+    Name = Struct.new(:filename, :longname, :attributes)
+
     def parse_handle_packet(packet)
       { :handle => packet.read_string }
     end
@@ -28,6 +30,19 @@ module Net; module SFTP; module Protocol; module V01
 
     def parse_attrs_packet(packet)
       { :attrs => attribute_factory.from_buffer(packet) }
+    end
+
+    def parse_name_packet(packet)
+      names = []
+
+      packet.read_long.times do
+        filename = packet.read_string
+        longname = packet.read_string
+        attrs    = attribute_factory.from_buffer(packet)
+        names   << Name.new(filename, longname, attrs)
+      end
+
+      { :names => names }
     end
 
     def open(path, flags, options)
@@ -83,6 +98,14 @@ module Net; module SFTP; module Protocol; module V01
 
     def fsetstat(handle, attrs)
       send_request(FXP_FSETSTAT, :string, handle, :raw, attribute_factory.new(attrs))
+    end
+
+    def opendir(path)
+      send_request(FXP_OPENDIR, :string, path)
+    end
+
+    def readdir(handle)
+      send_request(FXP_READDIR, :string, handle)
     end
 
     protected
