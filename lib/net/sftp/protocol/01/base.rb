@@ -46,16 +46,7 @@ module Net; module SFTP; module Protocol; module V01
     end
 
     def open(path, flags, options)
-      if String === flags
-        case flags.tr("b", "")
-        when "r"  then flags = IO::RDONLY
-        when "r+" then flags = IO::RDWR
-        when "w"  then flags = IO::WRONLY | IO::TRUNC | IO::CREAT
-        when "w+" then flags = IO::RDWR | IO::TRUNC | IO::CREAT
-        when "a", "a+" then flags = IO::APPEND | IO::CREAT
-        else raise ArgumentError, "unsupported flags: #{flags.inspect}"
-        end
-      end
+      flags = normalize_open_flags(flags)
 
       if    flags & IO::WRONLY != 0 then sftp_flags = F_WRITE
       elsif flags & IO::RDWR   != 0 then sftp_flags = F_READ | F_WRITE
@@ -129,6 +120,21 @@ module Net; module SFTP; module Protocol; module V01
     end
 
     protected
+
+      def normalize_open_flags(flags)
+        if String === flags
+          case flags.tr("b", "")
+          when "r"  then IO::RDONLY
+          when "r+" then IO::RDWR
+          when "w"  then IO::WRONLY | IO::TRUNC | IO::CREAT
+          when "w+" then IO::RDWR | IO::TRUNC | IO::CREAT
+          when "a", "a+" then IO::APPEND | IO::CREAT
+          else raise ArgumentError, "unsupported flags: #{flags.inspect}"
+          end
+        else
+          flags.to_i
+        end
+      end
 
       def attribute_factory
         V01::Attributes

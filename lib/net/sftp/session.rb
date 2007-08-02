@@ -56,11 +56,6 @@ module Net; module SFTP
 
     public
 
-      def request(type, *args, &callback)
-        request = Request.new(self, type, protocol.send(type, *args), &callback)
-        pending_requests[request.id] = request
-      end
-
       def open(path, flags="r", options={}, &callback)
         request :open, path, flags, options, &callback
       end
@@ -77,11 +72,11 @@ module Net; module SFTP
         request :write, handle, offset, data, &callback
       end
 
-      def lstat(path, flags=0, &callback)
+      def lstat(path, flags=nil, &callback)
         request :lstat, path, flags, &callback
       end
 
-      def fstat(handle, flags=0, &callback)
+      def fstat(handle, flags=nil, &callback)
         request :fstat, handle, flags, &callback
       end
 
@@ -117,11 +112,11 @@ module Net; module SFTP
         request :realpath, path, &callback
       end
 
-      def stat(path, flags=0, &callback)
+      def stat(path, flags=nil, &callback)
         request :stat, path, flags, &callback
       end
 
-      def rename(name, new_name, flags=0, &callback)
+      def rename(name, new_name, flags=nil, &callback)
         request :rename, name, new_name, flags, &callback
       end
 
@@ -133,7 +128,16 @@ module Net; module SFTP
         request :symlink, path, target, &callback
       end
 
+      def link(new_link_path, existing_path, symlink=true, &callback)
+        request :link, new_link_path, existing_path, symlink, &callback
+      end
+
     private
+
+      def request(type, *args, &callback)
+        request = Request.new(self, type, protocol.send(type, *args), &callback)
+        pending_requests[request.id] = request
+      end
 
       def when_channel_confirmed(channel)
         debug { "requesting sftp subsystem" }

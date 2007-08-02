@@ -12,6 +12,61 @@ module Net; module SFTP; module Protocol; module V01
     F_ACMODTIME   = 0x00000008
     F_EXTENDED    = 0x80000000
     
+    class <<self
+      def elements
+        @elements ||= [
+          [:size,                :int64,   F_SIZE],
+          [:uid,                 :long,    F_UIDGID],
+          [:gid,                 :long,    F_UIDGID],
+          [:permissions,         :long,    F_PERMISSIONS],
+          [:atime,               :int64,   F_ACMODTIME],
+          [:mtime,               :int64,   F_ACMODTIME],
+          [:extended,            :special, F_EXTENDED]
+        ]
+      end
+
+      def from_buffer(buffer)
+        flags = buffer.read_long
+        data = {}
+
+        elements.each do |name, type, condition|
+          if flags & condition == condition
+            if type == :special
+              data[name] = send("parse_#{name}", buffer)
+            else
+              data[name] = buffer.send("read_#{type}")
+            end
+          end
+        end
+
+        new(data)
+      end
+
+      def attr_accessor(name)
+        class_eval <<-CODE
+          def #{name}
+            attributes[:#{name}]
+          end
+
+          def #{name}=(value)
+            attributes[:#{name}] = value
+          end
+        CODE
+      end
+
+      private
+
+        def parse_extended(buffer)
+          extended = Hash.new
+          buffer.read_long.times do
+            extended[buffer.read_string] = buffer.read_string
+          end
+          extended
+        end
+    end
+
+    attr_reader   :attributes
+
     attr_accessor :size
     attr_accessor :uid
     attr_accessor :gid
@@ -20,56 +75,25 @@ module Net; module SFTP; module Protocol; module V01
     attr_accessor :mtime
     attr_accessor :extended
 
-    # Create a new Attributes object, initialized from the given buffer.
-    def self.from_buffer(buffer)
-      flags = buffer.read_long
-
-      size  = buffer.read_int64 if flags & F_SIZE != 0
-      uid   = buffer.read_long  if flags & F_UIDGID != 0
-      gid   = buffer.read_long  if flags & F_UIDGID != 0
-      perms = buffer.read_long  if flags & F_PERMISSIONS != 0
-      atime = buffer.read_long  if flags & F_ACMODTIME != 0
-      mtime = buffer.read_long  if flags & F_ACMODTIME != 0
-
-      if flags & F_EXTENDED != 0
-        extended = Hash.new
-        buffer.read_long.times do
-          extended[buffer.read_string] = buffer.read_string
-        end
-      end
-
-      new(:size => size, :uid => uid, :gid => gid, :permissions => perms,
-        :atime => atime, :mtime => mtime, :extended => extended)
-    end
-
-    # Create a new attributes object, initialized from the given hash. The
-    # :owner and :group attributes are treated specially; they are not actually
-    # supported by this version of the protocol, but are instead converted
-    # by this method to their corresponding id numbers, and assigned
-    # (respectively) to :uid and :gid.
-    def self.from_hash(hash)
-      if hash[:owner]
-        require 'etc'
-        hash[:uid] = Etc.getpwnam( hash[:owner] ).uid
-      end
-
-      if hash[:group]
-        require 'etc'
-        hash[:gid] = Etc.getgrnam( hash[:group] ).gid
-      end
-
-      new(hash)
-    end
-
     # Create a new Attributes with the given attributes.
-    def initialize(options={})
-      @size        = options[:size]
-      @uid         = options[:uid]
-      @gid         = options[:gid]
-      @permissions = options[:permissions]
-      @atime       = options[:atime] && Time.at(options[:atime])
-      @mtime       = options[:mtime] && Time.at(options[:mtime])
-      @extended    = options[:extended]
+    def initialize(attributes={})
+      @attributes = attributes
+    end
+
+    def uid
+      if attributes[:owner] && !attributes.key?(:uid)
+        require 'etc'
+        attributes[:uid] = Etc.getpwnam(hash[:owner]).uid
+      end
+      attributes[:uid]
+    end
+
+    def gid
+      if attributes[:group] && !attributes.key?(:gid)
+        require 'etc'
+        attributes[:gid] = Etc.getgrnam(attributes[:group]).gid
+      end
+      attributes[:uid]
     end
 
     # Convert the object to a string suitable for passing in an SFTP
@@ -77,25 +101,30 @@ module Net; module SFTP; module Protocol; module V01
     def to_s
       flags = 0
 
-      flags |= F_SIZE if @size
-      flags |= F_UIDGID if @uid && @gid
-      flags |= F_PERMISSIONS if @permissions
-      flags |= F_ACMODTIME if @atime && @mtime
-      flags |= F_EXTENDED if @extended
+      self.class.elements.each do |name, type, condition|
+        flags |= condition if attributes.key?(name)
+      end
 
       buffer = Net::SSH::Buffer.from(:long, flags)
-      buffer.write_int64 @size if @size
-      buffer.write_long @uid, @gid if @uid && @gid
-      buffer.write_long @permissions if @permissions
-      buffer.write_long @atime.to_i, @mtime.to_i if @atime && @mtime
-
-      if @extended
-        buffer.write_long @extended.size
-        @extended.each { |k,v| buffer.write_string k, v }
+      self.class.elements.each do |name, type, condition|
+        if flags & condition == condition
+          if type == :special
+            send("encode_#{name}", buffer)
+          else
+            buffer.send("write_#{type}", attributes[name])
+          end
+        end
       end
 
       buffer.to_s
     end
+
+    private
+
+      def encode_extended(buffer)
+        buffer.write_long extended.size
+        extended.each { |k,v| buffer.write_string k, v }
+      end
 
   end
 

@@ -22,6 +22,9 @@ module Net; module SFTP
     FXP_RENAME           = 18
     FXP_READLINK         = 19
     FXP_SYMLINK          = 20
+    FXP_LINK             = 21
+    FXP_BLOCK            = 22
+    FXP_UNBLOCK          = 23
 
     FXP_STATUS           = 101
     FXP_HANDLE           = 102
