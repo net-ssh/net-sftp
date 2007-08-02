@@ -42,17 +42,16 @@ module Net; module SFTP; module Protocol; module V05
 
       sftp_flags, desired_access = case
         when flags & IO::WRONLY != 0 then
-          [ F_CREATE_TRUNCATE, ACE::F_WRITE_DATA | ACE::F_WRITE_ATTRIBUTES ]
+          open = flags & IO::EXCL != 0 ? F_TRUNCATE_EXISTING : F_CREATE_TRUNCATE
+          [ open, ACE::F_WRITE_DATA | ACE::F_WRITE_ATTRIBUTES ]
         when flags & IO::RDWR != 0 then
-          [ F_OPEN_OR_CREATE, ACE::F_READ_DATA | ACE::F_READ_ATTRIBUTES | ACE::F_WRITE_DATA | ACE::F_WRITE_ATTRIBUTES ]
+          open = flags & IO::EXCL != 0 ? F_OPEN_EXISTING : F_OPEN_OR_CREATE
+          [ open, ACE::F_READ_DATA | ACE::F_READ_ATTRIBUTES | ACE::F_WRITE_DATA | ACE::F_WRITE_ATTRIBUTES ]
         when flags & IO::APPEND != 0 then
           [ F_OPEN_OR_CREATE | F_APPEND_DATA, ACE::F_WRITE_DATA | ACE::F_WRITE_ATTRIBUTES | ACE::F_APPEND_DATA ]
         else
           [ F_OPEN_EXISTING, ACE::F_READ_DATA | ACE::F_READ_ATTRIBUTES ]
       end
-
-      sftp_flags |= F_OPEN_OR_CREATE    if flags & IO::CREAT != 0
-      sftp_flags |= F_TRUNCATE_EXISTING if flags & IO::TRUNC != 0
 
       attributes = attribute_factory.new(options)
 

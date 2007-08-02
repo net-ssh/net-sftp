@@ -62,6 +62,11 @@ module Net; module SFTP; module Protocol; module V04
     T_BLOCK_DEVICE = 8
     T_FIFO         = 9
 
+    def initialize(attributes={})
+      super
+      attributes[:type] ||= T_REGULAR
+    end
+
     def owner
       if attributes[:uid] && !attributes.key?(:owner)
         require 'etc'
