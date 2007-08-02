@@ -119,7 +119,35 @@ module Net; module SFTP; module Protocol; module V01
       send_request(FXP_STAT, :string, path)
     end
 
+    def rename(*args)
+      not_implemented! :rename
+    end
+
+    def readlink(*args)
+      not_implemented! :readlink
+    end
+
+    def symlink(*args)
+      not_implemented! :symlink
+    end
+
+    def link(*args)
+      not_implemented! :link
+    end
+
+    def block(handle, offset, length, mask)
+      not_implemented! :block
+    end
+
+    def unblock(handle, offset, length)
+      not_implemented! :unblock
+    end
+
     protected
+
+      def not_implemented!(operation)
+        raise NotImplementedError, "the #{operation} operation is not available in the version of the SFTP protocol supported by your server"
+      end
 
       def normalize_open_flags(flags)
         if String === flags
