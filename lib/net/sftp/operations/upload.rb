@@ -37,8 +37,8 @@ module Net; module SFTP; module Operations
         raise "could not upload file: #{response}" unless response.ok?
         debug { "open #{remote} succeeded" }
         @handle = response[:handle]
-        @file = File.open(local)
-        @size = @file.stat.size
+        @file = local.respond_to?(:read) ? local : File.open(local)
+        @size = @file.respond_to?(:size) ? @file.size : @file.stat.size
         @offset = 0
         @active = 0
         update_progress(:offset => 0)
