@@ -4,6 +4,7 @@ module Net; module SFTP
 
     FXP_INIT             = 1
     FXP_VERSION          = 2
+
     FXP_OPEN             = 3
     FXP_CLOSE            = 4
     FXP_READ             = 5
