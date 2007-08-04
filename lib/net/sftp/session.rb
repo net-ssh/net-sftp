@@ -7,6 +7,19 @@ module Net; module SFTP
   class Session
     include Net::SSH::Loggable
 
+    def self.synchronous(*methods)
+      code = ""
+      methods.each do |method|
+        code << <<-CODE
+          def #{method}!(*args, &block)
+            #{method}(*args, &block)
+            loop
+          end
+        CODE
+      end
+      class_eval(code, __FILE__, __LINE__-6)
+    end
+
     attr_reader :session
     attr_reader :base
 
@@ -21,14 +34,13 @@ module Net; module SFTP
       base.loop(&block)
     end
 
-    def upload(local, remote, open_options={}, &block)
-      Operations::Upload.new(base, local, remote, open_options, &block)
-    end
+    public # SFTP operations
+    
+      def upload(local, remote, options={}, &block)
+        Operations::Upload.new(base, local, remote, options, &block)
+      end
 
-    def upload!(local, remote, open_options={}, &block)
-      upload(local, remote, open_options, &block)
-      loop
-    end
+      synchronous :upload
   end
 
 end; end
