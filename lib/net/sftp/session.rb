@@ -1,6 +1,7 @@
 require 'net/ssh'
 require 'net/sftp/base'
 require 'net/sftp/operations/upload'
+require 'net/sftp/operations/upload_tree'
 
 module Net; module SFTP
 
@@ -40,7 +41,11 @@ module Net; module SFTP
         Operations::Upload.new(base, local, remote, options, &block)
       end
 
-      synchronous :upload
+      def upload_tree(local, remote, options={}, &block)
+        Operations::UploadTree.new(base, local, remote, options, &block)
+      end
+
+      synchronous :upload, :upload_tree
   end
 
 end; end

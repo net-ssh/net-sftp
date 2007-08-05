@@ -19,8 +19,8 @@ module Net; module SFTP; module Protocol; module V01
           [:uid,                 :long,    F_UIDGID],
           [:gid,                 :long,    F_UIDGID],
           [:permissions,         :long,    F_PERMISSIONS],
-          [:atime,               :int64,   F_ACMODTIME],
-          [:mtime,               :int64,   F_ACMODTIME],
+          [:atime,               :long,    F_ACMODTIME],
+          [:mtime,               :long,    F_ACMODTIME],
           [:extended,            :special, F_EXTENDED]
         ]
       end
