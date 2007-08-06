@@ -1,7 +1,6 @@
 require 'net/ssh'
 require 'net/sftp/base'
 require 'net/sftp/operations/upload'
-require 'net/sftp/operations/upload_tree'
 
 module Net; module SFTP
 
