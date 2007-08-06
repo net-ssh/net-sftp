@@ -41,11 +41,7 @@ module Net; module SFTP
         Operations::Upload.new(base, local, remote, options, &block)
       end
 
-      def upload_tree(local, remote, options={}, &block)
-        Operations::UploadTree.new(base, local, remote, options, &block)
-      end
-
-      synchronous :upload, :upload_tree
+      synchronous :upload
   end
 
 end; end
