@@ -7,7 +7,6 @@ module Net; module SFTP; module Operations
 
     attr_reader :local
     attr_reader :remote
-    attr_reader :size
     attr_reader :options
 
     def initialize(base, local, remote, options={}, &progress)
