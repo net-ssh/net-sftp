@@ -49,7 +49,7 @@ module Net; module SFTP; module Operations
       attr_reader :base
       attr_reader :progress
 
-      LiveFile = Struct.new(:lpath, :rpath, :io, :size, :handle)
+      LiveFile = Struct.new(:local, :remote, :io, :size, :handle)
 
       DEFAULT_READ_SIZE   = 32_000
       SINGLE_FILE_READERS = 2
@@ -83,28 +83,35 @@ module Net; module SFTP; module Operations
             request = base.mkdir(rpath, &method(:on_mkdir))
             request[:dir] = rpath
           else
-            @active += 1
-            request = base.open(rpath, "w", &method(:on_open))
-            request[:file] = LiveFile.new(lpath, rpath)
-            update_progress(:open, request[:file])
+            open_file(lpath, rpath)
           end
         else
-          @active += 1
-          item = @stack.pop.first
-
-          if item.respond_to?(:read)
-            file = item
-            name = options[:name] || "<memory>"
-          else
-            file = File.open(item)
-            name = item
-          end
-
-          request = base.open(remote, "w", &method(:on_open))
-          request[:file] = LiveFile.new(name, remote, file)
-          update_progress(:open, request[:file])
+          open_file(@stack.pop.first, remote)
         end
         return true
+      end
+
+      def open_file(local, remote)
+        @active += 1
+
+        if local.respond_to?(:read)
+          file = local
+          name = options[:name] || "<memory>"
+        else
+          file = File.open(local)
+          name = local
+        end
+
+        if file.respond_to?(:stat)
+          size = file.stat.size
+        else
+          size = file.size
+        end
+
+        request = base.open(remote, "w", &method(:on_open))
+        request[:file] = LiveFile.new(name, remote, file, size)
+
+        update_progress(:open, request[:file])
       end
 
       def on_mkdir(response)
@@ -115,16 +122,9 @@ module Net; module SFTP; module Operations
       def on_open(response)
         @active -= 1
         file = response.request[:file]
-        raise "open #{file.rpath}: #{response}" unless response.ok?
+        raise "open #{file.remote}: #{response}" unless response.ok?
 
-        file.io ||= File.open(file.lpath)
         file.handle = response[:handle]
-
-        if file.io.respond_to?(:stat)
-          file.size = file.io.stat.size
-        else
-          file.size = file.io.size
-        end
 
         @uploads << file
         write_next_chunk(file)
@@ -137,14 +137,14 @@ module Net; module SFTP; module Operations
       def on_write(response)
         @active -= 1
         file = response.request[:file]
-        raise "write #{file.rpath}: #{response}" unless response.ok?
+        raise "write #{file.remote}: #{response}" unless response.ok?
         write_next_chunk(file)
       end
 
       def on_close(response)
         @active -= 1
         file = response.request[:file]
-        raise "close #{file.rpath}: #{response}" unless response.ok?
+        raise "close #{file.remote}: #{response}" unless response.ok?
         process_next_entry
       end
 
