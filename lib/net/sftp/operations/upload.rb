@@ -22,7 +22,7 @@ module Net; module SFTP; module Operations
       @uploads = []
 
       if recursive?
-        raise "expected a directory to upload" unless File.directory?(local)
+        raise "expected a directory to upload" unless ::File.directory?(local)
         @stack = [entries_for(local)]
         @local_cwd = local
         @remote_cwd = remote
@@ -35,7 +35,7 @@ module Net; module SFTP; module Operations
           end
         end
       else
-        raise "expected a file to upload" unless local.respond_to?(:read) || File.file?(local)
+        raise "expected a file to upload" unless local.respond_to?(:read) || ::File.file?(local)
         @stack = [[local]]
         process_next_entry
       end
@@ -70,15 +70,15 @@ module Net; module SFTP; module Operations
           return false
         elsif @stack.last.empty?
           @stack.pop
-          @local_cwd = File.dirname(@local_cwd)
-          @remote_cwd = File.dirname(@remote_cwd)
+          @local_cwd = ::File.dirname(@local_cwd)
+          @remote_cwd = ::File.dirname(@remote_cwd)
           process_next_entry
         elsif recursive?
           entry = @stack.last.shift
-          lpath = File.join(@local_cwd, entry)
-          rpath = File.join(@remote_cwd, entry)
+          lpath = ::File.join(@local_cwd, entry)
+          rpath = ::File.join(@remote_cwd, entry)
 
-          if File.directory?(lpath)
+          if ::File.directory?(lpath)
             @stack.push(entries_for(lpath))
             @local_cwd = lpath
             @remote_cwd = rpath
@@ -103,7 +103,7 @@ module Net; module SFTP; module Operations
           file = local
           name = options[:name] || "<memory>"
         else
-          file = File.open(local)
+          file = ::File.open(local)
           name = local
         end
 

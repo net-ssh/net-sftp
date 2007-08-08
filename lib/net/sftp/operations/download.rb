@@ -54,7 +54,7 @@ module Net; module SFTP; module Operations
 
           if entry.directory
             update_progress(:mkdir, entry.local)
-            Dir.mkdir(entry.local) unless File.directory?(entry.local)
+            Dir.mkdir(entry.local) unless ::File.directory?(entry.local)
             request = base.opendir(entry.remote, &method(:on_opendir))
             request[:entry] = entry
           else
@@ -83,7 +83,7 @@ module Net; module SFTP; module Operations
         else
           response[:names].each do |item|
             next if item.name == "." || item.name == ".."
-            stack << Entry.new(File.join(entry.remote, item.name), File.join(entry.local, item.name), item.directory?, item.attributes.size)
+            stack << Entry.new(::File.join(entry.remote, item.name), ::File.join(entry.local, item.name), item.directory?, item.attributes.size)
           end
 
           request = base.readdir(entry.handle, &method(:on_readdir))
@@ -109,7 +109,7 @@ module Net; module SFTP; module Operations
         raise "open #{entry.remote}: #{response}" unless response.ok?
 
         entry.handle = response[:handle]
-        entry.sink = entry.local.respond_to?(:write) ? entry.local : File.open(entry.local, "w")
+        entry.sink = entry.local.respond_to?(:write) ? entry.local : ::File.open(entry.local, "w")
         entry.offset = 0
 
         update_progress(:get, entry, 0, nil)

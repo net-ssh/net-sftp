@@ -24,6 +24,15 @@ module Net; module SFTP
       properties[key.to_sym] = value
     end
 
+    def pending?
+      session.pending_requests.key?(id)
+    end
+
+    def wait
+      session.loop { pending? }
+      self
+    end
+
     def respond_to(packet)
       if callback
         data = session.protocol.parse(packet)

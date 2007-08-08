@@ -2,6 +2,7 @@ require 'net/ssh'
 require 'net/sftp/base'
 require 'net/sftp/operations/upload'
 require 'net/sftp/operations/download'
+require 'net/sftp/operations/file_factory'
 
 module Net; module SFTP
 
@@ -63,7 +64,11 @@ module Net; module SFTP
         end
       end
 
-      synchronous :mkdir, :rmdir, :condition => "base.pending_requests.key?(object.id)"
+      synchronous :mkdir, :rmdir, :condition => "object.pending?"
+
+      def file
+        @file ||= Operations::FileFactory.new(base)
+      end
   end
 
 end; end
