@@ -67,6 +67,18 @@ module Net; module SFTP; module Protocol; module V04
       attributes[:type] ||= T_REGULAR
     end
 
+    def directory?
+      type == T_DIRECTORY
+    end
+
+    def symlink?
+      type == T_SYMLINK
+    end
+
+    def file?
+      type == T_REGULAR
+    end
+
     def owner
       if attributes[:uid] && !attributes.key?(:owner)
         require 'etc'

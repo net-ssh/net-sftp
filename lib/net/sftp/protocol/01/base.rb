@@ -3,6 +3,7 @@ require 'net/sftp/constants'
 require 'net/sftp/packet'
 require 'net/sftp/protocol/base'
 require 'net/sftp/protocol/01/attributes'
+require 'net/sftp/protocol/01/name'
 
 module Net; module SFTP; module Protocol; module V01
 
@@ -13,8 +14,6 @@ module Net; module SFTP; module Protocol; module V01
     F_CREAT  = 0x00000008
     F_TRUNC  = 0x00000010
     F_EXCL   = 0x00000020
-
-    Name = Struct.new(:filename, :longname, :attributes)
 
     def parse_handle_packet(packet)
       { :handle => packet.read_string }
@@ -39,7 +38,7 @@ module Net; module SFTP; module Protocol; module V01
         filename = packet.read_string
         longname = packet.read_string
         attrs    = attribute_factory.from_buffer(packet)
-        names   << Name.new(filename, longname, attrs)
+        names   << name_factory.new(filename, longname, attrs)
       end
 
       { :names => names }
@@ -166,6 +165,10 @@ module Net; module SFTP; module Protocol; module V01
 
       def attribute_factory
         V01::Attributes
+      end
+
+      def name_factory
+        V01::Name
       end
   end
 

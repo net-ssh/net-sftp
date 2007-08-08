@@ -27,7 +27,9 @@ module Net; module SFTP; module Operations
         @local_cwd = local
         @remote_cwd = remote
 
+        @active += 1
         base.mkdir(remote) do
+          @active -= 1
           (options[:requests] || RECURSIVE_READERS).to_i.times do
             break unless process_next_entry
           end
@@ -41,6 +43,10 @@ module Net; module SFTP; module Operations
 
     def recursive?
       options[:recursive]
+    end
+
+    def active?
+      @active > 0
     end
 
     private
@@ -58,7 +64,7 @@ module Net; module SFTP; module Operations
         if @stack.empty?
           if @uploads.any?
             write_next_chunk(@uploads.first)
-          elsif @active.zero?
+          elsif !active?
             update_progress(:finish)
           end
           return false

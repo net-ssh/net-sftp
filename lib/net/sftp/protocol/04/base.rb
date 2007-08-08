@@ -1,5 +1,6 @@
 require 'net/sftp/protocol/03/base'
 require 'net/sftp/protocol/04/attributes'
+require 'net/sftp/protocol/04/name'
 
 module Net; module SFTP; module Protocol; module V04
 
@@ -12,7 +13,7 @@ module Net; module SFTP; module Protocol; module V04
       packet.read_long.times do
         filename = packet.read_string
         attrs    = attribute_factory.from_buffer(packet)
-        names   << Name.new(filename, nil, attrs)
+        names   << name_factory.new(filename, attrs)
       end
 
       { :names => names }
@@ -53,6 +54,10 @@ module Net; module SFTP; module Protocol; module V04
 
       def attribute_factory
         V04::Attributes
+      end
+
+      def name_factory
+        V04::Name
       end
   end
 
