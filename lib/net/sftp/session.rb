@@ -48,6 +48,22 @@ module Net; module SFTP
       end
 
       synchronous :upload, :download, :condition => "object.active?"
+
+      def mkdir(remote, options={})
+        base.mkdir(remote, options) do |status|
+          raise "mkdir #{remote}: #{status}" unless status.ok?
+          yield if block_given?
+        end
+      end
+
+      def rmdir(remote)
+        base.rmdir(remote) do |status|
+          raise "rmdir #{remote}: #{status}" unless status.ok?
+          yield if block_given?
+        end
+      end
+
+      synchronous :mkdir, :rmdir, :condition => "base.pending_requests.key?(object.id)"
   end
 
 end; end

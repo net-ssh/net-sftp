@@ -21,6 +21,10 @@ module Net; module SFTP; module Operations
 
       self.logger = base.logger
 
+      if recursive? && local.respond_to?(:write)
+        raise ArgumentError, "cannot download a directory tree in-memory"
+      end
+
       @stack = [Entry.new(remote, local, recursive?)]
       process_next_entry
     end
@@ -49,6 +53,7 @@ module Net; module SFTP; module Operations
           @active += 1
 
           if entry.directory
+            update_progress(:mkdir, entry.local)
             Dir.mkdir(entry.local) unless File.directory?(entry.local)
             request = base.opendir(entry.remote, &method(:on_opendir))
             request[:entry] = entry
@@ -60,23 +65,23 @@ module Net; module SFTP; module Operations
         update_progress(:finish) if !active?
       end
 
-      def on_opendir(status)
-        entry = status.request[:entry]
-        raise "opendir #{entry.remote}: #{status}" unless status.ok?
-        entry.handle = status[:handle]
-        request = base.readdir(status[:handle], &method(:on_readdir))
+      def on_opendir(response)
+        entry = response.request[:entry]
+        raise "opendir #{entry.remote}: #{response}" unless response.ok?
+        entry.handle = response[:handle]
+        request = base.readdir(response[:handle], &method(:on_readdir))
         request[:parent] = entry
       end
 
-      def on_readdir(status)
-        entry = status.request[:parent]
-        if status.eof?
+      def on_readdir(response)
+        entry = response.request[:parent]
+        if response.eof?
           request = base.close(entry.handle, &method(:on_closedir))
           request[:parent] = entry
-        elsif !status.ok?
-          raise "readdir #{entry.remote}: #{status}"
+        elsif !response.ok?
+          raise "readdir #{entry.remote}: #{response}"
         else
-          status[:names].each do |item|
+          response[:names].each do |item|
             next if item.name == "." || item.name == ".."
             stack << Entry.new(File.join(entry.remote, item.name), File.join(entry.local, item.name), item.directory?, item.attributes.size)
           end
@@ -92,53 +97,54 @@ module Net; module SFTP; module Operations
         request[:entry] = entry
       end
 
-      def on_closedir(status)
+      def on_closedir(response)
         @active -= 1
-        entry = status.request[:parent]
-        raise "close #{entry.remote}: #{status}" unless status.ok?
+        entry = response.request[:parent]
+        raise "close #{entry.remote}: #{response}" unless response.ok?
         process_next_entry
       end
 
-      def on_open(status)
-        entry = status.request[:entry]
-        raise "open #{entry.remote}: #{status}" unless status.ok?
+      def on_open(response)
+        entry = response.request[:entry]
+        raise "open #{entry.remote}: #{response}" unless response.ok?
 
-        entry.handle = status[:handle]
-        entry.sink = File.open(entry.local, "w")
+        entry.handle = response[:handle]
+        entry.sink = entry.local.respond_to?(:write) ? entry.local : File.open(entry.local, "w")
         entry.offset = 0
 
+        update_progress(:get, entry, 0, nil)
         download_next_chunk(entry)
       end
 
       def download_next_chunk(entry)
-        update_progress(:read, entry, entry.offset)
-
         size = options[:read_size] || 32_000
         request = base.read(entry.handle, entry.offset, size, &method(:on_read))
-        entry.offset += size
         request[:entry] = entry
+        request[:offset] = entry.offset
+        entry.offset += size
       end
 
-      def on_read(status)
-        entry = status.request[:entry]
+      def on_read(response)
+        entry = response.request[:entry]
 
-        if status.eof? || (entry.size && entry.offset >= entry.size)
+        if response.eof?
           update_progress(:close, entry)
           entry.sink.close
           request = base.close(entry.handle, &method(:on_close))
           request[:entry] = entry
-        elsif !status.ok?
-          raise "read #{entry.remote}: #{status}"
+        elsif !response.ok?
+          raise "read #{entry.remote}: #{response}"
         else
-          entry.sink.write(status[:data])
+          update_progress(:get, entry, response.request[:offset] + response[:data].length, response[:data])
+          entry.sink.write(response[:data])
           download_next_chunk(entry)
         end
       end
 
-      def on_close(status)
+      def on_close(response)
         @active -= 1
-        entry = status.request[:entry]
-        raise "close #{entry.remote}: #{status}" unless status.ok?
+        entry = response.request[:entry]
+        raise "close #{entry.remote}: #{response}" unless response.ok?
         process_next_entry
       end
 

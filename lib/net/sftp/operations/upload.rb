@@ -132,6 +132,7 @@ module Net; module SFTP; module Operations
         file.handle = response[:handle]
 
         @uploads << file
+        update_progress(:put, file, 0, nil)
         write_next_chunk(file)
 
         if !recursive?
@@ -143,6 +144,7 @@ module Net; module SFTP; module Operations
         @active -= 1
         file = response.request[:file]
         raise "write #{file.remote}: #{response}" unless response.ok?
+        update_progress(:put, file, response.request[:offset], response.request[:data])
         write_next_chunk(file)
       end
 
@@ -150,6 +152,7 @@ module Net; module SFTP; module Operations
         @active -= 1
         file = response.request[:file]
         raise "close #{file.remote}: #{response}" unless response.ok?
+        update_progress(:close, file)
         process_next_entry
       end
 
@@ -161,14 +164,15 @@ module Net; module SFTP; module Operations
           offset = file.io.pos
           data = file.io.read(options[:read_size] || DEFAULT_READ_SIZE)
           if data.nil?
-            update_progress(:close, file)
             request = base.close(file.handle, &method(:on_close))
+            request[:file] = file
             file.io.close
             file.io = nil
             @uploads.delete(file)
           else
-            update_progress(:write, file, offset, data)
             request = base.write(file.handle, offset, data, &method(:on_write))
+            request[:data] = data
+            request[:offset] = file.io.pos
             request[:file] = file
           end
         end
