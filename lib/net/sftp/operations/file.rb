@@ -104,6 +104,10 @@ module Net; module SFTP; module Operations
       end
     end
 
+    def stat
+      base.fstat(handle, &method(:do_fstat)).wait[:stat]
+    end
+
     private
 
       def fill
@@ -129,6 +133,11 @@ module Net; module SFTP; module Operations
 
       def do_write(response)
         raise "write error: #{response}" unless response.ok?
+      end
+
+      def do_fstat(response)
+        raise "fstat error: #{response}" unless response.ok?
+        response.request[:stat] = response[:attrs]
       end
   end
 
