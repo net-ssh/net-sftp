@@ -28,14 +28,6 @@ module Net; module SFTP; module Protocol
 
     private
 
-      MAP = {
-        FXP_STATUS  => :status,
-        FXP_HANDLE  => :handle,
-        FXP_DATA    => :data,
-        FXP_NAME    => :name,
-        FXP_ATTRS   => :attrs
-      }
-
       def send_request(type, *args)
         @request_id_counter += 1
         session.send_packet(type, :long, @request_id_counter, *args)
