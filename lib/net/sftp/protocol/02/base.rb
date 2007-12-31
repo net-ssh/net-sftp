@@ -4,6 +4,10 @@ module Net; module SFTP; module Protocol; module V02
 
   class Base < V01::Base
 
+    def version
+      2
+    end
+
     def rename(name, new_name, flags=nil)
       send_request(FXP_RENAME, :string, name, :string, new_name)
     end

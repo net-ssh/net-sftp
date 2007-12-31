@@ -15,6 +15,10 @@ module Net; module SFTP; module Protocol; module V01
     F_TRUNC  = 0x00000010
     F_EXCL   = 0x00000020
 
+    def version
+      1
+    end
+
     def parse_handle_packet(packet)
       { :handle => packet.read_string }
     end

@@ -4,6 +4,10 @@ module Net; module SFTP; module Protocol; module V03
 
   class Base < V02::Base
 
+    def version
+      3
+    end
+
     def readlink(path)
       send_request(FXP_READLINK, :string, path)
     end

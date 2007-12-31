@@ -4,6 +4,11 @@ require 'net/sftp/protocol/06/attributes'
 module Net; module SFTP; module Protocol; module V06
 
   class Base < V05::Base
+
+    def version
+      6
+    end
+
     def link(new_link_path, existing_path, symlink)
       send_request(FXP_LINK, :string, new_link_path, :string, existing_path, :bool, symlink)
     end

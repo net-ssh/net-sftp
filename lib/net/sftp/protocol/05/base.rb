@@ -37,6 +37,10 @@ module Net; module SFTP; module Protocol; module V05
       F_SYNCHRONIZE       = 0x00100000
     end
 
+    def version
+      5
+    end
+
     def open(path, flags, options)
       flags = normalize_open_flags(flags)
 

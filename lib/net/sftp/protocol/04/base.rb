@@ -6,6 +6,10 @@ module Net; module SFTP; module Protocol; module V04
 
   class Base < V03::Base
 
+    def version
+      4
+    end
+
     # Same as earlier versions, except the longname member was removed.
     def parse_name_packet(packet)
       names = []

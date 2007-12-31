@@ -34,6 +34,18 @@ module Net; module SFTP
       channel.close
     end
 
+    def open?
+      state == :open
+    end
+
+    def closed?
+      state == :closed
+    end
+
+    def opening?
+      !(open? || closed?)
+    end
+
     def connect!(&block)
       return unless state == :closed
       @state = :opening
