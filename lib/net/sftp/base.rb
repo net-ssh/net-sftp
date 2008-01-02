@@ -30,10 +30,6 @@ module Net; module SFTP
       connect!(&block)
     end
 
-    def close_channel
-      channel.close
-    end
-
     def open?
       state == :open
     end

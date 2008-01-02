@@ -40,7 +40,7 @@ module Net; module SFTP
 
     def open
       loop { base.opening? }
-      yield self
+      yield self if block_given?
     end
 
     public # SFTP operations
