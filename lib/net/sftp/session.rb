@@ -38,6 +38,11 @@ module Net; module SFTP
       base.loop(&block)
     end
 
+    def open
+      loop { base.opening? }
+      yield self
+    end
+
     public # SFTP operations
     
       def upload(local, remote, options={}, &block)
