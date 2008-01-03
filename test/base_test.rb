@@ -127,11 +127,8 @@ class BaseTest < Net::SFTP::TestCase
 
   private
 
-    class V1 < Net::SFTP::Protocol::V01::Base
-    end
-
-    class V5 < Net::SFTP::Protocol::V05::Base
-    end
+    V1 = Net::SFTP::Protocol::V01::Base
+    V5 = Net::SFTP::Protocol::V05::Base
 
     def assert_scripted_command
       assert_scripted do
