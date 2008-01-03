@@ -16,17 +16,11 @@ class BaseTest < Net::SFTP::TestCase
 
   def test_v1_open_read_only_that_fails_should_invoke_callback
     expect_open("/path/to/file", "r", nil, :server_version => 1, :fail => 2)
-    called = false
 
-    assert_scripted_command do
-      sftp.base.open("/path/to/file") do |response|
-        called = true
-        assert !response.ok?
-        assert_equal 2, response.code
-      end
+    assert_command_with_callback(:open, "/path/to/file") do |response|
+      assert !response.ok?
+      assert_equal 2, response.code
     end
-
-    assert called, "expected callback to be invoked"
   end
 
   def test_v1_open_write_only_that_succeeds_should_invoke_callback
@@ -70,14 +64,65 @@ class BaseTest < Net::SFTP::TestCase
       channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
     end
 
-    called = false
-    assert_scripted_command do
-      sftp.base.close("handle") do |response|
-        called = true
-        assert response.ok?
-      end
+    assert_command_with_callback(:close, "handle") { |r| assert r.ok? }
+  end
+
+  def test_read_should_send_read_request_and_invoke_callback
+    expect_sftp_session do |channel|
+      channel.sends_packet(FXP_READ, :long, 0, :string, "handle", :int64, 512123, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 0, :string, "this is some data!")
     end
-    assert called
+
+    assert_command_with_callback(:read, "handle", 512123, 1024) do |response|
+      assert response.ok?
+      assert_equal "this is some data!", response[:data]
+    end
+  end
+
+  def test_write_should_send_write_request_and_invoke_callback
+    expect_sftp_session do |channel|
+      channel.sends_packet(FXP_WRITE, :long, 0, :string, "handle", :int64, 512123, :string, "this is some data!")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:write, "handle", 512123, "this is some data!") do |response|
+      assert response.ok?
+    end
+  end
+
+  def test_v1_lstat_should_send_lstat_request_and_invoke_callback
+    expect_sftp_session :server_version => 1 do |channel|
+      channel.sends_packet(FXP_LSTAT, :long, 0, :string, "/path/to/file")
+      channel.gets_packet(FXP_ATTRS, :long, 0, :long, 0xF, :int64, 123456, :long, 1, :long, 2, :long, 0765, :long, 123456789, :long, 234567890)
+    end
+
+    assert_command_with_callback(:lstat, "/path/to/file") do |response|
+      assert response.ok?
+      assert_equal 123456, response[:attrs].size
+      assert_equal 1, response[:attrs].uid
+      assert_equal 2, response[:attrs].gid
+      assert_equal 0765, response[:attrs].permissions
+      assert_equal 123456789, response[:attrs].atime
+      assert_equal 234567890, response[:attrs].mtime
+    end
+  end
+
+  def test_v4_lstat_should_send_default_flags_parameter
+    expect_sftp_session :server_version => 4 do |channel|
+      channel.sends_packet(FXP_LSTAT, :long, 0, :string, "/path/to/file", :long, 0x800001fd)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 2)
+    end
+
+    assert_command_with_callback(:lstat, "/path/to/file")
+  end
+
+  def test_v4_lstat_should_honor_flags_parameter
+    expect_sftp_session :server_version => 4 do |channel|
+      channel.sends_packet(FXP_LSTAT, :long, 0, :string, "/path/to/file", :long, 0x1)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 2)
+    end
+
+    assert_command_with_callback(:lstat, "/path/to/file", 0x1)
   end
 
   private
@@ -96,16 +141,22 @@ class BaseTest < Net::SFTP::TestCase
       end
     end
 
-    def assert_successful_open(*args)
+    def assert_command_with_callback(command, *args)
       called = false
       assert_scripted_command do
-        sftp.base.open(*args) do |response|
+        sftp.base.send(command, *args) do |response|
           called = true
-          assert response.ok?
-          assert_equal "handle", response[:handle]
+          yield response if block_given?
         end
       end
-      assert called, "expected callback to be invoked"
+      assert called, "expected callback to be invoked, but it wasn't"
+    end
+
+    def assert_successful_open(*args)
+      assert_command_with_callback(:open, *args) do |response|
+        assert response.ok?
+        assert_equal "handle", response[:handle]
+      end
     end
 
     def expect_open(path, mode, perms, options={})

@@ -93,7 +93,7 @@ module Net; module SFTP; module Protocol; module V01
         require 'etc'
         attributes[:gid] = Etc.getgrnam(attributes[:group]).gid
       end
-      attributes[:uid]
+      attributes[:gid]
     end
 
     # Convert the object to a string suitable for passing in an SFTP
