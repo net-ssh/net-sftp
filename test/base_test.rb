@@ -343,6 +343,80 @@ class BaseTest < Net::SFTP::TestCase
     assert_command_with_callback(:rename, "from", "to", 1)
   end
 
+  def test_v2_readlink_should_be_unimplemented
+    assert_not_implemented 2, :readlink, "/path/to/link"
+  end
+
+  def test_v3_readlink_should_send_readlink_packet
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_READLINK, :long, 0, :string, "/path/to/link")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 2)
+    end
+
+    assert_command_with_callback(:readlink, "/path/to/link")
+  end
+
+  def test_v2_symlink_should_be_unimplemented
+    assert_not_implemented 2, :symlink, "/path/to/source", "/path/to/link"
+  end
+
+  def test_v3_symlink_should_send_symlink_packet
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_SYMLINK, :long, 0, :string, "/path/to/source", :string, "/path/to/link")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:symlink, "/path/to/source", "/path/to/link")
+  end
+
+  def test_v6_symlink_should_send_link_packet
+    expect_sftp_session :server_version => 6 do |channel|
+      channel.sends_packet(FXP_LINK, :long, 0, :string, "/path/to/link", :string, "/path/to/source", :bool, true)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:symlink, "/path/to/source", "/path/to/link")
+  end
+
+  def test_v5_link_should_be_unimplemented
+    assert_not_implemented 5, :link, "/path/to/source", "/path/to/link", true
+  end
+
+  def test_v6_link_should_send_link_packet
+    expect_sftp_session :server_version => 6 do |channel|
+      channel.sends_packet(FXP_LINK, :long, 0, :string, "/path/to/link", :string, "/path/to/source", :bool, true)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:link, "/path/to/link", "/path/to/source", true)
+  end
+
+  def test_v5_block_should_be_unimplemented
+    assert_not_implemented 5, :block, "handle", 12345, 67890, 0xabcd
+  end
+
+  def test_v6_block_should_send_block_packet
+    expect_sftp_session :server_version => 6 do |channel|
+      channel.sends_packet(FXP_BLOCK, :long, 0, :string, "handle", :int64, 12345, :int64, 67890, :long, 0xabcd)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:block, "handle", 12345, 67890, 0xabcd)
+  end
+
+  def test_v5_unblock_should_be_unimplemented
+    assert_not_implemented 5, :unblock, "handle", 12345, 67890
+  end
+
+  def test_v6_unblock_should_send_block_packet
+    expect_sftp_session :server_version => 6 do |channel|
+      channel.sends_packet(FXP_UNBLOCK, :long, 0, :string, "handle", :int64, 12345, :int64, 67890)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:unblock, "handle", 12345, 67890)
+  end
+
   private
 
     V1 = Net::SFTP::Protocol::V01::Base

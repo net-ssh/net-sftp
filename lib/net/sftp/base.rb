@@ -141,6 +141,14 @@ module Net; module SFTP
         request :link, new_link_path, existing_path, symlink, &callback
       end
 
+      def block(handle, offset, length, mask, &callback)
+        request :block, handle, offset, length, mask, &callback
+      end
+
+      def unblock(handle, offset, length, &callback)
+        request :unblock, handle, offset, length, &callback
+      end
+
     private
 
       def request(type, *args, &callback)
