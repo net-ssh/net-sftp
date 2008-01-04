@@ -125,10 +125,234 @@ class BaseTest < Net::SFTP::TestCase
     assert_command_with_callback(:lstat, "/path/to/file", 0x1)
   end
 
+  def test_v1_fstat_should_send_fstat_request_and_invoke_callback
+    expect_sftp_session :server_version => 1 do |channel|
+      channel.sends_packet(FXP_FSTAT, :long, 0, :string, "handle")
+      channel.gets_packet(FXP_ATTRS, :long, 0, :long, 0xF, :int64, 123456, :long, 1, :long, 2, :long, 0765, :long, 123456789, :long, 234567890)
+    end
+
+    assert_command_with_callback(:fstat, "handle") do |response|
+      assert response.ok?
+      assert_equal 123456, response[:attrs].size
+      assert_equal 1, response[:attrs].uid
+      assert_equal 2, response[:attrs].gid
+      assert_equal 0765, response[:attrs].permissions
+      assert_equal 123456789, response[:attrs].atime
+      assert_equal 234567890, response[:attrs].mtime
+    end
+  end
+
+  def test_v4_fstat_should_send_default_flags_parameter
+    expect_sftp_session :server_version => 4 do |channel|
+      channel.sends_packet(FXP_FSTAT, :long, 0, :string, "handle", :long, 0x800001fd)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 2)
+    end
+
+    assert_command_with_callback(:fstat, "handle")
+  end
+
+  def test_v4_fstat_should_honor_flags_parameter
+    expect_sftp_session :server_version => 4 do |channel|
+      channel.sends_packet(FXP_FSTAT, :long, 0, :string, "handle", :long, 0x1)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 2)
+    end
+
+    assert_command_with_callback(:fstat, "handle", 0x1)
+  end
+
+  def test_v1_setstat_should_send_v1_attributes
+    expect_sftp_session :server_version => 1 do |channel|
+      channel.sends_packet(FXP_SETSTAT, :long, 0, :string, "/path/to/file", :long, 0xc, :long, 0765, :long, 1234567890, :long, 2345678901)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:setstat, "/path/to/file", :permissions => 0765, :atime => 1234567890, :mtime => 2345678901)
+  end
+
+  def test_v4_setstat_should_send_v4_attributes
+    expect_sftp_session :server_version => 4 do |channel|
+      channel.sends_packet(FXP_SETSTAT, :long, 0, :string, "/path/to/file", :long, 0x2c, :byte, 1, :long, 0765, :int64, 1234567890, :int64, 2345678901)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:setstat, "/path/to/file", :permissions => 0765, :atime => 1234567890, :mtime => 2345678901)
+  end
+
+  def test_v6_setstat_should_send_v4_attributes
+    expect_sftp_session :server_version => 6 do |channel|
+      channel.sends_packet(FXP_SETSTAT, :long, 0, :string, "/path/to/file", :long, 0x102c, :byte, 1, :long, 0765, :int64, 1234567890, :int64, 2345678901, :string, "text/plain")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:setstat, "/path/to/file", :permissions => 0765, :atime => 1234567890, :mtime => 2345678901, :mime_type => "text/plain")
+  end
+
+  def test_v1_fsetstat_should_send_v1_attributes
+    expect_sftp_session :server_version => 1 do |channel|
+      channel.sends_packet(FXP_FSETSTAT, :long, 0, :string, "handle", :long, 0xc, :long, 0765, :long, 1234567890, :long, 2345678901)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:fsetstat, "handle", :permissions => 0765, :atime => 1234567890, :mtime => 2345678901)
+  end
+
+  def test_v4_fsetstat_should_send_v4_attributes
+    expect_sftp_session :server_version => 4 do |channel|
+      channel.sends_packet(FXP_FSETSTAT, :long, 0, :string, "handle", :long, 0x2c, :byte, 1, :long, 0765, :int64, 1234567890, :int64, 2345678901)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:fsetstat, "handle", :permissions => 0765, :atime => 1234567890, :mtime => 2345678901)
+  end
+
+  def test_v6_fsetstat_should_send_v4_attributes
+    expect_sftp_session :server_version => 6 do |channel|
+      channel.sends_packet(FXP_FSETSTAT, :long, 0, :string, "handle", :long, 0x102c, :byte, 1, :long, 0765, :int64, 1234567890, :int64, 2345678901, :string, "text/plain")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:fsetstat, "handle", :permissions => 0765, :atime => 1234567890, :mtime => 2345678901, :mime_type => "text/plain")
+  end
+
+  def test_opendir_should_send_opendir_request_and_invoke_callback
+    expect_sftp_session do |channel|
+      channel.sends_packet(FXP_OPENDIR, :long, 0, :string, "/path/to/dir")
+      channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+    end
+
+    assert_command_with_callback(:opendir, "/path/to/dir")
+  end
+
+  def test_readdir_should_send_readdir_request_and_invoke_callback
+    expect_sftp_session do |channel|
+      channel.sends_packet(FXP_READDIR, :long, 0, :string, "handle")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 1)
+    end
+
+    assert_command_with_callback(:readdir, "handle") { |r| assert r.eof? }
+  end
+
+  def test_remove_should_send_remove_packet
+    expect_sftp_session do |channel|
+      channel.sends_packet(FXP_REMOVE, :long, 0, :string, "/path/to/file")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:remove, "/path/to/file")
+  end
+
+  def test_remove_should_send_remove_packet
+    expect_sftp_session do |channel|
+      channel.sends_packet(FXP_REMOVE, :long, 0, :string, "/path/to/file")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:remove, "/path/to/file")
+  end
+
+  def test_mkdir_should_send_mkdir_packet
+    expect_sftp_session do |channel|
+      channel.sends_packet(FXP_MKDIR, :long, 0, :string, "/path/to/dir", :long, 0x4, :byte, 1, :long, 0765)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:mkdir, "/path/to/dir", :permissions => 0765)
+  end
+
+  def test_rmdir_should_send_rmdir_packet
+    expect_sftp_session do |channel|
+      channel.sends_packet(FXP_RMDIR, :long, 0, :string, "/path/to/dir")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:rmdir, "/path/to/dir")
+  end
+
+  def test_realpath_should_send_realpath_packet
+    expect_sftp_session do |channel|
+      channel.sends_packet(FXP_REALPATH, :long, 0, :string, "/path/to/dir")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 2)
+    end
+
+    assert_command_with_callback(:realpath, "/path/to/dir")
+  end
+
+  def test_v1_stat_should_send_stat_request_and_invoke_callback
+    expect_sftp_session :server_version => 1 do |channel|
+      channel.sends_packet(FXP_STAT, :long, 0, :string, "/path/to/file")
+      channel.gets_packet(FXP_ATTRS, :long, 0, :long, 0xF, :int64, 123456, :long, 1, :long, 2, :long, 0765, :long, 123456789, :long, 234567890)
+    end
+
+    assert_command_with_callback(:stat, "/path/to/file") do |response|
+      assert response.ok?
+      assert_equal 123456, response[:attrs].size
+      assert_equal 1, response[:attrs].uid
+      assert_equal 2, response[:attrs].gid
+      assert_equal 0765, response[:attrs].permissions
+      assert_equal 123456789, response[:attrs].atime
+      assert_equal 234567890, response[:attrs].mtime
+    end
+  end
+
+  def test_v4_stat_should_send_default_flags_parameter
+    expect_sftp_session :server_version => 4 do |channel|
+      channel.sends_packet(FXP_STAT, :long, 0, :string, "/path/to/file", :long, 0x800001fd)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 2)
+    end
+
+    assert_command_with_callback(:stat, "/path/to/file")
+  end
+
+  def test_v4_stat_should_honor_flags_parameter
+    expect_sftp_session :server_version => 4 do |channel|
+      channel.sends_packet(FXP_STAT, :long, 0, :string, "/path/to/file", :long, 0x1)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 2)
+    end
+
+    assert_command_with_callback(:stat, "/path/to/file", 0x1)
+  end
+
+  def test_v1_rename_should_be_unimplemented
+    assert_not_implemented 1, :rename, "from", "to"
+  end
+
+  def test_v2_rename_should_send_rename_packet
+    expect_sftp_session :server_version => 2 do |channel|
+      channel.sends_packet(FXP_RENAME, :long, 0, :string, "from", :string, "to")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:rename, "from", "to")
+  end
+
+  def test_v5_rename_should_send_rename_packet_and_default_flags
+    expect_sftp_session :server_version => 5 do |channel|
+      channel.sends_packet(FXP_RENAME, :long, 0, :string, "from", :string, "to", :long, 0)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:rename, "from", "to")
+  end
+
+  def test_v5_rename_should_send_rename_packet_and_honor_flags
+    expect_sftp_session :server_version => 5 do |channel|
+      channel.sends_packet(FXP_RENAME, :long, 0, :string, "from", :string, "to", :long, 1)
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+    end
+
+    assert_command_with_callback(:rename, "from", "to", 1)
+  end
+
   private
 
     V1 = Net::SFTP::Protocol::V01::Base
     V5 = Net::SFTP::Protocol::V05::Base
+
+    def assert_not_implemented(server_version, command, *args)
+      expect_sftp_session :server_version => 1
+      sftp.open
+      assert_raises(NotImplementedError) { sftp.base.send(command, *args) }
+    end
 
     def assert_scripted_command
       assert_scripted do

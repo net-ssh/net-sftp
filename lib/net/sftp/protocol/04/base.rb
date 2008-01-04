@@ -35,11 +35,6 @@ module Net; module SFTP; module Protocol; module V04
       send_request(FXP_FSTAT, :string, handle, :long, convert(flags))
     end
 
-    def rename(name, new_name, flags)
-      flags ||= 0
-      send_request(FXP_RENAME, :string, name, :string, new_name, :long, flags)
-    end
-
     protected
 
       DEFAULT_FLAGS = Attributes::F_SIZE |

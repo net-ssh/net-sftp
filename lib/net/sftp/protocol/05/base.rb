@@ -41,6 +41,11 @@ module Net; module SFTP; module Protocol; module V05
       5
     end
 
+    def rename(name, new_name, flags)
+      flags ||= 0
+      send_request(FXP_RENAME, :string, name, :string, new_name, :long, flags)
+    end
+
     def open(path, flags, options)
       flags = normalize_open_flags(flags)
 
