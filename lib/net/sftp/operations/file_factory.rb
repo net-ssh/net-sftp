@@ -10,7 +10,7 @@ module Net; module SFTP; module Operations
       @base = base
     end
 
-    def open(name, flags="r", mode=0640, &block)
+    def open(name, flags="r", mode=nil, &block)
       request = base.open(name, flags, :permissions => mode, &method(:do_open))
       file = Operations::File.new(base)
       request[:file] = file

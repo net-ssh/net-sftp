@@ -8,41 +8,102 @@ require 'net/sftp/response'
 
 module Net; module SFTP
 
+  # Presents the low-level SFTP operations in a protocol-agnostic way. Requests
+  # get routed to the appropriate Protocol instance. Generally, you'll want to
+  # use the Session class instead of this one, but you can get at the underlying
+  # Base instance anytime you want, e.g.:
+  #
+  #   request = session.base.remove("/path/to/file")
+  #   request.wait
+  #
+  # Theoretically, you could instantiate this class directly, but it is
+  # easier just to go through the Session class.
   class Base
     include Net::SSH::Loggable
     include Net::SFTP::Constants
 
+    # The highest protocol version supported by the Net::SFTP library.
     HIGHEST_PROTOCOL_VERSION_SUPPORTED = 6
 
+    # A reference to the Net::SSH session object that powers this SFTP session.
     attr_reader :session
+
+    # The Net::SSH::Connection::Channel object that the SFTP session is being
+    # processed by.
     attr_reader :channel
+
+    # The state of the SFTP connection. It will be :opening, :subsystem, :init,
+    # :open, or :closed.
     attr_reader :state
-    attr_reader :input
+
+    # The protocol instance being used by this SFTP session. Useful for
+    # querying the protocol version in effect.
     attr_reader :protocol
+
+    # The hash of pending requests. Any requests that have been sent and which
+    # the server has not yet responded to will be represented here.
     attr_reader :pending_requests
 
+    # Creates a new Net::SFTP instance atop the given Net::SSH connection.
+    # This will return immediately, before the SFTP connection has been properly
+    # initialized. Once the connection is ready, the given block will be called.
+    # If you want to block until the connection has been initialized, try this:
+    #
+    #   base = Net::SFTP::Base.new(ssh)
+    #   base.loop { base.opening? }
     def initialize(session, &block)
       @session    = session
       @input      = Net::SSH::Buffer.new
       self.logger = session.logger
       @state      = :closed
 
-      connect!(&block)
+      connect(&block)
     end
 
+    # Closes the SFTP connection, but not the SSH connection. Blocks until the
+    # session has terminated. Once the session has terminated, further operations
+    # on this object will result in errors. You can reopen the SFTP session
+    # via the #connect method.
+    def close_channel
+      return unless open?
+      channel.close
+      loop { !closed? }
+    end
+
+    # Returns true if the connection has been initialized.
     def open?
       state == :open
     end
 
+    # Returns true if the connection has been closed.
     def closed?
       state == :closed
     end
 
+    # Returns true if the connection is in the process of being initialized
+    # (e.g., it is not closed, but is not yet fully open).
     def opening?
       !(open? || closed?)
     end
 
-    def connect!(&block)
+    # Attempts to establish an SFTP connection over the SSH session given when
+    # this object was instantiated. If the object is already open (or opening),
+    # this does nothing.
+    #
+    # This method does not block, and will return immediately. If you pass a
+    # block to it, that block will be invoked when the connection has been
+    # fully established. Thus, you can do something like this:
+    #
+    #   base.connect do
+    #     puts "open!"
+    #   end
+    #
+    # If you just want to block until the connection is ready, you can do this:
+    #
+    #   base.connect
+    #   base.loop { base.opening? }
+    #   puts "open!"
+    def connect(&block)
       return unless state == :closed
       @state = :opening
       @channel = session.open_channel(&method(:when_channel_confirmed))
@@ -52,11 +113,25 @@ module Net; module SFTP
     end
 
     alias :loop_forever :loop
+
+    # Runs the SSH event loop while the given block returns true. This lets
+    # you set up a state machine and then "fire it off". If you do not specify
+    # a block, the event loop will run for as long as there are any pending
+    # SFTP requests. This makes it easy to do thing like this:
+    #
+    #   base.remove("/path/to/file")
+    #   base.loop
     def loop(&block)
       block ||= Proc.new { pending_requests.any? }
       session.loop(&block)
     end
 
+    # Formats, constructs, and sends an SFTP packet of the given type and with
+    # the given data. This does not block, but merely enqueues the packet for
+    # sending and returns.
+    #
+    # You should probably use the operation methods, rather than building and
+    # sending the packet directly. (See #open, #close, etc.)
     def send_packet(type, *args)
       data = Net::SSH::Buffer.from(*args)
       msg = Net::SSH::Buffer.from(:long, data.length+1, :byte, type, :raw, data)
@@ -65,34 +140,161 @@ module Net; module SFTP
 
     public
 
+      # :call-seq:
+      #   open(path, flags="r", options={}) -> request
+      #   open(path, flags="r", options={}) { |response| ... } -> request
+      #
+      # Opens a file on the remote server. The +flags+ parameter determines
+      # how the flag is open, and accepts the same format as IO#open (e.g.,
+      # either a string like "r" or "w", or a combination of the IO constants).
+      # The +options+ parameter is a hash of attributes to be associated
+      # with the file, and varies greatly depending on the SFTP protocol
+      # version in use, but some (like :permissions) are always available.
+      #
+      # Returns immediately with a Request object. If a block is given, it will
+      # be invoked when the server responds, with a Response object as the only
+      # parameter. The :handle property of the response is the handle of the
+      # opened file, and may be passed to other methods (like #close, #read,
+      # #write, and so forth).
+      #
+      #   base.open("/path/to/file") do |response|
+      #     raise "fail!" unless response.ok?
+      #     base.close(response[:handle])
+      #   end
+      #   base.loop
       def open(path, flags="r", options={}, &callback)
         request :open, path, flags, options, &callback
       end
 
+      # :call-seq:
+      #   close(handle) -> request
+      #   close(handle) { |response| ... } -> request
+      #
+      # Closes an open handle, whether obtained via #open, or #opendir. Returns
+      # immediately with a Request object. If a block is given, it will be
+      # invoked when the server responds.
+      #
+      #   base.open("/path/to/file") do |response|
+      #     raise "fail!" unless response.ok?
+      #     base.close(response[:handle])
+      #   end
+      #   base.loop
       def close(handle, &callback)
         request :close, handle, &callback
       end
 
+      # :call-seq:
+      #   read(handle, offset, length) -> request
+      #   read(handle, offset, length) { |response| ... } -> request
+      #
+      # Requests that +length+ bytes, starting at +offset+ bytes from the
+      # beginning of the file, be read from the file identified by
+      # +handle+. (The +handle+ should be a value obtained via the #open
+      # method.)  Returns immediately with a Request object. If a block is
+      # given, it will be invoked when the server responds.
+      #
+      # The :data property of the response will contain the requested data,
+      # assuming the call was successful.
+      #
+      #   request = base.read(handle, 0, 1024) do |response|
+      #     if response.eof?
+      #       puts "end of file reached before reading any data"
+      #     elsif !response.ok?
+      #       puts "error (#{response})"
+      #     else
+      #       print(response[:data])
+      #     end
+      #   end
+      #   request.wait
+      #
+      # To read an entire file will usually require multiple calls to #read,
+      # unless you know in advance how large the file is.
       def read(handle, offset, length, &callback)
         request :read, handle, offset, length, &callback
       end
 
+      # :call-seq:
+      #   write(handle, offset, data) -> request
+      #   write(handle, offset, data) { |response| ... } -> request
+      #
+      # Requests that +data+ be written to the file identified by +handle+,
+      # starting at +offset+ bytes from the start of the file. The file must
+      # have been opened for writing via #open. Returns immediately with a
+      # Request object. If a block is given, it will be invoked when the
+      # server responds.
+      #
+      #   request = base.write(handle, 0, "hello, world!\n")
+      #   request.wait
       def write(handle, offset, data, &callback)
         request :write, handle, offset, data, &callback
       end
 
+      # :call-seq:
+      #   lstat(path, flags=nil) -> request
+      #   lstat(path, flags=nil) { |response| ... } -> request
+      #
+      # This method is identical to the #stat method, with the exception that
+      # it will not follow symbolic links (thus allowing you to stat the
+      # link itself, rather than what it refers to). The +flags+ parameter
+      # is not used in SFTP protocol versions prior to 4, and will be ignored
+      # in those versions of the protocol that do not use it. For those that
+      # do, however, you may provide hints as to which file proprties you wish
+      # to query (e.g., if all you want is permissions, you could pass the
+      # Net::SFTP::Protocol::V04::Attributes::F_PERMISSIONS flag as the value
+      # for the +flags+ parameter).
+      #
+      # The method returns immediately with a Request object. If a block is given,
+      # it will be invoked when the server responds. The :attrs property of
+      # the response will contain an Attributes instance appropriate for the
+      # the protocol version (see Protocol::V01::Attributes, Protocol::V04::Attributes,
+      # and Protocol::V06::Attributes).
+      #
+      #   request = base.lstat("/path/to/file") do |response|
+      #     raise "fail!" unless response.ok?
+      #     puts "permissions: %04o" % response[:attrs].permissions
+      #   end
+      #   request.wait
       def lstat(path, flags=nil, &callback)
         request :lstat, path, flags, &callback
       end
 
+      # The fstat method is identical to the #stat and #lstat methods, with
+      # the exception that it takes a +handle+ as the first parameter, such
+      # as would be obtained via the #open or #opendir methods. (See the #lstat
+      # method for full documentation).
       def fstat(handle, flags=nil, &callback)
         request :fstat, handle, flags, &callback
       end
 
+      # :call-seq:
+      #    setstat(path, attrs) -> request
+      #    setstat(path, attrs) { |response| ... } -> request
+      #
+      # This method may be used to set file metadata (such as permissions, or
+      # user/group information) on a remote file. The exact metadata that may
+      # be tweaked is dependent on the SFTP protocol version in use, but in
+      # general you may set at least the permissions, user, and group. (See
+      # Protocol::V01::Attributes, Protocol::V04::Attributes, and Protocol::V06::Attributes
+      # for the full lists of attributes that may be set for the different
+      # protocols.)
+      #
+      # The +attrs+ parameter is a hash, where the keys are symbols identifying
+      # the attributes to set.
+      #
+      # The method returns immediately with a Request object. If a block is given,
+      # it will be invoked when the server responds.
+      #
+      #   request = base.setstat("/path/to/file", :permissions => 0644)
+      #   request.wait
+      #   puts "success: #{request.response.ok?}"
       def setstat(path, attrs, &callback)
         request :setstat, path, attrs, &callback
       end
 
+      # The fsetstat method is identical to the #setstat method, with the
+      # exception that it takes a +handle+ as the first parameter, such as
+      # would be obtained via the #open or #opendir methods. (See the
+      # #setstat method for full documentation.)
       def fsetstat(handle, attrs, &callback)
         request :fsetstat, handle, attrs, &callback
       end
@@ -150,6 +352,8 @@ module Net; module SFTP
       end
 
     private
+
+      attr_reader :input
 
       def request(type, *args, &callback)
         request = Request.new(self, type, protocol.send(type, *args), &callback)

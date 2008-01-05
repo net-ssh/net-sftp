@@ -10,9 +10,11 @@ module Net; module SFTP
     attr_reader :type
     attr_reader :callback
     attr_reader :properties
+    attr_reader :response
 
     def initialize(session, type, id, &callback)
       @session, @id, @type, @callback = session, id, type, callback
+      @response = nil
       @properties = {}
     end
 
@@ -34,11 +36,11 @@ module Net; module SFTP
     end
 
     def respond_to(packet)
-      if callback
-        data = session.protocol.parse(packet)
-        data[:type] = packet.type
-        callback.call(Response.new(self, data))
-      end
+      data = session.protocol.parse(packet)
+      data[:type] = packet.type
+      @response = Response.new(self, data)
+
+      callback.call(@response) if callback
     end
   end
 
