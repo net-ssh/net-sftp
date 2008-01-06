@@ -299,73 +299,243 @@ module Net; module SFTP
         request :fsetstat, handle, attrs, &callback
       end
 
+      # :call-seq:
+      #   opendir(path) -> request
+      #   opendir(path) { |response| ... } -> request
+      #
+      # Attempts to open a directory on the remote host for reading. Once the
+      # handle is obtained, directory entries may be retrieved using the
+      # #readdir method. The method returns immediately with a Request object.
+      # If a block is given, it will be invoked when the server responds.
+      #
+      #   base.opendir("/path/to/directory") do |response|
+      #     raise "fail!" unless response.ok?
+      #     base.close(response[:handle])
+      #   end
+      #   base.loop
       def opendir(path, &callback)
         request :opendir, path, &callback
       end
 
+      # :call-seq:
+      #   readdir(handle) -> request
+      #   raeddir(handle) { |response| ... } -> request
+      #
+      # Reads a set of entries from the given directory handle (which must
+      # have been obtained via #opendir). If the response is EOF, then there
+      # are no more entries in the directory. Otherwise, the entries will be
+      # in the :names property of the response:
+      #
+      #   loop do
+      #     request = base.readdir(handle).wait
+      #     break if request.response.eof?
+      #     raise "fail!" unless request.response.ok?
+      #     request.response[:names].each do |entry|
+      #        puts entry.name
+      #     end
+      #   end
+      #
+      # See also Protocol::V01::Name and Protocol::V04::Name for the specific
+      # properties of each individual entry (which vary based on the SFTP
+      # protocol version in use).
       def readdir(handle, &callback)
         request :readdir, handle, &callback
       end
 
+      # :call-seq:
+      #   remove(filename) -> request
+      #   remove(filename) { |response| ... } -> request
+      #
+      # Attempts to remove the given file from the remote file system. Returns
+      # immediately with a Request object. If a block is given, the block will
+      # be invoked when the server responds, and will be passed a Response
+      # object.
+      #
+      #   base.remove("/path/to/file").wait
       def remove(filename, &callback)
         request :remove, filename, &callback
       end
 
+      # :call-seq:
+      #   mkdir(path, attrs={}) -> request
+      #   mkdir(path, attrs={}) { |response| ... } -> request
+      #
+      # Creates the named directory on the remote server. If an attribute hash
+      # is given, it must map to the set of attributes supported by the version
+      # of the SFTP protocol in use. (See Protocol::V01::Attributes,
+      # Protocol::V04::Attributes, and Protocol::V06::Attributes.)
+      #
+      #   base.mkdir("/path/to/directory", :permissions => 0550).wait
       def mkdir(path, attrs={}, &callback)
         request :mkdir, path, attrs, &callback
       end
 
+      # :call-seq:
+      #   rmdir(path) -> request
+      #   rmdir(path) { |response| ... } -> request
+      #
+      # Removes the named directory on the remote server. The directory must
+      # be empty before it can be removed.
+      #
+      #   base.rmdir("/path/to/directory").wait
       def rmdir(path, &callback)
         request :rmdir, path, &callback
       end
 
+      # :call-seq:
+      #   realpath(path) -> request
+      #   realpath(path) { |response| ... } -> request
+      #
+      # Tries to canonicalize the given path, turning any given path into an
+      # absolute path. This is primarily useful for converting a path with
+      # ".." or "." segments into an identical path without those segments.
+      # The answer will be in the response's :names attribute, as a
+      # one-element array.
+      #
+      #   request = base.realpath("/path/../to/../directory").wait
+      #   puts request[:names].first.name
       def realpath(path, &callback)
         request :realpath, path, &callback
       end
 
+      # Identical to the #lstat method, except that it follows symlinks
+      # (e.g., if you give it the path to a symlink, it will stat the target
+      # of the symlink rather than the symlink itself). See the #lstat method
+      # for full documentation.
       def stat(path, flags=nil, &callback)
         request :stat, path, flags, &callback
       end
 
+      # :call-seq:
+      #   rename(name, new_name, flags=nil) -> request
+      #   rename(name, new_name, flags=nil) { |response| ... } -> request
+      #
+      # Renames the given file. This operation is only available in SFTP
+      # protocol versions two and higher. The +flags+ parameter is ignored
+      # in versions prior to 5. In versions 5 and higher, the +flags+
+      # parameter can be used to specify how the rename should be performed
+      # (atomically, etc.).
+      #
+      # The following flags are defined in protocol version 5:
+      #
+      # * 0x0001 - overwrite an existing file if the new name specifies a file
+      #   that already exists.
+      # * 0x0002 - perform the rewrite atomically.
+      # * 0x0004 - allow the server to perform the rename as it prefers.
       def rename(name, new_name, flags=nil, &callback)
         request :rename, name, new_name, flags, &callback
       end
 
+      # :call-seq:
+      #   readlink(path) -> request
+      #   readlink(path) { |response| ... } -> request
+      #
+      # Queries the server for the target of the specified symbolic link.
+      # This operation is only available in protocol versions 3 and higher.
+      # The response to this request will include a names property, a one-element
+      # array naming the target of the symlink.
+      #
+      #   request = base.readlink("/path/to/symlink").wait
+      #   puts request.response[:names].first.name
       def readlink(path, &callback)
         request :readlink, path, &callback
       end
 
+      # :call-seq:
+      #   symlink(path, target) -> request
+      #   symlink(path, target) { |response| ... } -> request
+      #
+      # Attempts to create a symlink to +path+ at +target+. This operation
+      # is only available in protocol versions 3, 4, and 5, but the Net::SFTP
+      # library mimics the symlink behavior in protocol version 6 using the
+      # #link method, so it is safe to use this method in protocol version 6.
+      #
+      #   base.symlink("/path/to/file", "/path/to/symlink").wait
       def symlink(path, target, &callback)
         request :symlink, path, target, &callback
       end
 
+      # :call-seq:
+      #   link(new_link_path, existing_path, symlink=true) -> request
+      #   link(new_link_path, existing_path, symlink=true) { |response| ... } -> request
+      #
+      # Attempts to create a link, either hard or symbolic. This operation is
+      # only available in SFTP protocol versions 6 and higher. If the +symlink+
+      # paramter is true, a symbolic link will be created, otherwise a hard
+      # link will be created. The link will be named +new_link_path+, and will
+      # point to the path +existing_path+.
+      #
+      #   base.link("/path/to/symlink", "/path/to/file", true).wait
       def link(new_link_path, existing_path, symlink=true, &callback)
         request :link, new_link_path, existing_path, symlink, &callback
       end
 
+      # :call-seq:
+      #   block(handle, offset, length, mask) -> request
+      #   block(handle, offset, length, mask) { |response| ... } -> request
+      #
+      # Creates a byte-range lock on the file specified by the given +handle+.
+      # This operation is only available in SFTP protocol versions 6 and
+      # higher. The lock may be either mandatory or advisory.
+      #
+      # The +handle+ parameter is a file handle, as obtained by the #open method.
+      #
+      # The +offset+ and +length+ parameters describe the location and size of
+      # the byte range.
+      #
+      # The +mask+ describes how the lock should be defined, and consists of
+      # some combination of the following bit masks:
+      #
+      # * 0x0040 - Read lock. The byte range may not be accessed for reading
+      #   by via any other handle, though it may be written to.
+      # * 0x0080 - Write lock. The byte range may not be written to via any
+      #   other handle, though it may be read from.
+      # * 0x0100 - Delete lock. No other handle may delete this file.
+      # * 0x0200 - Advisory lock. The server need not honor the lock instruction.
+      #
+      # Once created, the lock may be removed via the #unblock method.
       def block(handle, offset, length, mask, &callback)
         request :block, handle, offset, length, mask, &callback
       end
 
+      # :call-seq:
+      #   unblock(handle, offset, length) -> request
+      #   unblock(handle, offset, length) { |response| ... } -> request
+      #
+      # Removes a previously created byte-range lock. This operation is only
+      # available in protocol versions 6 and higher. The +offset+ and +length+
+      # parameters must exactly match those that were given to #block when the
+      # lock was acquired.
       def unblock(handle, offset, length, &callback)
         request :unblock, handle, offset, length, &callback
       end
 
     private
 
+      # The input buffer used to accumulate packet data
       attr_reader :input
 
+      # Create and enqueue a new SFTP request of the given type, with the
+      # given arguments. Returns a new Request instance that encapsulates the
+      # request.
       def request(type, *args, &callback)
         request = Request.new(self, type, protocol.send(type, *args), &callback)
         pending_requests[request.id] = request
       end
 
+      # Called when the SSH channel is confirmed as "open" by the server.
+      # This is one of the states of the SFTP state machine, and is followed
+      # by the #when_subsystem_started state.
       def when_channel_confirmed(channel)
         debug { "requesting sftp subsystem" }
         @state = :subsystem
         channel.subsystem("sftp", &method(:when_subsystem_started))
       end
 
+      # Called when the SSH server confirms that the SFTP subsystem was
+      # successfully started. This sets up the appropriate callbacks on the
+      # SSH channel and then starts the SFTP protocol version negotiation
+      # process.
       def when_subsystem_started(channel, success)
         raise Net::SFTP::Exception, "could not start SFTP subsystem" unless success
 
@@ -381,12 +551,17 @@ module Net; module SFTP
         send_packet(FXP_INIT, :long, HIGHEST_PROTOCOL_VERSION_SUPPORTED)
       end
 
+      # Called when the SSH server closes the underlying channel.
       def when_channel_closed(channel)
         trace { "sftp channel closed" }
         @channel = nil
         @state = :closed
       end
 
+      # Called whenever Net::SSH polls the SFTP channel for pending activity.
+      # This basically checks the input buffer to see if enough input has been
+      # accumulated to handle. If there has, the packet is parsed and
+      # dispatched, according to its type (see #do_version and #dispatch_request).
       def when_channel_polled(channel)
         while input.length > 0
           if @packet_length.nil?
@@ -410,6 +585,9 @@ module Net; module SFTP
         end
       end
 
+      # Called to handle FXP_VERSION packets. This performs the SFTP protocol
+      # version negotiation, instantiating the appropriate Protocol instance
+      # and invoking the callback given to #connect, if any.
       def do_version(packet)
         trace { "negotiating sftp protocol version, mine is #{HIGHEST_PROTOCOL_VERSION_SUPPORTED}" }
 
@@ -433,6 +611,8 @@ module Net; module SFTP
         @on_ready.call(self) if @on_ready
       end
 
+      # Parses the packet, finds the associated Request instance, and tells
+      # the Request instance to respond to the packet (see Request#respond_to).
       def dispatch_request(packet)
         id = packet.read_long
         request = pending_requests.delete(id) or raise Net::SFTP::Exception, "no such request `#{id}'"
