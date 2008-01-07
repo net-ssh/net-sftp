@@ -37,6 +37,11 @@ module Net; module SFTP; module Operations
       @active > 0
     end
 
+    def wait
+      sftp.loop { active? }
+      self
+    end
+
     private
 
       attr_reader :sftp

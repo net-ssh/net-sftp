@@ -12,21 +12,6 @@ module Net; module SFTP
     include Net::SSH::Loggable
     include Net::SFTP::Constants
 
-    def self.synchronous(*methods)
-      options = methods.last.is_a?(Hash) ? methods.pop : {}
-      condition = options[:condition] ? " { #{options[:condition]} }" : ""
-      code = ""
-      methods.each do |method|
-        code << <<-CODE
-          def #{method}!(*args, &block)
-            object = #{method}(*args, &block)
-            loop#{condition}
-          end
-        CODE
-      end
-      class_eval(code, __FILE__, __LINE__-6)
-    end
-
     # The highest protocol version supported by the Net::SFTP library.
     HIGHEST_PROTOCOL_VERSION_SUPPORTED = 6
 
@@ -526,11 +511,17 @@ module Net; module SFTP
         Operations::Upload.new(self, local, remote, options, &block)
       end
 
+      def upload!(local, remote, options={}, &block)
+        upload(local, remote, options={}, &block).wait
+      end
+
       def download(remote, local, options={}, &block)
         Operations::Download.new(self, local, remote, options, &block)
       end
 
-      synchronous :upload, :download, :condition => "object.active?"
+      def download!(remote, local, options={}, &block)
+        download(remote, local, options={}, &block).wait
+      end
 
       def file
         @file ||= Operations::FileFactory.new(self)
