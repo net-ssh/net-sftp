@@ -14,7 +14,7 @@ module Net
       sftp = Net::SFTP::Session.new(session, &block)
 
       if block_given?
-        session.loop { sftp.base.state != :open }
+        sftp.loop { sftp.opening? }
         sftp.loop
       end
 
