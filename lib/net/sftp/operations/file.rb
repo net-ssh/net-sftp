@@ -4,12 +4,12 @@ require 'net/sftp/operations/file'
 module Net; module SFTP; module Operations
 
   class File
-    attr_reader :base
+    attr_reader :sftp
     attr_reader :handle
     attr_reader :pos
 
-    def initialize(base)
-      @base     = base
+    def initialize(sftp)
+      @sftp     = sftp
       @pos      = 0
       @real_pos = 0
       @real_eof = false
@@ -27,7 +27,7 @@ module Net; module SFTP; module Operations
     end
 
     def close
-      base.close(handle, &method(:do_close)).wait
+      sftp.close(handle, &method(:do_close)).wait
     end
 
     def eof?
@@ -81,7 +81,7 @@ module Net; module SFTP; module Operations
 
     def write(data)
       data = data.to_s
-      base.write(handle, @real_pos, data, &method(:do_write)).wait
+      sftp.write(handle, @real_pos, data, &method(:do_write)).wait
       @real_pos += data.length
       @pos = @real_pos
       data.length
@@ -105,13 +105,13 @@ module Net; module SFTP; module Operations
     end
 
     def stat
-      base.fstat(handle, &method(:do_fstat)).wait[:stat]
+      sftp.fstat(handle, &method(:do_fstat)).wait[:stat]
     end
 
     private
 
       def fill
-        base.read(handle, @real_pos, 8192, &method(:do_read)).wait
+        sftp.read(handle, @real_pos, 8192, &method(:do_read)).wait
         !@real_eof
       end
 

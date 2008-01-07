@@ -9,15 +9,15 @@ module Net; module SFTP; module Operations
     attr_reader :remote
     attr_reader :options
 
-    def initialize(base, local, remote, options={}, &progress)
-      @base = base
+    def initialize(sftp, local, remote, options={}, &progress)
+      @sftp = sftp
       @local = local
       @remote = remote
       @progress = progress || options[:progress]
       @options = options
       @active = 0
 
-      self.logger = base.logger
+      self.logger = sftp.logger
 
       @uploads = []
 
@@ -28,7 +28,7 @@ module Net; module SFTP; module Operations
         @remote_cwd = remote
 
         @active += 1
-        base.mkdir(remote) do
+        sftp.mkdir(remote) do
           @active -= 1
           (options[:requests] || RECURSIVE_READERS).to_i.times do
             break unless process_next_entry
@@ -51,7 +51,7 @@ module Net; module SFTP; module Operations
 
     private
 
-      attr_reader :base
+      attr_reader :sftp
       attr_reader :progress
 
       LiveFile = Struct.new(:local, :remote, :io, :size, :handle)
@@ -85,7 +85,7 @@ module Net; module SFTP; module Operations
 
             @active += 1
             update_progress(:mkdir, rpath)
-            request = base.mkdir(rpath, &method(:on_mkdir))
+            request = sftp.mkdir(rpath, &method(:on_mkdir))
             request[:dir] = rpath
           else
             open_file(lpath, rpath)
@@ -113,7 +113,7 @@ module Net; module SFTP; module Operations
           size = file.size
         end
 
-        request = base.open(remote, "w", &method(:on_open))
+        request = sftp.open(remote, "w", &method(:on_open))
         request[:file] = LiveFile.new(name, remote, file, size)
 
         update_progress(:open, request[:file])
@@ -164,13 +164,13 @@ module Net; module SFTP; module Operations
           offset = file.io.pos
           data = file.io.read(options[:read_size] || DEFAULT_READ_SIZE)
           if data.nil?
-            request = base.close(file.handle, &method(:on_close))
+            request = sftp.close(file.handle, &method(:on_close))
             request[:file] = file
             file.io.close
             file.io = nil
             @uploads.delete(file)
           else
-            request = base.write(file.handle, offset, data, &method(:on_write))
+            request = sftp.write(file.handle, offset, data, &method(:on_write))
             request[:data] = data
             request[:offset] = file.io.pos
             request[:file] = file

@@ -1,4 +1,5 @@
 require 'net/sftp/constants'
+require 'net/sftp/response'
 
 module Net; module SFTP
 

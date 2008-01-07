@@ -11,15 +11,15 @@ module Net; module SFTP; module Operations
 
     Entry = Struct.new(:remote, :local, :directory, :size, :handle, :offset, :sink)
 
-    def initialize(base, local, remote, options={}, &progress)
-      @base = base
+    def initialize(sftp, local, remote, options={}, &progress)
+      @sftp = sftp
       @local = local
       @remote = remote
       @progress = progress || options[:progress]
       @options = options
       @active = 0
 
-      self.logger = base.logger
+      self.logger = sftp.logger
 
       if recursive? && local.respond_to?(:write)
         raise ArgumentError, "cannot download a directory tree in-memory"
@@ -39,7 +39,7 @@ module Net; module SFTP; module Operations
 
     private
 
-      attr_reader :base
+      attr_reader :sftp
       attr_reader :stack
       attr_reader :progress
 
@@ -55,7 +55,7 @@ module Net; module SFTP; module Operations
           if entry.directory
             update_progress(:mkdir, entry.local)
             Dir.mkdir(entry.local) unless ::File.directory?(entry.local)
-            request = base.opendir(entry.remote, &method(:on_opendir))
+            request = sftp.opendir(entry.remote, &method(:on_opendir))
             request[:entry] = entry
           else
             open_file(entry)
@@ -69,14 +69,14 @@ module Net; module SFTP; module Operations
         entry = response.request[:entry]
         raise "opendir #{entry.remote}: #{response}" unless response.ok?
         entry.handle = response[:handle]
-        request = base.readdir(response[:handle], &method(:on_readdir))
+        request = sftp.readdir(response[:handle], &method(:on_readdir))
         request[:parent] = entry
       end
 
       def on_readdir(response)
         entry = response.request[:parent]
         if response.eof?
-          request = base.close(entry.handle, &method(:on_closedir))
+          request = sftp.close(entry.handle, &method(:on_closedir))
           request[:parent] = entry
         elsif !response.ok?
           raise "readdir #{entry.remote}: #{response}"
@@ -86,14 +86,14 @@ module Net; module SFTP; module Operations
             stack << Entry.new(::File.join(entry.remote, item.name), ::File.join(entry.local, item.name), item.directory?, item.attributes.size)
           end
 
-          request = base.readdir(entry.handle, &method(:on_readdir))
+          request = sftp.readdir(entry.handle, &method(:on_readdir))
           request[:parent] = entry
         end
       end
 
       def open_file(entry)
         update_progress(:open, entry)
-        request = base.open(entry.remote, &method(:on_open))
+        request = sftp.open(entry.remote, &method(:on_open))
         request[:entry] = entry
       end
 
@@ -118,7 +118,7 @@ module Net; module SFTP; module Operations
 
       def download_next_chunk(entry)
         size = options[:read_size] || 32_000
-        request = base.read(entry.handle, entry.offset, size, &method(:on_read))
+        request = sftp.read(entry.handle, entry.offset, size, &method(:on_read))
         request[:entry] = entry
         request[:offset] = entry.offset
         entry.offset += size
@@ -130,7 +130,7 @@ module Net; module SFTP; module Operations
         if response.eof?
           update_progress(:close, entry)
           entry.sink.close
-          request = base.close(entry.handle, &method(:on_close))
+          request = sftp.close(entry.handle, &method(:on_close))
           request[:entry] = entry
         elsif !response.ok?
           raise "read #{entry.remote}: #{response}"

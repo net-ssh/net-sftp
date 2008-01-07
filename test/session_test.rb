@@ -1,11 +1,11 @@
 require "#{File.dirname(__FILE__)}/common"
 
-class BaseTest < Net::SFTP::TestCase
+class SessionTest < Net::SFTP::TestCase
   (1..6).each do |version|
     define_method("test_server_reporting_version_#{version}_should_cause_version_#{version}_to_be_used") do
       expect_sftp_session :server_version => version
-      assert_scripted { sftp.open }
-      assert_equal version, sftp.base.protocol.version
+      assert_scripted { sftp.connect! }
+      assert_equal version, sftp.protocol.version
     end
   end
 
@@ -424,13 +424,13 @@ class BaseTest < Net::SFTP::TestCase
 
     def assert_not_implemented(server_version, command, *args)
       expect_sftp_session :server_version => 1
-      sftp.open
-      assert_raises(NotImplementedError) { sftp.base.send(command, *args) }
+      sftp.connect!
+      assert_raises(NotImplementedError) { sftp.send(command, *args) }
     end
 
     def assert_scripted_command
       assert_scripted do
-        sftp.open
+        sftp.connect!
         yield
         sftp.loop
       end
@@ -439,7 +439,7 @@ class BaseTest < Net::SFTP::TestCase
     def assert_command_with_callback(command, *args)
       called = false
       assert_scripted_command do
-        sftp.base.send(command, *args) do |response|
+        sftp.send(command, *args) do |response|
           called = true
           yield response if block_given?
         end

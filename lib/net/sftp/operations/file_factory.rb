@@ -4,15 +4,15 @@ require 'net/sftp/operations/file'
 module Net; module SFTP; module Operations
 
   class FileFactory
-    attr_reader :base
+    attr_reader :sftp
 
-    def initialize(base)
-      @base = base
+    def initialize(sftp)
+      @sftp = sftp
     end
 
     def open(name, flags="r", mode=nil, &block)
-      request = base.open(name, flags, :permissions => mode, &method(:do_open))
-      file = Operations::File.new(base)
+      request = sftp.open(name, flags, :permissions => mode, &method(:do_open))
+      file = Operations::File.new(sftp)
       request[:file] = file
       request.wait
 
