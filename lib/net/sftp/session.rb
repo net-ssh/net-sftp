@@ -793,7 +793,7 @@ module Net; module SFTP
         pending_requests[request.id] = request
       end
 
-      # Waits for the given request to complete. If the response is not
+      # Waits for the given request to complete. If the response is
       # EOF, nil is returned. If the response was not successful
       # (e.g., !response.ok?), a StatusException will be raised.
       # If +property+ is given, the corresponding property from the response
