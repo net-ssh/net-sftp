@@ -8,6 +8,7 @@ module Net; module SFTP; module Operations
     attr_reader :local
     attr_reader :remote
     attr_reader :options
+    attr_reader :sftp
 
     def initialize(sftp, local, remote, options={}, &progress)
       @sftp = sftp
@@ -56,7 +57,6 @@ module Net; module SFTP; module Operations
 
     private
 
-      attr_reader :sftp
       attr_reader :progress
 
       LiveFile = Struct.new(:local, :remote, :io, :size, :handle)

@@ -8,8 +8,9 @@ module Net; module SFTP; module Operations
     attr_reader :handle
     attr_reader :pos
 
-    def initialize(sftp)
+    def initialize(sftp, handle)
       @sftp     = sftp
+      @handle   = handle
       @pos      = 0
       @real_pos = 0
       @real_eof = false
@@ -104,12 +105,6 @@ module Net; module SFTP; module Operations
     def stat
       sftp.fstat!(handle)
     end
-
-    public # publicly exposed methods excluded from the API
-    
-      def establish!(handle)
-        @handle = handle
-      end
 
     private
 

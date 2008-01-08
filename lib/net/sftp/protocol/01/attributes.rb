@@ -102,7 +102,7 @@ module Net; module SFTP; module Protocol; module V01
       flags = 0
 
       self.class.elements.each do |name, type, condition|
-        flags |= condition if attributes.key?(name)
+        flags |= condition if attributes[name]
       end
 
       buffer = Net::SSH::Buffer.from(:long, flags)

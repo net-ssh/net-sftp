@@ -11,10 +11,8 @@ module Net; module SFTP; module Operations
     end
 
     def open(name, flags="r", mode=nil, &block)
-      request = sftp.open(name, flags, :permissions => mode, &method(:do_open))
-      file = Operations::File.new(sftp)
-      request[:file] = file
-      request.wait
+      handle = sftp.open!(name, flags, :permissions => mode)
+      file = Operations::File.new(sftp, handle)
 
       if block_given?
         begin
@@ -26,14 +24,6 @@ module Net; module SFTP; module Operations
         return file
       end
     end
-
-    private
-
-      def do_open(response)
-        file = response.request[:file]
-        raise "open failed: #{response}" unless response.ok?
-        file.establish!(response[:handle])
-      end
   end
 
 end; end; end
