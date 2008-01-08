@@ -51,90 +51,58 @@ module Net; module SFTP
       connect(&block)
     end
 
-    # Closes the SFTP connection, but not the SSH connection. Blocks until the
-    # session has terminated. Once the session has terminated, further operations
-    # on this object will result in errors. You can reopen the SFTP session
-    # via the #connect method.
-    def close_channel
-      return unless open?
-      channel.close
-      loop { !closed? }
-    end
+    public # high-level SFTP operations
 
-    # Returns true if the connection has been initialized.
-    def open?
-      state == :open
-    end
+      # Initiates an upload from +local+ to +remote+, asynchronously. This
+      # method will return a new Operations::Upload instance, and requires
+      # the event loop to be run in order for the upload to progress. See
+      # Operations::Upload for a full discussion of how this method can be
+      # used.
+      #
+      #   uploader = sftp.upload("/local/path", "/remote/path")
+      #   uploader.wait
+      def upload(local, remote, options={}, &block)
+        Operations::Upload.new(self, local, remote, options, &block)
+      end
 
-    # Returns true if the connection has been closed.
-    def closed?
-      state == :closed
-    end
+      # Identical to #upload, but blocks until the upload is complete.
+      def upload!(local, remote, options={}, &block)
+        upload(local, remote, options={}, &block).wait
+      end
 
-    # Returns true if the connection is in the process of being initialized
-    # (e.g., it is not closed, but is not yet fully open).
-    def opening?
-      !(open? || closed?)
-    end
+      # Initiates a download from +remote+ to +local+, asynchronously. This
+      # method will return a new Operations::Download instance, and requires
+      # that the event loop be run in order for the download to progress. See
+      # Operations::Download for a full discussion of hos this method can be
+      # used.
+      #
+      #   download = sftp.downnload("/remote/path", "/local/path")
+      #   download.wait
+      def download(remote, local, options={}, &block)
+        Operations::Download.new(self, local, remote, options, &block)
+      end
 
-    # Attempts to establish an SFTP connection over the SSH session given when
-    # this object was instantiated. If the object is already open (or opening),
-    # this does nothing.
-    #
-    # This method does not block, and will return immediately. If you pass a
-    # block to it, that block will be invoked when the connection has been
-    # fully established. Thus, you can do something like this:
-    #
-    #   sftp.connect do
-    #     puts "open!"
-    #   end
-    #
-    # If you just want to block until the connection is ready, see the #connect!
-    # method.
-    def connect(&block)
-      return unless state == :closed
-      @state = :opening
-      @channel = session.open_channel(&method(:when_channel_confirmed))
-      @packet_length = nil
-      @protocol = nil
-      @on_ready = block
-    end
+      # Identical to #download, but blocks until the download is complete.
+      def download!(remote, local, options={}, &block)
+        download(remote, local, options={}, &block).wait
+      end
 
-    # Same as the #connect method, but blocks until the SFTP connection has
-    # been fully initialized.
-    def connect!(&block)
-      connect(&block)
-      loop { opening? }
-      self
-    end
+      # Returns an Operations::FileFactory instance, which can be used to
+      # mimic synchronous, IO-like file operations on a remote file via
+      # SFTP.
+      #
+      #   sftp.file.open("/path/to/file") do |file|
+      #     while line = file.gets
+      #       puts line
+      #     end
+      #   end
+      #
+      # See Operations::FileFactory and Operations::File for more details.
+      def file
+        @file ||= Operations::FileFactory.new(self)
+      end
 
-    alias :loop_forever :loop
-
-    # Runs the SSH event loop while the given block returns true. This lets
-    # you set up a state machine and then "fire it off". If you do not specify
-    # a block, the event loop will run for as long as there are any pending
-    # SFTP requests. This makes it easy to do thing like this:
-    #
-    #   sftp.remove("/path/to/file")
-    #   sftp.loop
-    def loop(&block)
-      block ||= Proc.new { pending_requests.any? }
-      session.loop(&block)
-    end
-
-    # Formats, constructs, and sends an SFTP packet of the given type and with
-    # the given data. This does not block, but merely enqueues the packet for
-    # sending and returns.
-    #
-    # You should probably use the operation methods, rather than building and
-    # sending the packet directly. (See #open, #close, etc.)
-    def send_packet(type, *args)
-      data = Net::SSH::Buffer.from(*args)
-      msg = Net::SSH::Buffer.from(:long, data.length+1, :byte, type, :raw, data)
-      channel.send_data(msg.to_s)
-    end
-
-    public
+    public # low-level SFTP operations
 
       # :call-seq:
       #   open(path, flags="r", options={}) -> request
@@ -695,26 +663,89 @@ module Net; module SFTP
         wait_for(unblock(handle, offset, length, &callback))
       end
 
-    public # high-level SFTP operations
-    
-      def upload(local, remote, options={}, &block)
-        Operations::Upload.new(self, local, remote, options, &block)
+    public # miscellaneous methods
+
+      # Closes the SFTP connection, but not the SSH connection. Blocks until the
+      # session has terminated. Once the session has terminated, further operations
+      # on this object will result in errors. You can reopen the SFTP session
+      # via the #connect method.
+      def close_channel
+        return unless open?
+        channel.close
+        loop { !closed? }
       end
 
-      def upload!(local, remote, options={}, &block)
-        upload(local, remote, options={}, &block).wait
+      # Returns true if the connection has been initialized.
+      def open?
+        state == :open
       end
 
-      def download(remote, local, options={}, &block)
-        Operations::Download.new(self, local, remote, options, &block)
+      # Returns true if the connection has been closed.
+      def closed?
+        state == :closed
       end
 
-      def download!(remote, local, options={}, &block)
-        download(remote, local, options={}, &block).wait
+      # Returns true if the connection is in the process of being initialized
+      # (e.g., it is not closed, but is not yet fully open).
+      def opening?
+        !(open? || closed?)
       end
 
-      def file
-        @file ||= Operations::FileFactory.new(self)
+      # Attempts to establish an SFTP connection over the SSH session given when
+      # this object was instantiated. If the object is already open (or opening),
+      # this does nothing.
+      #
+      # This method does not block, and will return immediately. If you pass a
+      # block to it, that block will be invoked when the connection has been
+      # fully established. Thus, you can do something like this:
+      #
+      #   sftp.connect do
+      #     puts "open!"
+      #   end
+      #
+      # If you just want to block until the connection is ready, see the #connect!
+      # method.
+      def connect(&block)
+        return unless state == :closed
+        @state = :opening
+        @channel = session.open_channel(&method(:when_channel_confirmed))
+        @packet_length = nil
+        @protocol = nil
+        @on_ready = block
+      end
+
+      # Same as the #connect method, but blocks until the SFTP connection has
+      # been fully initialized.
+      def connect!(&block)
+        connect(&block)
+        loop { opening? }
+        self
+      end
+
+      alias :loop_forever :loop
+
+      # Runs the SSH event loop while the given block returns true. This lets
+      # you set up a state machine and then "fire it off". If you do not specify
+      # a block, the event loop will run for as long as there are any pending
+      # SFTP requests. This makes it easy to do thing like this:
+      #
+      #   sftp.remove("/path/to/file")
+      #   sftp.loop
+      def loop(&block)
+        block ||= Proc.new { pending_requests.any? }
+        session.loop(&block)
+      end
+
+      # Formats, constructs, and sends an SFTP packet of the given type and with
+      # the given data. This does not block, but merely enqueues the packet for
+      # sending and returns.
+      #
+      # You should probably use the operation methods, rather than building and
+      # sending the packet directly. (See #open, #close, etc.)
+      def send_packet(type, *args)
+        data = Net::SSH::Buffer.from(*args)
+        msg = Net::SSH::Buffer.from(:long, data.length+1, :byte, type, :raw, data)
+        channel.send_data(msg.to_s)
       end
 
     private

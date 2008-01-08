@@ -16,10 +16,6 @@ module Net; module SFTP; module Operations
       @buffer   = ""
     end
 
-    def establish!(handle)
-      @handle = handle
-    end
-
     def pos=(offset)
       @real_pos = @pos = offset
       @buffer = ""
@@ -27,7 +23,8 @@ module Net; module SFTP; module Operations
     end
 
     def close
-      sftp.close(handle, &method(:do_close)).wait
+      sftp.close!(handle)
+      @handle = nil
     end
 
     def eof?
@@ -81,7 +78,7 @@ module Net; module SFTP; module Operations
 
     def write(data)
       data = data.to_s
-      sftp.write(handle, @real_pos, data, &method(:do_write)).wait
+      sftp.write!(handle, @real_pos, data)
       @real_pos += data.length
       @pos = @real_pos
       data.length
@@ -105,39 +102,29 @@ module Net; module SFTP; module Operations
     end
 
     def stat
-      sftp.fstat(handle, &method(:do_fstat)).wait[:stat]
+      sftp.fstat!(handle)
     end
+
+    public # publicly exposed methods excluded from the API
+    
+      def establish!(handle)
+        @handle = handle
+      end
 
     private
 
       def fill
-        sftp.read(handle, @real_pos, 8192, &method(:do_read)).wait
-        !@real_eof
-      end
+        data = sftp.read!(handle, @real_pos, 8192)
 
-      def do_close(response)
-        raise "close error: #{response}" unless response.ok?
-        @handle = nil
-      end
-
-      def do_read(response)
-        if response.eof?
+        if data.nil?
           @real_eof = true
-        elsif !response.ok?
-          raise "read error: #{response}"
+          return false
         else
-          @real_pos += response[:data].length
-          @buffer << response[:data]
+          @real_pos += data.length
+          @buffer << data
         end
-      end
 
-      def do_write(response)
-        raise "write error: #{response}" unless response.ok?
-      end
-
-      def do_fstat(response)
-        raise "fstat error: #{response}" unless response.ok?
-        response.request[:stat] = response[:attrs]
+        !@real_eof
       end
   end
 
