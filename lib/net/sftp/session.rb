@@ -9,6 +9,31 @@ require 'net/sftp/operations/file_factory'
 
 module Net; module SFTP
 
+  # The Session class encapsulates a single SFTP channel on a Net::SSH
+  # connection. Instances of this class are what most applications will
+  # interact with most, as it provides access to both low-level (mkdir,
+  # rename, remove, symlink, etc.) and high-level (upload, download, etc.)
+  # SFTP operations.
+  #
+  # Although Session makes it easy to do SFTP operations serially, you can
+  # also set up multiple operations to be done in parallel, too, without
+  # needing to resort to threading. You merely need to fire off the requests,
+  # and then run the event loop until all of the requests have completed:
+  #
+  #   handle1 = sftp.open!("/path/to/file1")
+  #   handle2 = sftp.open!("/path/to/file2")
+  #
+  #   r1 = sftp.read(handle1, 0, 1024)
+  #   r2 = sftp.read(handle2, 0, 1024)
+  #   sftp.loop { [r1, r2].any? { |r| r.pending? } }
+  #
+  #   puts "chunk #1: #{r1.response[:data]}"
+  #   puts "chunk #2: #{r2.response[:data]}"
+  #
+  # By passing blocks to the operations, you can set up powerful state
+  # machines, to fire off subsequent operations. In fact, the Operations::Upload
+  # and Operations::Download classes set up such state machines, so that
+  # multiple uploads and/or downloads can be running simultaneously.
   class Session
     include Net::SSH::Loggable
     include Net::SFTP::Constants
