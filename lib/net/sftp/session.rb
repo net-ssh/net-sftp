@@ -34,6 +34,13 @@ module Net; module SFTP
   # machines, to fire off subsequent operations. In fact, the Operations::Upload
   # and Operations::Download classes set up such state machines, so that
   # multiple uploads and/or downloads can be running simultaneously.
+  #
+  # The convention with the names of the operations is as follows: if the method
+  # name ends with an exclamation mark, like #read!, it will be synchronous
+  # (e.g., it will block until the server responds). Methods without an
+  # exclamation mark (e.g. #read) are asynchronous, and return before the
+  # server has responded. You will need to make sure the SSH event loop is
+  # run in order to process these requests. (See #loop.)
   class Session
     include Net::SSH::Loggable
     include Net::SFTP::Constants

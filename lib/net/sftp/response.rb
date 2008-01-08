@@ -24,12 +24,6 @@ module Net; module SFTP
     FX_INVALID_FILENAME       = 20
     FX_LINK_LOOP              = 21
 
-    MAP = constants.inject({}) do |memo, name|
-      next memo unless name =~ /^FX_(.*)/
-      memo[const_get(name)] = $1.downcase.tr("_", " ")
-      memo
-    end
-
     attr_reader :request
     attr_reader :data
     attr_reader :code
@@ -60,6 +54,12 @@ module Net; module SFTP
 
     def eof?
       code == FX_EOF
+    end
+
+    MAP = constants.inject({}) do |memo, name|
+      next memo unless name =~ /^FX_(.*)/
+      memo[const_get(name)] = $1.downcase.tr("_", " ")
+      memo
     end
   end
 
