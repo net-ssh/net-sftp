@@ -21,9 +21,9 @@ module Net; module SFTP; module Operations
       self.logger = sftp.logger
 
       @uploads = []
+      @recursive = ::File.directory?(local)
 
       if recursive?
-        raise "expected a directory to upload" unless ::File.directory?(local)
         @stack = [entries_for(local)]
         @local_cwd = local
         @remote_cwd = remote
@@ -36,14 +36,14 @@ module Net; module SFTP; module Operations
           end
         end
       else
-        raise "expected a file to upload" unless local.respond_to?(:read) || ::File.file?(local)
+        raise ArgumentError, "expected a file to upload" unless local.respond_to?(:read) || ::File.exists?(local)
         @stack = [[local]]
         process_next_entry
       end
     end
 
     def recursive?
-      options[:recursive]
+      @recursive
     end
 
     def active?
@@ -118,26 +118,29 @@ module Net; module SFTP; module Operations
           size = file.size
         end
 
-        request = sftp.open(remote, "w", &method(:on_open))
-        request[:file] = LiveFile.new(name, remote, file, size)
+        metafile = LiveFile.new(name, remote, file, size)
+        update_progress(:open, metafile)
 
-        update_progress(:open, request[:file])
+        request = sftp.open(remote, "w", &method(:on_open))
+        request[:file] = metafile
       end
 
       def on_mkdir(response)
         @active -= 1
+        dir = response.request[:dir]
+        raise StatusException.new(response, "mkdir #{dir}") unless response.ok?
+
         process_next_entry
       end
 
       def on_open(response)
         @active -= 1
         file = response.request[:file]
-        raise "open #{file.remote}: #{response}" unless response.ok?
+        raise StatusException.new(response, "open #{file.remote}") unless response.ok?
 
         file.handle = response[:handle]
 
         @uploads << file
-        update_progress(:put, file, 0, nil)
         write_next_chunk(file)
 
         if !recursive?
@@ -148,16 +151,14 @@ module Net; module SFTP; module Operations
       def on_write(response)
         @active -= 1
         file = response.request[:file]
-        raise "write #{file.remote}: #{response}" unless response.ok?
-        update_progress(:put, file, response.request[:offset], response.request[:data])
+        raise StatusException.new(response, "write #{file.remote}") unless response.ok?
         write_next_chunk(file)
       end
 
       def on_close(response)
         @active -= 1
         file = response.request[:file]
-        raise "close #{file.remote}: #{response}" unless response.ok?
-        update_progress(:close, file)
+        raise StatusException.new(response, "close #{file.remote}") unless response.ok?
         process_next_entry
       end
 
@@ -169,15 +170,15 @@ module Net; module SFTP; module Operations
           offset = file.io.pos
           data = file.io.read(options[:read_size] || DEFAULT_READ_SIZE)
           if data.nil?
+            update_progress(:close, file)
             request = sftp.close(file.handle, &method(:on_close))
             request[:file] = file
             file.io.close
             file.io = nil
             @uploads.delete(file)
           else
+            update_progress(:put, file, offset, data)
             request = sftp.write(file.handle, offset, data, &method(:on_write))
-            request[:data] = data
-            request[:offset] = file.io.pos
             request[:file] = file
           end
         end

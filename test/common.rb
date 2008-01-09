@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'mocha'
 
 begin
   gem 'net-ssh', ">= 2.0.0"
@@ -46,6 +47,14 @@ class Net::SFTP::TestCase < Test::Unit::TestCase
         yield channel if block_given?
       end
     end
+
+    def assert_scripted_command
+      assert_scripted do
+        sftp.connect!
+        yield
+        sftp.loop
+      end
+    end
 end
 
 class Net::SSH::Test::Channel
@@ -63,4 +72,26 @@ class Net::SSH::Test::Channel
       data = Net::SSH::Buffer.from(*args)
       Net::SSH::Buffer.from(:long, data.length+1, :byte, type, :raw, data).to_s
     end
+end
+
+class ProgressHandler
+  def initialize(progress_ref)
+    @progress = progress_ref
+  end
+
+  def on_open(*args)
+    @progress << [:open, *args]
+  end
+
+  def on_put(*args)
+    @progress << [:put, *args]
+  end
+
+  def on_close(*args)
+    @progress << [:close, *args]
+  end
+
+  def on_finish(*args)
+    @progress << [:finish, @args]
+  end
 end

@@ -15,10 +15,13 @@ module Net; module SFTP
     # The description of the error
     attr_reader :description
 
+    # Any incident-specific text given when the exception was raised
+    attr_reader :text
+
     # Create a new status exception that reports the given code and
     # description.
-    def initialize(response)
-      @response = response
+    def initialize(response, text=nil)
+      @response, @text = response, text
       @code = response.code
       @description = response.message
       @description = Response::MAP[@code] if @description.nil? || @description.empty?
@@ -28,6 +31,7 @@ module Net; module SFTP
     # description.
     def message
       m = super
+      m << " #{text}" if text
       m << " (#{code}, #{description.inspect})"
     end
 

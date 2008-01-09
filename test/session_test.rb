@@ -428,14 +428,6 @@ class SessionTest < Net::SFTP::TestCase
       assert_raises(NotImplementedError) { sftp.send(command, *args) }
     end
 
-    def assert_scripted_command
-      assert_scripted do
-        sftp.connect!
-        yield
-        sftp.loop
-      end
-    end
-
     def assert_command_with_callback(command, *args)
       called = false
       assert_scripted_command do
