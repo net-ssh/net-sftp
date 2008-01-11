@@ -55,6 +55,52 @@ class Net::SFTP::TestCase < Test::Unit::TestCase
         sftp.loop
       end
     end
+
+    def assert_progress_reported_open(expect={})
+      assert_progress_reported(:open, expect)
+    end
+
+    def assert_progress_reported_put(offset, data, expect={})
+      assert_equal offset, current_event[3] if offset
+      assert_equal data, current_event[4] if data
+      assert_progress_reported(:put, expect)
+    end
+
+    def assert_progress_reported_close(expect={})
+      assert_progress_reported(:close, expect)
+    end
+
+    def assert_progress_reported_finish
+      assert_progress_reported(:finish)
+    end
+
+    def assert_progress_reported(event, expect={})
+      assert_equal event, current_event[0]
+      expect.each do |key, value|
+        assert_equal value, current_event[2].send(key)
+      end
+      next_event!
+    end
+
+    def assert_no_more_reported_events
+      assert @progress.empty?, "expected #{@progress.empty?} to be empty"
+    end
+
+    def prepare_progress!
+      @progress = []
+    end
+
+    def record_progress(event)
+      @progress << event
+    end
+
+    def current_event
+      @progress.first
+    end
+
+    def next_event!
+      @progress.shift
+    end
 end
 
 class Net::SSH::Test::Channel
