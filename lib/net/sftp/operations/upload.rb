@@ -21,7 +21,7 @@ module Net; module SFTP; module Operations
       self.logger = sftp.logger
 
       @uploads = []
-      @recursive = ::File.directory?(local)
+      @recursive = local.respond_to?(:read) ? false : ::File.directory?(local)
 
       if recursive?
         @stack = [entries_for(local)]

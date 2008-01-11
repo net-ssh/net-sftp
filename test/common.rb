@@ -70,6 +70,11 @@ class Net::SFTP::TestCase < Test::Unit::TestCase
       assert_progress_reported(:close, expect)
     end
 
+    def assert_progress_reported_mkdir(dir)
+      assert_equal dir, current_event[2]
+      assert_progress_reported(:mkdir)
+    end
+
     def assert_progress_reported_finish
       assert_progress_reported(:finish)
     end
