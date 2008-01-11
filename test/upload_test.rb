@@ -64,12 +64,12 @@ class UploadTest < Net::SFTP::TestCase
     end
   end
 
-  def test_upload_file_with_custom_read_size_should_read_chunks_of_default_size
+  def test_upload_file_with_custom_read_size_should_read_chunks_of_that_size
     test_upload_file_should_read_chunks_of_size(100)
   end
 
   def test_upload_file_with_custom_requests_should_start_that_many_writes
-    size = 100
+    size = Net::SFTP::Operations::Upload::DEFAULT_READ_SIZE
     expect_sftp_session :server_version => 3 do |channel|
       channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/remote", :long, 0x1A, :long, 0)
       channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
@@ -88,18 +88,65 @@ class UploadTest < Net::SFTP::TestCase
     expect_file("/path/to/local", "a" * size + "b" * size + "c" * size + "d" * size)
 
     assert_scripted_command do
-      sftp.upload("/path/to/local", "/path/to/remote", :read_size => size, :requests => 3)
+      sftp.upload("/path/to/local", "/path/to/remote", :requests => 3)
     end
   end
 
-  # local as directory
+  def test_upload_directory_should_mirror_directory_structure_remotely
+    expect_directory("/path/to/local", %w(. .. file1 file2 file3 subdir))
+    expect_directory("/path/to/local/subdir", %w(. .. other1 other2))
+    expect_file("/path/to/local/file1", "contents of file1")
+    expect_file("/path/to/local/file2", "contents of file2")
+    expect_file("/path/to/local/file3", "contents of file3")
+    expect_file("/path/to/local/subdir/other1", "contents of other1")
+    expect_file("/path/to/local/subdir/other2", "contents of other2")
+
+    expect_sftp_session :server_version => 3 do |ch|
+      ch.sends_packet(FXP_MKDIR, :long, 0, :string, "/path/to/remote", :long, 0)
+      ch.gets_packet(FXP_STATUS, :long, 0, :long, 0)
+      ch.sends_packet(FXP_OPEN, :long, 1, :string, "/path/to/remote/file1", :long, 0x1A, :long, 0)
+      ch.sends_packet(FXP_OPEN, :long, 2, :string, "/path/to/remote/file2", :long, 0x1A, :long, 0)
+      ch.sends_packet(FXP_OPEN, :long, 3, :string, "/path/to/remote/file3", :long, 0x1A, :long, 0)
+      ch.sends_packet(FXP_MKDIR, :long, 4, :string, "/path/to/remote/subdir", :long, 0)
+      ch.sends_packet(FXP_OPEN, :long, 5, :string, "/path/to/remote/subdir/other1", :long, 0x1A, :long, 0)
+      ch.sends_packet(FXP_OPEN, :long, 6, :string, "/path/to/remote/subdir/other2", :long, 0x1A, :long, 0)
+      ch.gets_packet(FXP_HANDLE, :long, 1, :string, "hfile1")
+      ch.sends_packet(FXP_WRITE, :long, 7, :string, "hfile1", :int64, 0, :string, "contents of file1")
+      ch.gets_packet(FXP_HANDLE, :long, 2, :string, "hfile2")
+      ch.sends_packet(FXP_WRITE, :long, 8, :string, "hfile2", :int64, 0, :string, "contents of file2")
+      ch.gets_packet(FXP_HANDLE, :long, 3, :string, "hfile3")
+      ch.sends_packet(FXP_WRITE, :long, 9, :string, "hfile3", :int64, 0, :string, "contents of file3")
+      ch.gets_packet(FXP_STATUS, :long, 4, :long, 0)
+      ch.gets_packet(FXP_HANDLE, :long, 5, :string, "hother1")
+      ch.sends_packet(FXP_CLOSE, :long, 10, :string, "hfile1")
+      ch.sends_packet(FXP_WRITE, :long, 11, :string, "hother1", :int64, 0, :string, "contents of other1")
+      ch.gets_packet(FXP_HANDLE, :long, 6, :string, "hother2")
+      ch.sends_packet(FXP_WRITE, :long, 12, :string, "hother2", :int64, 0, :string, "contents of other2")
+      ch.gets_packet(FXP_STATUS, :long, 7, :long, 0)
+      ch.sends_packet(FXP_CLOSE, :long, 13, :string, "hfile2")
+      ch.gets_packet(FXP_STATUS, :long, 8, :long, 0)
+      ch.sends_packet(FXP_CLOSE, :long, 14, :string, "hfile3")
+      ch.gets_packet(FXP_STATUS, :long, 9, :long, 0)
+      ch.sends_packet(FXP_CLOSE, :long, 15, :string, "hother1")
+      ch.gets_packet(FXP_STATUS, :long, 10, :long, 0)
+      ch.sends_packet(FXP_CLOSE, :long, 16, :string, "hother2")
+      ch.gets_packet(FXP_STATUS, :long, 11, :long, 0)
+      ch.gets_packet(FXP_STATUS, :long, 12, :long, 0)
+      ch.gets_packet(FXP_STATUS, :long, 13, :long, 0)
+      ch.gets_packet(FXP_STATUS, :long, 14, :long, 0)
+      ch.gets_packet(FXP_STATUS, :long, 15, :long, 0)
+      ch.gets_packet(FXP_STATUS, :long, 16, :long, 0)
+    end
+
+    assert_scripted_command do
+      sftp.upload("/path/to/local", "/path/to/remote")
+    end
+  end
+
   # local as directory with progress
   # local as IO with :name
   # local as IO without :name
   # local as IO with progress
-
-  # upload with custom # of :requests
-  # upload with custom :read_size
 
   private
 
@@ -109,6 +156,11 @@ class UploadTest < Net::SFTP::TestCase
       file = StringIO.new(data)
       file.stubs(:stat).returns(stub("stat", :size => data.length))
       File.stubs(:open).with(path).returns(file)
+    end
+
+    def expect_directory(path, entries)
+      Dir.stubs(:entries).with(path).returns(entries)
+      File.stubs(:directory?).with(path).returns(true)
     end
 
     def expect_file_transfer(local, remote, data)

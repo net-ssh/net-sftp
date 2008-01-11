@@ -29,8 +29,9 @@ module Net; module SFTP; module Operations
         @remote_cwd = remote
 
         @active += 1
-        sftp.mkdir(remote) do
+        sftp.mkdir(remote) do |response|
           @active -= 1
+          raise StatusException.new(response, "mkdir `#{remote}'") unless response.ok?
           (options[:requests] || RECURSIVE_READERS).to_i.times do
             break unless process_next_entry
           end
