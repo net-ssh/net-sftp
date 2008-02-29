@@ -10,16 +10,7 @@ class DownloadTest < Net::SFTP::TestCase
     remote = "/path/to/remote"
     text = "this is some text\n"
 
-    expect_sftp_session :server_version => 3 do |channel|
-      channel.sends_packet(FXP_OPEN, :long, 0, :string, remote, :long, 0x01, :long, 0)
-      channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
-      channel.sends_packet(FXP_READ, :long, 1, :string, "handle", :int64, 0, :long, 32_000)
-      channel.gets_packet(FXP_DATA, :long, 1, :string, text)
-      channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, 32_000, :long, 32_000)
-      channel.gets_packet(FXP_STATUS, :long, 2, :long, 1)
-      channel.sends_packet(FXP_CLOSE, :long, 3, :string, "handle")
-      channel.gets_packet(FXP_STATUS, :long, 3, :long, 0)
-    end
+    expect_file_transfer(remote, text)
 
     file = StringIO.new
     File.stubs(:open).with(local, "w").returns(file)
@@ -105,11 +96,37 @@ class DownloadTest < Net::SFTP::TestCase
     assert_no_more_reported_events
   end
 
-  # download directory with progress
-  # download file to io
-  # download directory to io should fail
+  def test_download_file_should_transfer_remote_to_local_buffer
+    remote = "/path/to/remote"
+    text = "this is some text\n"
+
+    expect_file_transfer(remote, text)
+
+    local = StringIO.new
+
+    assert_scripted_command { sftp.download(remote, local) }
+    assert_equal text, local.string
+  end
+
+  def test_download_directory_to_buffer_should_fail
+    expect_sftp_session :server_version => 3
+    assert_raises(ArgumentError) { sftp.download("/path/to/remote", StringIO.new, :recursive => true) }
+  end
 
   private
+
+    def expect_file_transfer(remote, text)
+      expect_sftp_session :server_version => 3 do |channel|
+        channel.sends_packet(FXP_OPEN, :long, 0, :string, remote, :long, 0x01, :long, 0)
+        channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+        channel.sends_packet(FXP_READ, :long, 1, :string, "handle", :int64, 0, :long, 32_000)
+        channel.gets_packet(FXP_DATA, :long, 1, :string, text)
+        channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, 32_000, :long, 32_000)
+        channel.gets_packet(FXP_STATUS, :long, 2, :long, 1)
+        channel.sends_packet(FXP_CLOSE, :long, 3, :string, "handle")
+        channel.gets_packet(FXP_STATUS, :long, 3, :long, 0)
+      end
+    end
 
     def prepare_large_file_download(local, remote, text)
       expect_sftp_session :server_version => 3 do |channel|
