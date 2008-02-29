@@ -66,6 +66,16 @@ class Net::SFTP::TestCase < Test::Unit::TestCase
       assert_progress_reported(:put, expect)
     end
 
+    def assert_progress_reported_get(offset, data, expect={})
+      assert_equal offset, current_event[3] if offset
+      if data.is_a?(Fixnum)
+        assert_equal data, current_event[4].length
+      elsif data
+        assert_equal data, current_event[4]
+      end
+      assert_progress_reported(:get, expect)
+    end
+
     def assert_progress_reported_close(expect={})
       assert_progress_reported(:close, expect)
     end

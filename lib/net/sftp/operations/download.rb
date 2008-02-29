@@ -5,6 +5,7 @@ module Net; module SFTP; module Operations
   class Download
     include Net::SSH::Loggable
 
+    attr_reader :sftp
     attr_reader :local
     attr_reader :remote
     attr_reader :options
@@ -34,7 +35,7 @@ module Net; module SFTP; module Operations
     end
 
     def active?
-      @active > 0
+      @active > 0 || stack.any?
     end
 
     def wait
@@ -44,9 +45,14 @@ module Net; module SFTP; module Operations
 
     private
 
-      attr_reader :sftp
       attr_reader :stack
       attr_reader :progress
+
+      DEFAULT_READ_SIZE = 32_000
+
+      def read_size
+        options[:read_size] || DEFAULT_READ_SIZE
+      end
 
       def requests
         options[:requests] || (recursive? ? 16 : 2)
@@ -91,6 +97,9 @@ module Net; module SFTP; module Operations
             stack << Entry.new(::File.join(entry.remote, item.name), ::File.join(entry.local, item.name), item.directory?, item.attributes.size)
           end
 
+          # take this opportunity to enqueue more requests
+          process_next_entry
+
           request = sftp.readdir(entry.handle, &method(:on_readdir))
           request[:parent] = entry
         end
@@ -117,16 +126,14 @@ module Net; module SFTP; module Operations
         entry.sink = entry.local.respond_to?(:write) ? entry.local : ::File.open(entry.local, "w")
         entry.offset = 0
 
-        update_progress(:get, entry, 0, nil)
         download_next_chunk(entry)
       end
 
       def download_next_chunk(entry)
-        size = options[:read_size] || 32_000
-        request = sftp.read(entry.handle, entry.offset, size, &method(:on_read))
+        request = sftp.read(entry.handle, entry.offset, read_size, &method(:on_read))
         request[:entry] = entry
         request[:offset] = entry.offset
-        entry.offset += size
+        entry.offset += read_size
       end
 
       def on_read(response)
@@ -140,7 +147,7 @@ module Net; module SFTP; module Operations
         elsif !response.ok?
           raise "read #{entry.remote}: #{response}"
         else
-          update_progress(:get, entry, response.request[:offset] + response[:data].length, response[:data])
+          update_progress(:get, entry, response.request[:offset], response[:data])
           entry.sink.write(response[:data])
           download_next_chunk(entry)
         end

@@ -37,6 +37,20 @@ module Net; module SFTP; module Operations
   #   io = StringIO.new(data)
   #   sftp.upload!(io, "/path/to/remote")
   #
+  # The following options are supported:
+  #
+  # * <tt>:progress</tt> - either a block or an object to act as a progress
+  #   callback. See the discussion of "progress monitoring" below.
+  # * <tt>:requests</tt> - the number of pending SFTP requests to allow at
+  #   any given time. When uploading an entire directory tree recursively,
+  #   this will default to 16, otherwise it will default to 2. Setting this
+  #   higher might improve throughput. Reducing it will reduce throughput.
+  # * <tt>:read_size</tt> - the maximum number of bytes to read at a time
+  #   from the source. Increasing this value might improve throughput. It
+  #   defaults to 32,000 bytes.
+  # * <tt>:name</tt> - the filename to report to the progress monitor when
+  #   an IO object is given as +local+. This defaults to "<memory>".
+  #
   # == Progress Monitoring
   #
   # Sometimes it is desirable to track the progress of an upload. There are
@@ -118,23 +132,9 @@ module Net; module SFTP; module Operations
     # identifying the location on the remote host that the upload should
     # target.
     #
-    # The following +options+ are supported:
-    #
-    # * <tt>:progress</tt> - either a block or an object to act as a progress
-    #   callback. See the discussion of "progress monitoring" in Net::SFTP::Operations::Upload.
-    # * <tt>:requests</tt> - the number of pending SFTP requests to allow at
-    #   any given time. When uploading an entire directory tree recursively,
-    #   this will default to 16, otherwise it will default to 2. Setting this
-    #   higher might improve throughput. Reducing it will reduce throughput.
-    # * <tt>:read_size</tt> - the maximum number of bytes to read at a time
-    #   from the source. Increasing this value might improve throughput. It
-    #   defaults to 32,000 bytes.
-    # * <tt>:name</tt> - the filename to report to the progress monitor when
-    #   an IO object is given as +local+. This defaults to "<memory>".
-    #
     # This will return immediately, and requires that the SSH event loop be
     # run in order to effect the upload. (See #wait.)
-    def initialize(sftp, local, remote, options={}, &progress)
+    def initialize(sftp, local, remote, options={}, &progress) #:nodoc:
       @sftp = sftp
       @local = local
       @remote = remote
