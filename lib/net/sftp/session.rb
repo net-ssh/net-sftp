@@ -99,7 +99,7 @@ module Net; module SFTP
 
       # Identical to #upload, but blocks until the upload is complete.
       def upload!(local, remote, options={}, &block)
-        upload(local, remote, options={}, &block).wait
+        upload(local, remote, options, &block).wait
       end
 
       # Initiates a download from +remote+ to +local+, asynchronously. This
@@ -116,7 +116,7 @@ module Net; module SFTP
 
       # Identical to #download, but blocks until the download is complete.
       def download!(remote, local, options={}, &block)
-        download(remote, local, options={}, &block).wait
+        download(remote, local, options, &block).wait
       end
 
       # Returns an Operations::FileFactory instance, which can be used to
