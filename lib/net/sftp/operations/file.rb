@@ -56,9 +56,9 @@ module Net; module SFTP; module Operations
       end
 
       loop do
-        at = @buffer.index(sep_string)
+        at = @buffer.index(delim)
         if at
-          offset = at + sep_string.length
+          offset = at + delim.length
           @pos += offset
           line, @buffer = @buffer[0,offset], @buffer[offset..-1]
           return line
