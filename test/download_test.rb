@@ -1,4 +1,4 @@
-require "#{File.dirname(__FILE__)}/common"
+require "common"
 
 class DownloadTest < Net::SFTP::TestCase
   def setup

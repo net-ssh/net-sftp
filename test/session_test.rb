@@ -1,4 +1,4 @@
-require "#{File.dirname(__FILE__)}/common"
+require "common"
 
 class SessionTest < Net::SFTP::TestCase
   (1..6).each do |version|
