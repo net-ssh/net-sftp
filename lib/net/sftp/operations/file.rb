@@ -100,6 +100,7 @@ module Net; module SFTP; module Operations
           write("\n") unless item[-1] == ?\n
         end
       end
+      nil
     end
 
     def stat
