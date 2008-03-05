@@ -184,12 +184,16 @@ module Net; module SFTP; module Operations
       # file or directory that needs to be downloaded.
       Entry = Struct.new(:remote, :local, :directory, :size, :handle, :offset, :sink)
 
+      #--
+      # "ruby -w" hates private attributes, so we have to do these longhand
+      #++
+
       # The stack of Entry instances, indicating which files and directories
       # on the remote host remain to be downloaded.
-      attr_reader :stack
+      def stack; @stack; end
 
       # The progress handler for this instance. Possibly nil.
-      attr_reader :progress
+      def progress; @progress; end
 
       # The default read size.
       DEFAULT_READ_SIZE = 32_000

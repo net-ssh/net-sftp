@@ -14,8 +14,8 @@ module Net; module SFTP; module Protocol; module V04
     F_SUBSECOND_TIMES   = 0x00000100
     
     attr_accessor :type
-    attr_accessor :owner
-    attr_accessor :group
+    attr_writer   :owner
+    attr_writer   :group
     attr_accessor :atime_nseconds
     attr_accessor :createtime
     attr_accessor :createtime_nseconds

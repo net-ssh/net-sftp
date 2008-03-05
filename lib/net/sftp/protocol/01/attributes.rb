@@ -68,8 +68,8 @@ module Net; module SFTP; module Protocol; module V01
     attr_reader   :attributes
 
     attr_accessor :size
-    attr_accessor :uid
-    attr_accessor :gid
+    attr_writer   :uid
+    attr_writer   :gid
     attr_accessor :permissions
     attr_accessor :atime
     attr_accessor :mtime

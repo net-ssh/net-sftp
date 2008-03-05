@@ -26,7 +26,7 @@ class ResponseTest < Net::SFTP::TestCase
     assert_equal "no space on filesystem (14)", response.to_s
   end
 
-  def test_to_s_with_default_message_should_show_default_message
+  def test_to_s_with_explicit_message_should_show_explicit_message
     response = Net::SFTP::Response.new(mock("response"), :code => 14, :message => "out of space")
     assert_equal "out of space (no space on filesystem, 14)", response.to_s
   end

@@ -241,15 +241,6 @@ class SessionTest < Net::SFTP::TestCase
     assert_command_with_callback(:remove, "/path/to/file")
   end
 
-  def test_remove_should_send_remove_packet
-    expect_sftp_session do |channel|
-      channel.sends_packet(FXP_REMOVE, :long, 0, :string, "/path/to/file")
-      channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
-    end
-
-    assert_command_with_callback(:remove, "/path/to/file")
-  end
-
   def test_mkdir_should_send_mkdir_packet
     expect_sftp_session do |channel|
       channel.sends_packet(FXP_MKDIR, :long, 0, :string, "/path/to/dir", :long, 0x4, :byte, 1, :long, 0765)

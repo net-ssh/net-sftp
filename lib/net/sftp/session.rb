@@ -782,8 +782,12 @@ module Net; module SFTP
 
     private
 
+      #--
+      # "ruby -w" hates private attributes, so we have to do this longhand
+      #++
+
       # The input buffer used to accumulate packet data
-      attr_reader :input
+      def input; @input; end
 
       # Create and enqueue a new SFTP request of the given type, with the
       # given arguments. Returns a new Request instance that encapsulates the

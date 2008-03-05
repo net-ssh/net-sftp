@@ -187,8 +187,12 @@ module Net; module SFTP; module Operations
 
     private
 
+      #--
+      # "ruby -w" hates private attributes, so we have to do this longhand.
+      #++
+
       # The progress handler for this instance. Possibly nil.
-      attr_reader :progress
+      def progress; @progress; end
 
       # A simple struct for recording metadata about the file currently being
       # uploaded.

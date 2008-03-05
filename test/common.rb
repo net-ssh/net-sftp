@@ -153,6 +153,6 @@ class ProgressHandler
   end
 
   def on_finish(*args)
-    @progress << [:finish, @args]
+    @progress << [:finish, *args]
   end
 end
