@@ -8,8 +8,11 @@ $LOAD_PATH.unshift "../net-ssh/lib"
 require "./lib/net/sftp/version"
 
 PACKAGE_NAME = "net-sftp"
-PACKAGE_VERSION = Net::SFTP::Version::STRING
-PACKAGE_VERSION << ".#{ENV['BUILD']}" if ENV['BUILD']
+PACKAGE_VERSION = Net::SFTP::Version::STRING.dup
+
+if ENV['SNAPSHOT'].to_i == 1
+  PACKAGE_VERSION << "." << Time.now.utc.strftime("%Y%m%d%H%M%S")
+end
 
 SOURCE_FILES = FileList.new do |fl|
   [ "lib", "test" ].each do |dir|
@@ -54,14 +57,14 @@ task :clean do
 end
 
 Rake::TestTask.new do |t|
-  t.test_files = FileList["test/*_test.rb"]
+  t.test_files = FileList["test/test_*.rb"]
   t.libs << "test"
   t.verbose = true
 end
 
 desc "Build a code coverage report"
 task :coverage do
-  files = Dir.glob("test/*_test.rb").join(" ")
+  files = Dir.glob("test/test_*.rb").join(" ")
   sh "rcov -o coverage #{files}"
 end
 
@@ -151,6 +154,7 @@ end
 
 file "#{package_dir}/#{gem_file}" => package_dir do
   spec = eval(File.read(PACKAGE_NAME+".gemspec"))
+  spec.version = PACKAGE_VERSION
   Gem::Builder.new(spec).build
   mv gem_file, "#{package_dir}/#{gem_file}"
 end

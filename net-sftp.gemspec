@@ -1,11 +1,9 @@
 require './lib/net/sftp/version'
 
-PKG_BUILD = ENV['PKG_BUILD'] ? ".#{ENV['PKG_BUILD']}" : ""
-
 Gem::Specification.new do |s|
 
   s.name = 'net-sftp'
-  s.version = Net::SFTP::Version::STRING + PKG_BUILD
+  s.version = Net::SFTP::Version::STRING
   s.platform = Gem::Platform::RUBY
   s.summary = "Net::SFTP is a pure-Ruby implementation of the SFTP client protocol, supporting protocol versions 1 to 6."
   s.files = Dir.glob("{lib,test}/**/*")
