@@ -1,0 +1,6 @@
+=== (unreleased)
+
+* 1 major enhancement
+
+  * Rewritten! (Never, ever, do this at home.) New and improved API.
+
