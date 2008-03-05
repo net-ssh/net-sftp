@@ -40,7 +40,7 @@ module Net; module SFTP
 
     def to_s
       if message && !message.empty? && message.downcase != MAP[code]
-        "#{message} (#{MAP[code]} #{code})"
+        "#{message} (#{MAP[code]}, #{code})"
       else
         "#{MAP[code]} (#{code})"
       end
