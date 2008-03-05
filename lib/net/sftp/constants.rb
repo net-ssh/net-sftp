@@ -1,5 +1,8 @@
 module Net; module SFTP
 
+  # The packet types and other general constants used by the SFTP protocol.
+  # See the specification for the SFTP protocol for a full discussion of their
+  # meaning and usage.
   module Constants
 
     FXP_INIT             = 1
