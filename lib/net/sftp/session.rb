@@ -31,8 +31,8 @@ module Net; module SFTP
   #   puts "chunk #2: #{r2.response[:data]}"
   #
   # By passing blocks to the operations, you can set up powerful state
-  # machines, to fire off subsequent operations. In fact, the Operations::Upload
-  # and Operations::Download classes set up such state machines, so that
+  # machines, to fire off subsequent operations. In fact, the Net::SFTP::Operations::Upload
+  # and Net::SFTP::Operations::Download classes set up such state machines, so that
   # multiple uploads and/or downloads can be running simultaneously.
   #
   # The convention with the names of the operations is as follows: if the method
@@ -86,9 +86,9 @@ module Net; module SFTP
     public # high-level SFTP operations
 
       # Initiates an upload from +local+ to +remote+, asynchronously. This
-      # method will return a new Operations::Upload instance, and requires
+      # method will return a new Net::SFTP::Operations::Upload instance, and requires
       # the event loop to be run in order for the upload to progress. See
-      # Operations::Upload for a full discussion of how this method can be
+      # Net::SFTP::Operations::Upload for a full discussion of how this method can be
       # used.
       #
       #   uploader = sftp.upload("/local/path", "/remote/path")
@@ -103,9 +103,9 @@ module Net; module SFTP
       end
 
       # Initiates a download from +remote+ to +local+, asynchronously. This
-      # method will return a new Operations::Download instance, and requires
+      # method will return a new Net::SFTP::Operations::Download instance, and requires
       # that the event loop be run in order for the download to progress. See
-      # Operations::Download for a full discussion of hos this method can be
+      # Net::SFTP::Operations::Download for a full discussion of hos this method can be
       # used.
       #
       #   download = sftp.downnload("/remote/path", "/local/path")
@@ -119,7 +119,7 @@ module Net; module SFTP
         download(remote, local, options, &block).wait
       end
 
-      # Returns an Operations::FileFactory instance, which can be used to
+      # Returns an Net::SFTP::Operations::FileFactory instance, which can be used to
       # mimic synchronous, IO-like file operations on a remote file via
       # SFTP.
       #
@@ -129,7 +129,7 @@ module Net; module SFTP
       #     end
       #   end
       #
-      # See Operations::FileFactory and Operations::File for more details.
+      # See Net::SFTP::Operations::FileFactory and Net::SFTP::Operations::File for more details.
       def file
         @file ||= Operations::FileFactory.new(self)
       end

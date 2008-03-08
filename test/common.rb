@@ -6,7 +6,6 @@ begin
   require 'net/ssh'
 rescue LoadError
   $LOAD_PATH.unshift "#{File.dirname(__FILE__)}/../../net-ssh/lib"
-  $LOAD_PATH.unshift "#{File.dirname(__FILE__)}/../../net-ssh.v2/lib"
 
   begin
     require 'net/ssh'
