@@ -7,7 +7,14 @@ require 'net/sftp/protocol/06/base'
 
 module Net; module SFTP
 
+  # The Protocol module contains the definitions for all supported SFTP
+  # protocol versions.
   module Protocol
+
+    # Instantiates and returns a new protocol driver instance for the given
+    # protocol version. +session+ must be a valid SFTP session object, and
+    # +version+ must be an integer. If an unsupported version is given,
+    # an exception will be raised.
     def self.load(session, version)
       case version
       when 1 then V01::Base.new(session)
@@ -19,6 +26,7 @@ module Net; module SFTP
       else raise NotImplementedError, "unsupported SFTP version #{version.inspect}"
       end
     end
+
   end
 
 end; end
