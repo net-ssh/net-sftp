@@ -155,3 +155,15 @@ class ProgressHandler
     @progress << [:finish, *args]
   end
 end
+
+# "prime the pump", so to speak: predefine the modules we need so we can
+# define the test classes in a more elegant short-hand.
+
+module Protocol
+  module V01; end
+  module V02; end
+  module V03; end
+  module V04; end
+  module V05; end
+  module V06; end
+end
