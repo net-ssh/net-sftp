@@ -42,11 +42,17 @@ module Net; module SFTP; module Protocol; module V01
         new(data)
       end
 
-      def attr_accessor(name)
+      def attr_accessor(name, options={})
+        unless options[:write_only]
+          method = <<-CODE
+            def #{name}
+              attributes[:#{name}]
+            end
+          CODE
+        end
+
         class_eval <<-CODE
-          def #{name}
-            attributes[:#{name}]
-          end
+          #{method}
 
           def #{name}=(value)
             attributes[:#{name}] = value
@@ -68,8 +74,8 @@ module Net; module SFTP; module Protocol; module V01
     attr_reader   :attributes
 
     attr_accessor :size
-    attr_writer   :uid
-    attr_writer   :gid
+    attr_accessor :uid, :write_only => true
+    attr_accessor :gid, :write_only => true
     attr_accessor :permissions
     attr_accessor :atime
     attr_accessor :mtime
