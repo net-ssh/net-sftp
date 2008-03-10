@@ -87,11 +87,11 @@ module Net; module SFTP; module Protocol; module V01
     end
 
     def setstat(path, attrs)
-      send_request(FXP_SETSTAT, :string, path, :raw, attribute_factory.new(attrs))
+      send_request(FXP_SETSTAT, :string, path, :raw, attribute_factory.new(attrs).to_s)
     end
 
     def fsetstat(handle, attrs)
-      send_request(FXP_FSETSTAT, :string, handle, :raw, attribute_factory.new(attrs))
+      send_request(FXP_FSETSTAT, :string, handle, :raw, attribute_factory.new(attrs).to_s)
     end
 
     def opendir(path)
@@ -107,7 +107,7 @@ module Net; module SFTP; module Protocol; module V01
     end
 
     def mkdir(path, attrs)
-      send_request(FXP_MKDIR, :string, path, :raw, attribute_factory.new(attrs))
+      send_request(FXP_MKDIR, :string, path, :raw, attribute_factory.new(attrs).to_s)
     end
 
     def rmdir(path)
@@ -122,15 +122,15 @@ module Net; module SFTP; module Protocol; module V01
       send_request(FXP_STAT, :string, path)
     end
 
-    def rename(*args)
+    def rename(name, new_name, flags=nil)
       not_implemented! :rename
     end
 
-    def readlink(*args)
+    def readlink(path)
       not_implemented! :readlink
     end
 
-    def symlink(*args)
+    def symlink(path, target)
       not_implemented! :symlink
     end
 

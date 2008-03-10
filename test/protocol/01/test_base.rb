@@ -1,5 +1,9 @@
 require 'common'
 
+# NOTE: these tests assume that the interface to Net::SFTP::Session#send_packet
+# will remain constant. If that interface ever changes, these tests will need
+# to be updated!
+
 class Protocol::V01::TestBase < Net::SFTP::TestCase
   include Net::SFTP::Constants
 
@@ -57,30 +61,140 @@ class Protocol::V01::TestBase < Net::SFTP::TestCase
     @session.expects(:send_packet).with(FXP_OPEN, :long, 0,
       :string, "/path/to/file",
       :long, Base::F_READ | Base::F_WRITE | Base::F_CREAT | Base::F_EXCL,
-      :raw, raw(:long, 0)).returns(1)
+      :raw, raw(:long, 0))
 
     assert_equal 0, @base.open("/path/to/file", IO::RDWR | IO::CREAT | IO::EXCL, {})
   end
 
-  def test_open_with_r_flag_should_translate_to_sftp_constants
-    @session.expects(:send_packet).with(FXP_OPEN, :long, 0,
-      :string, "/path/to/file", :long, Base::F_READ, :raw, raw(:long, 0)).returns(1)
+  { "r"  => Base::F_READ,
+    "rb" => Base::F_READ,
+    "r+" => Base::F_READ | Base::F_WRITE,
+    "w"  => Base::F_WRITE | Base::F_TRUNC | Base::F_CREAT,
+    "w+" => Base::F_WRITE | Base::F_READ | Base::F_TRUNC | Base::F_CREAT,
+    "a"  => Base::F_APPEND | Base::F_CREAT,
+    "a+" => Base::F_APPEND | Base::F_CREAT
+  }.each do |flags, options|
+    safe_name = flags.sub(/\+/, "_plus")
+    define_method("test_open_with_#{safe_name}_should_translate_to_0x#{options.to_s(16)}") do
+      @session.expects(:send_packet).with(FXP_OPEN, :long, 0,
+        :string, "/path/to/file", :long, options, :raw, raw(:long, 0))
 
-    assert_equal 0, @base.open("/path/to/file", "r", {})
+      assert_equal 0, @base.open("/path/to/file", flags, {})
+    end
   end
 
-  def test_open_with_b_flag_should_ignore_b_flag
+  def test_open_with_attributes_converts_hash_to_attribute_packet
     @session.expects(:send_packet).with(FXP_OPEN, :long, 0,
-      :string, "/path/to/file", :long, Base::F_READ, :raw, raw(:long, 0)).returns(1)
-
-    assert_equal 0, @base.open("/path/to/file", "rb", {})
+      :string, "/path/to/file", :long, Base::F_READ, :raw, raw(:long, 0x4, :long, 0755))
+    @base.open("/path/to/file", "r", :permissions => 0755)
   end
 
-  def test_open_with_r_plus_flag_should_translate_to_sftp_constants
-    @session.expects(:send_packet).with(FXP_OPEN, :long, 0,
-      :string, "/path/to/file", :long, Base::F_READ | Base::F_WRITE,
-      :raw, raw(:long, 0)).returns(1)
+  def test_close_should_send_close_packet
+    @session.expects(:send_packet).with(FXP_CLOSE, :long, 0, :string, "handle")
+    assert_equal 0, @base.close("handle")
+  end
 
-    assert_equal 0, @base.open("/path/to/file", "r+", {})
+  def test_read_should_send_read_packet
+    @session.expects(:send_packet).with(FXP_READ, :long, 0, :string, "handle", :int64, 1234, :long, 5678)
+    assert_equal 0, @base.read("handle", 1234, 5678)
+  end
+
+  def test_write_should_send_write_packet
+    @session.expects(:send_packet).with(FXP_WRITE, :long, 0, :string, "handle", :int64, 1234, :string, "data")
+    assert_equal 0, @base.write("handle", 1234, "data")
+  end
+
+  def test_lstat_should_send_lstat_packet
+    @session.expects(:send_packet).with(FXP_LSTAT, :long, 0, :string, "/path/to/file")
+    assert_equal 0, @base.lstat("/path/to/file")
+  end
+
+  def test_lstat_should_ignore_flags_parameter
+    @session.expects(:send_packet).with(FXP_LSTAT, :long, 0, :string, "/path/to/file")
+    assert_equal 0, @base.lstat("/path/to/file", 12345)
+  end
+
+  def test_fstat_should_send_fstat_packet
+    @session.expects(:send_packet).with(FXP_FSTAT, :long, 0, :string, "handle")
+    assert_equal 0, @base.fstat("handle")
+  end
+
+  def test_fstat_should_ignore_flags_parameter
+    @session.expects(:send_packet).with(FXP_FSTAT, :long, 0, :string, "handle")
+    assert_equal 0, @base.fstat("handle", 12345)
+  end
+
+  def test_setstat_should_translate_hash_to_attributes_and_send_setstat_packet
+    @session.expects(:send_packet).with(FXP_SETSTAT, :long, 0, :string, "/path/to/file", :raw, raw(:long, 0x6, :long, 1, :long, 2, :long, 0755))
+    assert_equal 0, @base.setstat("/path/to/file", :uid => 1, :gid => 2, :permissions => 0755)
+  end
+
+  def test_fsetstat_should_translate_hash_to_attributes_and_send_fsetstat_packet
+    @session.expects(:send_packet).with(FXP_FSETSTAT, :long, 0, :string, "handle", :raw, raw(:long, 0x6, :long, 1, :long, 2, :long, 0755))
+    assert_equal 0, @base.fsetstat("handle", :uid => 1, :gid => 2, :permissions => 0755)
+  end
+
+  def test_opendir_should_send_opendir_packet
+    @session.expects(:send_packet).with(FXP_OPENDIR, :long, 0, :string, "/path/to/dir")
+    assert_equal 0, @base.opendir("/path/to/dir")
+  end
+
+  def test_readdir_should_send_readdir_packet
+    @session.expects(:send_packet).with(FXP_READDIR, :long, 0, :string, "handle")
+    assert_equal 0, @base.readdir("handle")
+  end
+
+  def test_remove_should_send_remove_packet
+    @session.expects(:send_packet).with(FXP_REMOVE, :long, 0, :string, "/path/to/file")
+    assert_equal 0, @base.remove("/path/to/file")
+  end
+
+  def test_mkdir_should_translate_hash_to_attributes_and_send_mkdir_packet
+    @session.expects(:send_packet).with(FXP_MKDIR, :long, 0, :string, "/path/to/dir", :raw, raw(:long, 0x6, :long, 1, :long, 2, :long, 0755))
+    assert_equal 0, @base.mkdir("/path/to/dir", :uid => 1, :gid => 2, :permissions => 0755)
+  end
+
+  def test_rmdir_should_send_rmdir_packet
+    @session.expects(:send_packet).with(FXP_RMDIR, :long, 0, :string, "/path/to/dir")
+    assert_equal 0, @base.rmdir("/path/to/dir")
+  end
+
+  def test_realpath_should_send_realpath_packet
+    @session.expects(:send_packet).with(FXP_REALPATH, :long, 0, :string, "/path/to/file")
+    assert_equal 0, @base.realpath("/path/to/file")
+  end
+
+  def test_stat_should_send_stat_packet
+    @session.expects(:send_packet).with(FXP_STAT, :long, 0, :string, "/path/to/file")
+    assert_equal 0, @base.stat("/path/to/file")
+  end
+
+  def test_stat_should_ignore_flags_parameter
+    @session.expects(:send_packet).with(FXP_STAT, :long, 0, :string, "/path/to/file")
+    assert_equal 0, @base.stat("/path/to/file", 12345)
+  end
+
+  def test_rename_should_raise_not_implemented_error
+    assert_raises(NotImplementedError) { @base.rename("/path/to/old", "/path/to/new") }
+  end
+
+  def test_readlink_should_raise_not_implemented_error
+    assert_raises(NotImplementedError) { @base.readlink("/path/to/link") }
+  end
+
+  def test_symlink_should_raise_not_implemented_error
+    assert_raises(NotImplementedError) { @base.symlink("/path/to/link", "/path/to/file") }
+  end
+
+  def test_link_should_raise_not_implemented_error
+    assert_raises(NotImplementedError) { @base.link("/path/to/link", "/path/to/file", true) }
+  end
+
+  def test_block_should_raise_not_implemented_error
+    assert_raises(NotImplementedError) { @base.block("handle", 100, 200, 0) }
+  end
+
+  def test_unblock_should_raise_not_implemented_error
+    assert_raises(NotImplementedError) { @base.unblock("handle", 100, 200) }
   end
 end
