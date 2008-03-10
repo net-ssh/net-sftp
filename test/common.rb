@@ -33,6 +33,10 @@ class Net::SFTP::TestCase < Test::Unit::TestCase
 
   protected
 
+    def raw(*args)
+      Net::SSH::Buffer.from(*args).to_s
+    end
+
     def sftp(options={})
       @sftp ||= Net::SFTP::Session.new(connection(options))
     end

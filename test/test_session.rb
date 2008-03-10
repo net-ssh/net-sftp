@@ -408,6 +408,10 @@ class SessionTest < Net::SFTP::TestCase
     assert_command_with_callback(:unblock, "handle", 12345, 67890)
   end
 
+  def test_send_packet_and_other_methods
+    flunk "these need to be written yet!"
+  end
+
   private
 
     V1 = Net::SFTP::Protocol::V01::Base

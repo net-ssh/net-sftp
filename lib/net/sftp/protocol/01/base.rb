@@ -63,7 +63,7 @@ module Net; module SFTP; module Protocol; module V01
 
       attributes = attribute_factory.new(options)
 
-      send_request(FXP_OPEN, :string, path, :long, sftp_flags, :raw, attributes)
+      send_request(FXP_OPEN, :string, path, :long, sftp_flags, :raw, attributes.to_s)
     end
 
     def close(handle)
