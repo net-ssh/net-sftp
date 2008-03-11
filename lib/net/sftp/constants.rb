@@ -1,4 +1,4 @@
-module Net; module SFTP
+module Net module SFTP
 
   # The packet types and other general constants used by the SFTP protocol.
   # See the specification for the SFTP protocol for a full discussion of their
@@ -43,6 +43,37 @@ module Net; module SFTP
     FXP_RENAME_ATOMIC    = 0x00000002
     FXP_RENAME_NATIVE    = 0x00000004
 
+    ACE4_ACCESS_ALLOWED_ACE_TYPE      = 0x00000000
+    ACE4_ACCESS_DENIED_ACE_TYPE       = 0x00000001
+    ACE4_SYSTEM_AUDIT_ACE_TYPE        = 0x00000002
+    ACE4_SYSTEM_ALARM_ACE_TYPE        = 0x00000003
+
+    ACE4_FILE_INHERIT_ACE             = 0x00000001
+    ACE4_DIRECTORY_INHERIT_ACE        = 0x00000002
+    ACE4_NO_PROPAGATE_INHERIT_ACE     = 0x00000004
+    ACE4_INHERIT_ONLY_ACE             = 0x00000008
+    ACE4_SUCCESSFUL_ACCESS_ACE_FLAG   = 0x00000010
+    ACE4_FAILED_ACCESS_ACE_FLAG       = 0x00000020
+    ACE4_IDENTIFIER_GROUP             = 0x00000040
+
+    ACE4_READ_DATA                    = 0x00000001
+    ACE4_LIST_DIRECTORY               = 0x00000001
+    ACE4_WRITE_DATA                   = 0x00000002
+    ACE4_ADD_FILE                     = 0x00000002
+    ACE4_APPEND_DATA                  = 0x00000004
+    ACE4_ADD_SUBDIRECTORY             = 0x00000004
+    ACE4_READ_NAMED_ATTRS             = 0x00000008
+    ACE4_WRITE_NAMED_ATTRS            = 0x00000010
+    ACE4_EXECUTE                      = 0x00000020
+    ACE4_DELETE_CHILD                 = 0x00000040
+    ACE4_READ_ATTRIBUTES              = 0x00000080
+    ACE4_WRITE_ATTRIBUTES             = 0x00000100
+    ACE4_DELETE                       = 0x00010000
+    ACE4_READ_ACL                     = 0x00020000
+    ACE4_WRITE_ACL                    = 0x00040000
+    ACE4_WRITE_OWNER                  = 0x00080000
+    ACE4_SYNCHRONIZE                  = 0x00100000
+
   end
 
-end; end
+end end

@@ -187,11 +187,9 @@ module Net; module SFTP; module Protocol; module V01
     # packet. This is the raw representation of the attribute packet payload,
     # and is not intended to be human readable.
     def to_s
-      flags = 0
+      prepare_serialization!
 
-      # force the uid/gid to be translated from owner/group, if those keys
-      # were given on instantiation
-      uid; gid
+      flags = 0
 
       self.class.elements.each do |name, type, condition|
         flags |= condition if attributes[name]
@@ -212,6 +210,13 @@ module Net; module SFTP; module Protocol; module V01
     end
 
     private
+
+      def prepare_serialization!
+        # force the uid/gid to be translated from owner/group, if those keys
+        # were given on instantiation
+        uid
+        gid
+      end
 
       # Encodes information about the extended info onto the end of the given
       # buffer.

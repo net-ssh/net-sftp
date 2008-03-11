@@ -19,7 +19,7 @@ module Net; module SFTP; module Protocol; module V04
     attr_accessor :atime_nseconds
     attr_accessor :createtime
     attr_accessor :createtime_nseconds
-    attr_accessor :mtime
+    attr_accessor :mtime_nseconds
     attr_accessor :acl
 
     ACL = Struct.new(:type, :flag, :mask, :who)
@@ -79,23 +79,14 @@ module Net; module SFTP; module Protocol; module V04
       type == T_REGULAR
     end
 
-    def owner
-      if attributes[:uid] && !attributes.key?(:owner)
-        require 'etc'
-        attributes[:owner] = Etc.getpwuid(hash[:uid]).name
-      end
-      attributes[:owner]
-    end
-
-    def group
-      if attributes[:gid] && !attributes.key?(:group)
-        require 'etc'
-        attributes[:group] = Etc.getgrgid(attributes[:gid]).name
-      end
-      attributes[:group]
-    end
-
     private
+
+      def prepare_serialization!
+        # force the group/owner to be translated from uid/gid, if those keys
+        # were given on instantiation
+        owner
+        group
+      end
 
       def encode_acl(buffer)
         acl_buf = Net::SSH::Buffer.from(:long, acl.length)
