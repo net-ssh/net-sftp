@@ -3,6 +3,12 @@ require 'common'
 module Etc; end
 
 class Protocol::V04::TestAttributes < Net::SFTP::TestCase
+  def setup
+    @directory = attributes_factory.new(:type => attributes_factory::T_DIRECTORY)
+    @symlink = attributes_factory.new(:type => attributes_factory::T_SYMLINK)
+    @file = attributes_factory.new(:type => attributes_factory::T_REGULAR)
+  end
+
   def test_from_buffer_should_correctly_parse_buffer_and_return_attribute_object
     attributes = attributes_factory.from_buffer(full_buffer)
 
@@ -100,6 +106,24 @@ class Protocol::V04::TestAttributes < Net::SFTP::TestCase
   def test_attributes_without_subsecond_times_should_serialize_without_subsecond_times
     attributes = attributes_factory.new(:atime => 100)
     assert_equal Net::SSH::Buffer.from(:long, 0x8, :byte, 1, :int64, 100).to_s, attributes.to_s
+  end
+
+  def test_directory_should_be_true_only_when_type_is_directory
+    assert @directory.directory?
+    assert !@symlink.directory?
+    assert !@file.directory?
+  end
+
+  def test_symlink_should_be_true_only_when_type_is_symlink
+    assert !@directory.symlink?
+    assert @symlink.symlink?
+    assert !@file.symlink?
+  end
+
+  def test_file_should_be_true_only_when_type_is_file
+    assert !@directory.file?
+    assert !@symlink.file?
+    assert @file.file?
   end
 
   private
