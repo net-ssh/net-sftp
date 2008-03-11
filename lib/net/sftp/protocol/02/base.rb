@@ -2,8 +2,7 @@ require 'net/sftp/protocol/01/base'
 
 module Net; module SFTP; module Protocol; module V02
 
-  # Wraps the low-level SFTP calls for version 2 of the SFTP protocol. Also
-  # implements the packet parsing as defined by version 2 of the protocol.
+  # Wraps the low-level SFTP calls for version 2 of the SFTP protocol.
   #
   # None of these protocol methods block--all of them return immediately,
   # requiring the SSH event loop to be run while the server response is
