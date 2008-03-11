@@ -64,19 +64,27 @@ module Net; module SFTP; module Protocol; module V01
       end
 
       # A convenience method for defining methods that expose specific
-      # attributes.
-      def attr_accessor(name, options={}) #:nodoc:
-        unless options[:write_only]
-          method = <<-CODE
-            def #{name}
-              attributes[:#{name}]
-            end
-          CODE
-        end
-
+      # attributes. This redefines the standard attr_accessor (an admittedly
+      # bad practice) because (1) I don't need any "regular" accessors, and
+      # (2) because rdoc will automatically pick up and note methods defined
+      # via attr_accessor.
+      def attr_accessor(name) #:nodoc:
         class_eval <<-CODE
-          #{method}
+          def #{name}
+            attributes[:#{name}]
+          end
+        CODE
 
+        attr_writer(name)
+      end
+
+      # A convenience method for defining methods that expose specific
+      # attributes. This redefines the standard attr_writer (an admittedly
+      # bad practice) because (1) I don't need any "regular" accessors, and
+      # (2) because rdoc will automatically pick up and note methods defined
+      # via attr_writer.
+      def attr_writer(name) #:nodoc:
+        class_eval <<-CODE
           def #{name}=(value)
             attributes[:#{name}] = value
           end
@@ -102,10 +110,10 @@ module Net; module SFTP; module Protocol; module V01
     attr_accessor :size
 
     # The user-id of the user that owns the file
-    attr_accessor :uid, :write_only => true
+    attr_writer   :uid
 
     # The group-id of the user that owns the file
-    attr_accessor :gid, :write_only => true
+    attr_writer   :gid
 
     # The permissions on the file
     attr_accessor :permissions
@@ -211,6 +219,7 @@ module Net; module SFTP; module Protocol; module V01
 
     private
 
+      # Perform protocol-version-specific preparations for serialization.
       def prepare_serialization!
         # force the uid/gid to be translated from owner/group, if those keys
         # were given on instantiation
