@@ -14,7 +14,7 @@ class Protocol::V01::TestBase < Net::SFTP::TestCase
     @base = Net::SFTP::Protocol::V01::Base.new(@session)
   end
 
-  def test_version_should_be_1
+  def test_version
     assert_equal 1, @base.version
   end
 
