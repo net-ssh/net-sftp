@@ -1,25 +1,41 @@
 module Net; module SFTP; module Protocol; module V04
 
+  # Represents a single named item on the remote server. This includes the
+  # name, and attributes about the item, and the "longname".
+  #
+  # For backwards compatibility with the format and interface of the Name
+  # structure from previous protocol versions, this also exposes a #longname
+  # method, which returns a string that can be used to display this item in
+  # a directory listing.
   class Name
+    # The name of the item on the remote server.
     attr_reader :name
+
+    # Attributes instance describing this item.
     attr_reader :attributes
 
+    # Create a new Name object with the given name and attributes.
     def initialize(name, attributes)
       @name, @attributes = name, attributes
     end
 
+    # Returns +true+ if the item is a directory.
     def directory?
       attributes.directory?
     end
 
+    # Returns +true+ if the item is a symlink.
     def symlink?
       attributes.symlink?
     end
 
+    # Returns +true+ if the item is a regular file.
     def file?
       attributes.file?
     end
 
+    # Returns a string representing this file, in a format similar to that
+    # used by the unix "ls" utility.
     def longname
       @longname ||= begin
         longname = if directory?
