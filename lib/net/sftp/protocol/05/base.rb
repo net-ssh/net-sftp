@@ -3,6 +3,7 @@ require 'net/sftp/protocol/04/base'
 module Net; module SFTP; module Protocol; module V05
 
   class Base < V04::Base
+    include Net::SFTP::Constants
 
     F_CREATE_NEW         = 0x00000000
     F_CREATE_TRUNCATE    = 0x00000001
@@ -16,26 +17,6 @@ module Net; module SFTP; module Protocol; module V05
     F_READ_LOCK          = 0x00000040
     F_WRITE_LOCK         = 0x00000080
     F_DELETE_LOCK        = 0x00000100
-
-    module ACE
-      F_READ_DATA         = 0x00000001
-      F_LIST_DIRECTORY    = 0x00000001
-      F_WRITE_DATA        = 0x00000002
-      F_ADD_FILE          = 0x00000002
-      F_APPEND_DATA       = 0x00000004
-      F_ADD_SUBDIRECTORY  = 0x00000004
-      F_READ_NAMED_ATTRS  = 0x00000008
-      F_WRITE_NAMED_ATTRS = 0x00000010
-      F_EXECUTE           = 0x00000020
-      F_DELETE_CHILD      = 0x00000040
-      F_READ_ATTRIBUTES   = 0x00000080
-      F_WRITE_ATTRIBUTES  = 0x00000100
-      F_DELETE            = 0x00010000
-      F_READ_ACL          = 0x00020000
-      F_WRITE_ACL         = 0x00040000
-      F_WRITE_OWNER       = 0x00080000
-      F_SYNCHRONIZE       = 0x00100000
-    end
 
     def version
       5

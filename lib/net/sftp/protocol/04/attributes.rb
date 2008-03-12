@@ -49,7 +49,7 @@ module Net; module SFTP; module Protocol; module V04
     T_FIFO         = 9
 
     # A simple struct for representing a single entry in an Access Control
-    # List.
+    # List. (See Net::SFTP::Constants::ACE)
     ACL = Struct.new(:type, :flag, :mask, :who)
 
     class <<self

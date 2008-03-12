@@ -13,7 +13,7 @@ module Net; module SFTP
   #   puts request.pending? #-> false
   #   result = request.response
   class Request
-    include Constants
+    include Constants::PacketTypes
 
     # The Net::SFTP session object that is servicing this request
     attr_reader :session

@@ -8,7 +8,7 @@ module Net; module SFTP; module Protocol
   # provides a way for subclasses to send requests.
   class Base
     include Net::SSH::Loggable
-    include Net::SFTP::Constants
+    include Net::SFTP::Constants::PacketTypes
 
     # The SFTP session object that acts as client to this protocol instance
     attr_reader :session

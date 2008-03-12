@@ -22,7 +22,7 @@ require 'net/sftp/constants'
 require 'net/ssh/test'
 
 class Net::SFTP::TestCase < Test::Unit::TestCase
-  include Net::SFTP::Constants
+  include Net::SFTP::Constants::PacketTypes
   include Net::SSH::Test
 
   def default_test

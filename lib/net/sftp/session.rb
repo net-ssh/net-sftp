@@ -43,7 +43,7 @@ module Net; module SFTP
   # run in order to process these requests. (See #loop.)
   class Session
     include Net::SSH::Loggable
-    include Net::SFTP::Constants
+    include Net::SFTP::Constants::PacketTypes
 
     # The highest protocol version supported by the Net::SFTP library.
     HIGHEST_PROTOCOL_VERSION_SUPPORTED = 6
