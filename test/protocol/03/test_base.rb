@@ -2,11 +2,6 @@ require 'common'
 require 'protocol/02/test_base'
 
 class Protocol::V03::TestBase < Protocol::V02::TestBase
-  def setup
-    super
-    @base = Net::SFTP::Protocol::V03::Base.new(@session)
-  end
-
   def test_version
     assert_equal 3, @base.version
   end
@@ -23,4 +18,10 @@ class Protocol::V03::TestBase < Protocol::V02::TestBase
     @session.expects(:send_packet).with(FXP_SYMLINK, :long, 0, :string, "/path/to/link", :string, "/path/to/file")
     assert_equal 0, @base.symlink("/path/to/link", "/path/to/file")
   end
+
+  private
+
+    def driver
+      Net::SFTP::Protocol::V03::Base
+    end
 end
