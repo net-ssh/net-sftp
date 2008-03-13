@@ -352,7 +352,7 @@ module Net; module SFTP; module Operations
       # Attempts to notify the progress monitor (if one was given) about
       # progress made for the given event.
       def update_progress(event, *args)
-        on = :"on_#{event}"
+        on = "on_#{event}"
         if progress.respond_to?(on)
           progress.send(on, self, *args)
         elsif progress.respond_to?(:call)

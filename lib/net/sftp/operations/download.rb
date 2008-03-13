@@ -23,8 +23,7 @@ module Net; module SFTP; module Operations
   #   dls = %w(file1 file2 file3).map { |f| sftp.download("remote/#{f}", f) }
   #   dls.each { |d| d.wait }
   #
-  # To download an entire directory tree, recursively, simply pass specify
-  # :recursive => true:
+  # To download an entire directory tree, recursively, simply specify :recursive => true:
   #
   #   sftp.download!("/path/to/remotedir", "/path/to/local", :recursive => true)
   #
@@ -331,7 +330,7 @@ module Net; module SFTP; module Operations
       # If a progress callback or object has been set, this will report
       # the progress to that callback or object.
       def update_progress(hook, *args)
-        on = :"on_#{hook}"
+        on = "on_#{hook}"
         if progress.respond_to?(on)
           progress.send(on, self, *args)
         elsif progress.respond_to?(:call)
