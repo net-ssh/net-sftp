@@ -5,6 +5,9 @@ module Net module SFTP
   # meaning and usage.
   module Constants
 
+    # The various packet types supported by SFTP protocol versions 1 through 6.
+    # The FXP_EXTENDED and FXP_EXTENDED_REPLY packet types are not currently
+    # understood by Net::SFTP.
     module PacketTypes
       FXP_INIT           = 1
       FXP_VERSION        = 2
@@ -37,16 +40,21 @@ module Net module SFTP
       FXP_NAME           = 104
       FXP_ATTRS          = 105
                          
-      FXP_EXTENDED       = 106
-      FXP_EXTENDED_REPLY = 107
+      FXP_EXTENDED       = 200
+      FXP_EXTENDED_REPLY = 201
     end
 
+    # Beginning in version 5 of the protocol, Net::SFTP::Session#rename accepts
+    # an optional +flags+ argument that must be either 0 or a combination of
+    # these constants.
     module RenameFlags
       OVERWRITE = 0x00000001
       ATOMIC    = 0x00000002
       NATIVE    = 0x00000004
     end
 
+    # When an FXP_STATUS packet is received from the server, the +code+ will
+    # be one of the following constants.
     module StatusCodes
       FX_OK                     = 0
       FX_EOF                    = 1
@@ -72,7 +80,15 @@ module Net module SFTP
       FX_LINK_LOOP              = 21
     end
 
+    # The Net::SFTP::Session#open operation is one of the worst casualties of
+    # the revisions between SFTP protocol versions. The flags change considerably
+    # between version 1 and version 6. Net::SFTP tries to shield programmers
+    # from the differences, so you'll almost never need to use these flags
+    # directly, but if you ever need to specify some flag that isn't exposed
+    # by the higher-level API, these are the ones that are available to you.
     module OpenFlags
+      # These are the flags that are understood by versions 1-4 of the the
+      # open operation.
       module FV1
         READ   = 0x00000001
         WRITE  = 0x00000002
@@ -82,6 +98,8 @@ module Net module SFTP
         EXCL   = 0x00000020
       end
 
+      # Version 5 of the open operation totally discarded the flags understood
+      # by versions 1-4, and replaced them with these.
       module FV5
         CREATE_NEW         = 0x00000000
         CREATE_TRUNCATE    = 0x00000001
@@ -97,6 +115,8 @@ module Net module SFTP
         DELETE_LOCK        = 0x00000100
       end
 
+      # Version 6 of the open operation added these flags, in addition to the
+      # flags understood by version 5.
       module FV6
         ADVISORY_LOCK           = 0x00000200
         NOFOLLOW                = 0x00000400
@@ -108,6 +128,8 @@ module Net module SFTP
       end
     end
 
+    # The Net::SFTP::Session#block operation, implemented in version 6 of
+    # the protocol, understands these constants for the +mask+ parameter.
     module LockTypes
       READ     = OpenFlags::FV5::READ_LOCK
       WRITE    = OpenFlags::FV5::WRITE_LOCK
@@ -116,6 +138,8 @@ module Net module SFTP
     end
 
     module ACE
+      # Access control entry types, used from version 4 of the protocol,
+      # onward. See Net::SFTP::Protocol::V04::Attributes::ACL.
       module Type
         ACCESS_ALLOWED = 0x00000000
         ACCESS_DENIED  = 0x00000001
@@ -123,6 +147,8 @@ module Net module SFTP
         SYSTEM_ALARM   = 0x00000003
       end
 
+      # Access control entry flags, used from version 4 of the protocol,
+      # onward. See Net::SFTP::Protocol::V04::Attributes::ACL.
       module Flag
         FILE_INHERIT         = 0x00000001
         DIRECTORY_INHERIT    = 0x00000002
@@ -133,6 +159,8 @@ module Net module SFTP
         IDENTIFIER_GROUP     = 0x00000040
       end
 
+      # Access control entry masks, used from version 4 of the protocol,
+      # onward. See Net::SFTP::Protocol::V04::Attributes::ACL.
       module Mask
         READ_DATA         = 0x00000001
         LIST_DIRECTORY    = 0x00000001
