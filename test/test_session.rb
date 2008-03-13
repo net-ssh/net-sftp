@@ -1,6 +1,10 @@
 require "common"
 
 class SessionTest < Net::SFTP::TestCase
+  include Net::SFTP::Constants
+  include Net::SFTP::Constants::OpenFlags
+  include Net::SFTP::Constants::PacketTypes
+
   (1..6).each do |version|
     define_method("test_server_reporting_version_#{version}_should_cause_version_#{version}_to_be_used") do
       expect_sftp_session :server_version => version
@@ -414,9 +418,6 @@ class SessionTest < Net::SFTP::TestCase
 
   private
 
-    V1 = Net::SFTP::Protocol::V01::Base
-    V5 = Net::SFTP::Protocol::V05::Base
-
     def assert_not_implemented(server_version, command, *args)
       expect_sftp_session :server_version => 1
       sftp.connect!
@@ -454,23 +455,23 @@ class SessionTest < Net::SFTP::TestCase
         if version >= 5
           flags, access = case mode
             when "r" then 
-              [V5::F_OPEN_EXISTING, V5::ACE::F_READ_DATA | V5::ACE::F_READ_ATTRIBUTES]
+              [FV5::OPEN_EXISTING, ACE::Mask::READ_DATA | ACE::Mask::READ_ATTRIBUTES]
             when "w" then
-              [V5::F_CREATE_TRUNCATE, V5::ACE::F_WRITE_DATA | V5::ACE::F_WRITE_ATTRIBUTES]
+              [FV5::CREATE_TRUNCATE, ACE::Mask::WRITE_DATA | ACE::Mask::WRITE_ATTRIBUTES]
             when "rw" then
-              [V5::F_OPEN_OR_CREATE, V5::ACE::F_READ_DATA | V5::ACE::F_READ_ATTRIBUTES | V5::ACE::F_WRITE_DATA | V5::ACE::F_WRITE_ATTRIBUTES]
+              [FV5::OPEN_OR_CREATE, ACE::Mask::READ_DATA | ACE::Mask::READ_ATTRIBUTES | ACE::Mask::WRITE_DATA | ACE::Mask::WRITE_ATTRIBUTES]
             when "a" then
-              [V5::F_OPEN_OR_CREATE | V5::F_APPEND_DATA, V5::ACE::F_WRITE_DATA | V5::ACE::F_WRITE_ATTRIBUTES | V5::ACE::F_APPEND_DATA]
+              [FV5::OPEN_OR_CREATE | FV5::APPEND_DATA, ACE::Mask::WRITE_DATA | ACE::Mask::WRITE_ATTRIBUTES | ACE::Mask::APPEND_DATA]
             else raise ArgumentError, "unsupported mode #{mode.inspect}"
           end
 
           channel.sends_packet(FXP_OPEN, :long, 0, :string, path, :long, access, :long, flags, *attrs)
         else
           flags = case mode
-            when "r"  then V1::F_READ
-            when "w"  then V1::F_WRITE | V1::F_TRUNC | V1::F_CREAT
-            when "rw" then V1::F_WRITE | V1::F_READ
-            when "a"  then V1::F_APPEND | V1::F_CREAT
+            when "r"  then FV1::READ
+            when "w"  then FV1::WRITE | FV1::TRUNC | FV1::CREAT
+            when "rw" then FV1::WRITE | FV1::READ
+            when "a"  then FV1::APPEND | FV1::WRITE | FV1::CREAT
             else raise ArgumentError, "unsupported mode #{mode.inspect}"
           end
 

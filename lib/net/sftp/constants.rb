@@ -42,9 +42,9 @@ module Net module SFTP
     end
 
     module RenameFlags
-      FXP_OVERWRITE = 0x00000001
-      FXP_ATOMIC    = 0x00000002
-      FXP_NATIVE    = 0x00000004
+      OVERWRITE = 0x00000001
+      ATOMIC    = 0x00000002
+      NATIVE    = 0x00000004
     end
 
     module StatusCodes
@@ -72,37 +72,69 @@ module Net module SFTP
       FX_LINK_LOOP              = 21
     end
 
-    module ACE
-      T_ACCESS_ALLOWED    = 0x00000000
-      T_ACCESS_DENIED     = 0x00000001
-      T_SYSTEM_AUDIT      = 0x00000002
-      T_SYSTEM_ALARM      = 0x00000003
-                                 
-      FL_FILE_INHERIT         = 0x00000001
-      FL_DIRECTORY_INHERIT    = 0x00000002
-      FL_NO_PROPAGATE_INHERIT = 0x00000004
-      FL_INHERIT_ONLY         = 0x00000008
-      FL_SUCCESSFUL_ACCESS    = 0x00000010
-      FL_FAILED_ACCESS        = 0x00000020
-      FL_IDENTIFIER_GROUP     = 0x00000040
+    module OpenFlags
+      module FV1
+        READ   = 0x00000001
+        WRITE  = 0x00000002
+        APPEND = 0x00000004
+        CREAT  = 0x00000008
+        TRUNC  = 0x00000010
+        EXCL   = 0x00000020
+      end
 
-      F_READ_DATA         = 0x00000001
-      F_LIST_DIRECTORY    = 0x00000001
-      F_WRITE_DATA        = 0x00000002
-      F_ADD_FILE          = 0x00000002
-      F_APPEND_DATA       = 0x00000004
-      F_ADD_SUBDIRECTORY  = 0x00000004
-      F_READ_NAMED_ATTRS  = 0x00000008
-      F_WRITE_NAMED_ATTRS = 0x00000010
-      F_EXECUTE           = 0x00000020
-      F_DELETE_CHILD      = 0x00000040
-      F_READ_ATTRIBUTES   = 0x00000080
-      F_WRITE_ATTRIBUTES  = 0x00000100
-      F_DELETE            = 0x00010000
-      F_READ_ACL          = 0x00020000
-      F_WRITE_ACL         = 0x00040000
-      F_WRITE_OWNER       = 0x00080000
-      F_SYNCHRONIZE       = 0x00100000
+      module FV5
+        CREATE_NEW         = 0x00000000
+        CREATE_TRUNCATE    = 0x00000001
+        OPEN_EXISTING      = 0x00000002
+        OPEN_OR_CREATE     = 0x00000003
+        TRUNCATE_EXISTING  = 0x00000004
+
+        APPEND_DATA        = 0x00000008
+        APPEND_DATA_ATOMIC = 0x00000010
+        TEXT_MODE          = 0x00000020
+        READ_LOCK          = 0x00000040
+        WRITE_LOCK         = 0x00000080
+        DELETE_LOCK        = 0x00000100
+      end
+    end
+
+    module ACE
+      module Type
+        ACCESS_ALLOWED = 0x00000000
+        ACCESS_DENIED  = 0x00000001
+        SYSTEM_AUDIT   = 0x00000002
+        SYSTEM_ALARM   = 0x00000003
+      end
+
+      module Flag
+        FILE_INHERIT         = 0x00000001
+        DIRECTORY_INHERIT    = 0x00000002
+        NO_PROPAGATE_INHERIT = 0x00000004
+        INHERIT_ONLY         = 0x00000008
+        SUCCESSFUL_ACCESS    = 0x00000010
+        FAILED_ACCESS        = 0x00000020
+        IDENTIFIER_GROUP     = 0x00000040
+      end
+
+      module Mask
+        READ_DATA         = 0x00000001
+        LIST_DIRECTORY    = 0x00000001
+        WRITE_DATA        = 0x00000002
+        ADD_FILE          = 0x00000002
+        APPEND_DATA       = 0x00000004
+        ADD_SUBDIRECTORY  = 0x00000004
+        READ_NAMED_ATTRS  = 0x00000008
+        WRITE_NAMED_ATTRS = 0x00000010
+        EXECUTE           = 0x00000020
+        DELETE_CHILD      = 0x00000040
+        READ_ATTRIBUTES   = 0x00000080
+        WRITE_ATTRIBUTES  = 0x00000100
+        DELETE            = 0x00010000
+        READ_ACL          = 0x00020000
+        WRITE_ACL         = 0x00040000
+        WRITE_OWNER       = 0x00080000
+        SYNCHRONIZE       = 0x00100000
+      end
     end
 
   end

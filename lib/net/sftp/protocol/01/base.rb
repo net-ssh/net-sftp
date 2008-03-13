@@ -17,12 +17,7 @@ module Net; module SFTP; module Protocol; module V01
   # You will almost certainly never need to use this driver directly. Please
   # see Net::SFTP::Session for the recommended interface.
   class Base < Protocol::Base
-    F_READ   = 0x00000001
-    F_WRITE  = 0x00000002
-    F_APPEND = 0x00000004
-    F_CREAT  = 0x00000008
-    F_TRUNC  = 0x00000010
-    F_EXCL   = 0x00000020
+    include Net::SFTP::Constants::OpenFlags
 
     # Returns the protocol version implemented by this driver. (1, in this
     # case)
@@ -78,15 +73,17 @@ module Net; module SFTP; module Protocol; module V01
     def open(path, flags, options)
       flags = normalize_open_flags(flags)
 
-      if    flags & IO::WRONLY != 0 then sftp_flags = F_WRITE
-      elsif flags & IO::RDWR   != 0 then sftp_flags = F_READ | F_WRITE
-      elsif flags & IO::APPEND != 0 then sftp_flags = F_APPEND
-      else  sftp_flags = F_READ
+      if flags & (IO::WRONLY | IO::RDWR) != 0
+        sftp_flags = FV1::WRITE
+        sftp_flags |= FV1::READ if flags & IO::RDWR != 0
+        sftp_flags |= FV1::APPEND if flags & IO::APPEND != 0
+      else
+        sftp_flags = FV1::READ
       end
 
-      sftp_flags |= F_CREAT if flags & IO::CREAT != 0
-      sftp_flags |= F_TRUNC if flags & IO::TRUNC != 0
-      sftp_flags |= F_EXCL  if flags & IO::EXCL  != 0
+      sftp_flags |= FV1::CREAT if flags & IO::CREAT != 0
+      sftp_flags |= FV1::TRUNC if flags & IO::TRUNC != 0
+      sftp_flags |= FV1::EXCL  if flags & IO::EXCL  != 0
 
       attributes = attribute_factory.new(options)
 
@@ -246,7 +243,8 @@ module Net; module SFTP; module Protocol; module V01
           when "r+" then IO::RDWR
           when "w"  then IO::WRONLY | IO::TRUNC | IO::CREAT
           when "w+" then IO::RDWR | IO::TRUNC | IO::CREAT
-          when "a", "a+" then IO::APPEND | IO::CREAT
+          when "a"  then IO::APPEND | IO::CREAT | IO::WRONLY
+          when "a+" then IO::APPEND | IO::CREAT | IO::RDWR
           else raise ArgumentError, "unsupported flags: #{flags.inspect}"
           end
         else

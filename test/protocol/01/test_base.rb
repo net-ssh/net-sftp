@@ -6,8 +6,8 @@ require 'common'
 
 class Protocol::V01::TestBase < Net::SFTP::TestCase
   include Net::SFTP::Constants
-
-  Base = Net::SFTP::Protocol::V01::Base
+  include Net::SFTP::Constants::PacketTypes
+  include Net::SFTP::Constants::OpenFlags
 
   def setup
     @session = stub('session', :logger => nil)
@@ -60,22 +60,22 @@ class Protocol::V01::TestBase < Net::SFTP::TestCase
   def test_open_with_numeric_flag_should_accept_IO_constants
     @session.expects(:send_packet).with(FXP_OPEN, :long, 0,
       :string, "/path/to/file",
-      :long, Base::F_READ | Base::F_WRITE | Base::F_CREAT | Base::F_EXCL,
+      :long, FV1::READ | FV1::WRITE | FV1::CREAT | FV1::EXCL,
       :raw, attributes.new.to_s)
 
     assert_equal 0, @base.open("/path/to/file", IO::RDWR | IO::CREAT | IO::EXCL, {})
   end
 
-  { "r"  => Base::F_READ,
-    "rb" => Base::F_READ,
-    "r+" => Base::F_READ | Base::F_WRITE,
-    "w"  => Base::F_WRITE | Base::F_TRUNC | Base::F_CREAT,
-    "w+" => Base::F_WRITE | Base::F_READ | Base::F_TRUNC | Base::F_CREAT,
-    "a"  => Base::F_APPEND | Base::F_CREAT,
-    "a+" => Base::F_APPEND | Base::F_CREAT
+  { "r"  => FV1::READ,
+    "rb" => FV1::READ,
+    "r+" => FV1::READ | FV1::WRITE,
+    "w"  => FV1::WRITE | FV1::TRUNC | FV1::CREAT,
+    "w+" => FV1::WRITE | FV1::READ | FV1::TRUNC | FV1::CREAT,
+    "a"  => FV1::APPEND | FV1::WRITE | FV1::CREAT,
+    "a+" => FV1::APPEND | FV1::WRITE | FV1::READ | FV1::CREAT
   }.each do |flags, options|
     safe_name = flags.sub(/\+/, "_plus")
-    define_method("test_open_with_#{safe_name}_should_translate_to_0x#{options.to_s(16)}") do
+    define_method("test_open_with_#{safe_name}_should_translate_correctly") do
       @session.expects(:send_packet).with(FXP_OPEN, :long, 0,
         :string, "/path/to/file", :long, options, :raw, attributes.new.to_s)
 
@@ -85,7 +85,7 @@ class Protocol::V01::TestBase < Net::SFTP::TestCase
 
   def test_open_with_attributes_converts_hash_to_attribute_packet
     @session.expects(:send_packet).with(FXP_OPEN, :long, 0,
-      :string, "/path/to/file", :long, Base::F_READ, :raw, attributes.new(:permissions => 0755).to_s)
+      :string, "/path/to/file", :long, FV1::READ, :raw, attributes.new(:permissions => 0755).to_s)
     @base.open("/path/to/file", "r", :permissions => 0755)
   end
 
