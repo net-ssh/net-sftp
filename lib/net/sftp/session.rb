@@ -495,8 +495,8 @@ module Net; module SFTP
       # return the Response object for the request.
       #
       #   sftp.rmdir!("/path/to/directory")
-      def rmdir!(path, attrs={}, &callback)
-        wait_for(rmdir(path, attrs, &callback))
+      def rmdir!(path, &callback)
+        wait_for(rmdir(path, &callback))
       end
 
       # :call-seq:
@@ -628,6 +628,9 @@ module Net; module SFTP
       # point to the path +existing_path+.
       #
       #   sftp.link("/path/to/symlink", "/path/to/file", true).wait
+      #
+      # Note that #link is only available for SFTP protocol 6 and higher. You
+      # can use #symlink for protocols 3 and higher.
       def link(new_link_path, existing_path, symlink=true, &callback)
         request :link, new_link_path, existing_path, symlink, &callback
       end
