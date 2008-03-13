@@ -96,6 +96,23 @@ module Net module SFTP
         WRITE_LOCK         = 0x00000080
         DELETE_LOCK        = 0x00000100
       end
+
+      module FV6
+        ADVISORY_LOCK           = 0x00000200
+        NOFOLLOW                = 0x00000400
+        DELETE_ON_CLOSE         = 0x00000800
+        ACCESS_AUDIT_ALARM_INFO = 0x00001000
+        ACCESS_BACKUP           = 0x00002000
+        BACKUP_STREAM           = 0x00004000
+        OVERRIDE_OWNER          = 0x00008000
+      end
+    end
+
+    module LockTypes
+      READ     = OpenFlags::FV5::READ_LOCK
+      WRITE    = OpenFlags::FV5::WRITE_LOCK
+      DELETE   = OpenFlags::FV5::DELETE_LOCK
+      ADVISORY = OpenFlags::FV6::ADVISORY_LOCK
     end
 
     module ACE
