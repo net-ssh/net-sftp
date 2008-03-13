@@ -32,6 +32,9 @@ test/protocol/03/test_base.rb
 test/protocol/04/test_attributes.rb
 test/protocol/04/test_base.rb
 test/protocol/04/test_name.rb
+test/protocol/05/test_base.rb
+test/protocol/06/test_attributes.rb
+test/protocol/06/test_base.rb
 test/protocol/test_base.rb
 test/test_all.rb
 test/test_download.rb
