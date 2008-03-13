@@ -182,7 +182,7 @@ class SessionTest < Net::SFTP::TestCase
     assert_command_with_callback(:setstat, "/path/to/file", :permissions => 0765, :atime => 1234567890, :mtime => 2345678901)
   end
 
-  def test_v6_setstat_should_send_v4_attributes
+  def test_v6_setstat_should_send_v6_attributes
     expect_sftp_session :server_version => 6 do |channel|
       channel.sends_packet(FXP_SETSTAT, :long, 0, :string, "/path/to/file", :long, 0x102c, :byte, 1, :long, 0765, :int64, 1234567890, :int64, 2345678901, :string, "text/plain")
       channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
@@ -209,7 +209,7 @@ class SessionTest < Net::SFTP::TestCase
     assert_command_with_callback(:fsetstat, "handle", :permissions => 0765, :atime => 1234567890, :mtime => 2345678901)
   end
 
-  def test_v6_fsetstat_should_send_v4_attributes
+  def test_v6_fsetstat_should_send_v6_attributes
     expect_sftp_session :server_version => 6 do |channel|
       channel.sends_packet(FXP_FSETSTAT, :long, 0, :string, "handle", :long, 0x102c, :byte, 1, :long, 0765, :int64, 1234567890, :int64, 2345678901, :string, "text/plain")
       channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
@@ -370,7 +370,7 @@ class SessionTest < Net::SFTP::TestCase
       channel.gets_packet(FXP_STATUS, :long, 0, :long, 0)
     end
 
-    assert_command_with_callback(:symlink, "/path/to/source", "/path/to/link")
+    assert_command_with_callback(:symlink, "/path/to/link", "/path/to/source")
   end
 
   def test_v5_link_should_be_unimplemented

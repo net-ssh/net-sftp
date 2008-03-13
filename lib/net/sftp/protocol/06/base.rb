@@ -14,7 +14,7 @@ module Net; module SFTP; module Protocol; module V06
     end
 
     def symlink(path, target)
-      link(target, path, true)
+      link(path, target, true)
     end
 
     def block(handle, offset, length, mask)
