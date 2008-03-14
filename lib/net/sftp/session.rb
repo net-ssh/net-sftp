@@ -115,8 +115,13 @@ module Net; module SFTP
       end
 
       # Identical to #download, but blocks until the download is complete.
-      def download!(remote, local, options={}, &block)
-        download(remote, local, options, &block).wait
+      # If +local+ is omitted, downloads the file to an in-memory buffer
+      # and returns the result as a string; otherwise, returns the
+      # Net::SFTP::Operations::Download instance.
+      def download!(remote, local=nil, options={}, &block)
+        destination = local || StringIO.new
+        result = download(remote, destination, options, &block).wait
+        local ? result : destination.string
       end
 
       # Returns an Net::SFTP::Operations::FileFactory instance, which can be used to
