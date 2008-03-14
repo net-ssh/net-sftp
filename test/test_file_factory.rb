@@ -35,4 +35,14 @@ class FileFactoryTest < Net::SFTP::TestCase
     f = @factory.open("/path/to/remote")
     assert_instance_of Net::SFTP::Operations::File, f
   end
+
+  def test_directory_should_be_true_for_directory
+    @sftp.expects(:lstat!).with("/path/to/dir").returns(mock('attrs', :directory? => true))
+    assert @factory.directory?("/path/to/dir")
+  end
+
+  def test_directory_should_be_false_for_non_directory
+    @sftp.expects(:lstat!).with("/path/to/file").returns(mock('attrs', :directory? => false))
+    assert !@factory.directory?("/path/to/file")
+  end
 end

@@ -50,6 +50,11 @@ module Net; module SFTP; module Operations
         return file
       end
     end
+
+    # Returns +true+ if the argument refers to a directory on the remote host.
+    def directory?(path)
+      sftp.lstat!(path).directory?
+    end
   end
 
 end; end; end
