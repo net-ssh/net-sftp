@@ -2,7 +2,14 @@ require 'net/ssh'
 require 'net/sftp/session'
 
 module Net
-  
+
+  # Net::SFTP is a pure-Ruby module for programmatically interacting with a
+  # remote host via the SFTP protocol (that's SFTP as in "Secure File Transfer
+  # Protocol" produced by the Secure Shell Working Group, not "Secure FTP"
+  # and certainly not "Simple FTP").
+  #
+  # See Net::SFTP#start for an introduction to the library. Also, see
+  # Net::SFTP::Session for further documentation.
   module SFTP
     # A convenience method for starting a standalone SFTP session. It will
     # start up an SSH session using the given arguments (see the documentation

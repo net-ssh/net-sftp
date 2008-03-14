@@ -109,7 +109,7 @@ module Net; module SFTP
       # Net::SFTP::Operations::Download for a full discussion of hos this method can be
       # used.
       #
-      #   download = sftp.downnload("/remote/path", "/local/path")
+      #   download = sftp.download("/remote/path", "/local/path")
       #   download.wait
       def download(remote, local, options={}, &block)
         Operations::Download.new(self, local, remote, options, &block)
