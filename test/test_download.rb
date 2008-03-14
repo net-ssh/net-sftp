@@ -188,10 +188,10 @@ class DownloadTest < Net::SFTP::TestCase
 
         channel.sends_packet(FXP_READDIR, :long, 1, :string, "dir1")
         channel.gets_packet(FXP_NAME, :long, 1, :long, 4,
-          :string, "..",      :string, "drwxr-xr-x  4 bob bob  136 Aug  1 ..", :long, 0x01, :int64, 0,
-          :string, ".",       :string, "drwxr-xr-x  4 bob bob  136 Aug  1 .", :long, 0x01, :int64, 0,
-          :string, "subdir1", :string, "drwxr-xr-x  4 bob bob  136 Aug  1 subdir1", :long, 0x01, :int64, 0,
-          :string, "file1",   :string, "-rw-rw-r--  1 bob bob  100 Aug  1 file1", :long, 0x01, :int64, 100)
+          :string, "..",      :string, "drwxr-xr-x  4 bob bob  136 Aug  1 ..", :long, 0x04, :long, 040755,
+          :string, ".",       :string, "drwxr-xr-x  4 bob bob  136 Aug  1 .", :long, 0x04, :long, 040755,
+          :string, "subdir1", :string, "drwxr-xr-x  4 bob bob  136 Aug  1 subdir1", :long, 0x04, :long, 040755,
+          :string, "file1",   :string, "-rw-rw-r--  1 bob bob  100 Aug  1 file1", :long, 0x04, :long, 0100644)
 
         channel.sends_packet(FXP_OPENDIR, :long, 2, :string, File.join(remote, "subdir1"))
         channel.sends_packet(FXP_OPEN, :long, 3, :string, File.join(remote, "file1"), :long, 0x01, :long, 0)
@@ -207,9 +207,9 @@ class DownloadTest < Net::SFTP::TestCase
         channel.sends_packet(FXP_CLOSE, :long, 7, :string, "dir1")
 
         channel.gets_packet(FXP_NAME, :long, 5, :long, 3,
-          :string, "..",    :string, "drwxr-xr-x  4 bob bob  136 Aug  1 ..", :long, 0x01, :int64, 0,
-          :string, ".",     :string, "drwxr-xr-x  4 bob bob  136 Aug  1 .", :long, 0x01, :int64, 0,
-          :string, "file2", :string, "-rw-rw-r--  1 bob bob  100 Aug  1 file2", :long, 0x01, :int64, 100)
+          :string, "..",    :string, "drwxr-xr-x  4 bob bob  136 Aug  1 ..", :long, 0x04, :long, 040755,
+          :string, ".",     :string, "drwxr-xr-x  4 bob bob  136 Aug  1 .", :long, 0x04, :long, 040755,
+          :string, "file2", :string, "-rw-rw-r--  1 bob bob  100 Aug  1 file2", :long, 0x04, :long, 0100644)
 
         channel.sends_packet(FXP_OPEN, :long, 8, :string, File.join(remote, "subdir1", "file2"), :long, 0x01, :long, 0)
         channel.sends_packet(FXP_READDIR, :long, 9, :string, "dir2")

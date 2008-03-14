@@ -191,6 +191,30 @@ module Net; module SFTP; module Protocol; module V01
       attributes[:group]
     end
 
+    # Returns true if these attributes appear to describe a directory. This
+    # is done by comparing the permissions, so if the permissions are not
+    # available, +nil+ is returned.
+    def directory?
+      return nil if permissions.nil?
+      return (permissions & 040000) == 040000
+    end
+
+    # Returns true if these attributes appear to describe a symlink. This
+    # is done by comparing the permissions, so if the permissions are not
+    # available, +nil+ is returned.
+    def symlink?
+      return nil if permissions.nil?
+      return (permissions & 020000) == 020000
+    end
+
+    # Returns true if these attributes appear to describe a regular file. This
+    # is done by comparing the permissions, so if the permissions are not
+    # available, +nil+ is returned.
+    def file?
+      return nil if permissions.nil?
+      return (permissions & 0100000) == 0100000
+    end
+
     # Convert the object to a string suitable for passing in an SFTP
     # packet. This is the raw representation of the attribute packet payload,
     # and is not intended to be human readable.
