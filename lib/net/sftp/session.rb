@@ -3,6 +3,7 @@ require 'net/sftp/constants'
 require 'net/sftp/errors'
 require 'net/sftp/protocol'
 require 'net/sftp/request'
+require 'net/sftp/operations/dir'
 require 'net/sftp/operations/upload'
 require 'net/sftp/operations/download'
 require 'net/sftp/operations/file_factory'
@@ -137,6 +138,19 @@ module Net; module SFTP
       # See Net::SFTP::Operations::FileFactory and Net::SFTP::Operations::File for more details.
       def file
         @file ||= Operations::FileFactory.new(self)
+      end
+
+      # Returns a Net::SFTP::Operations::Dir instance, which can be used to
+      # conveniently iterate over and search directories on the remote server.
+      #
+      #  sftp.dir.glob("/base/path", "*/**/*.rb") do |entry|
+      #    p entry.name
+      #  end
+      #
+      # See Net::SFTP::Operations::Dir for a more detailed discussion of how
+      # to use this.
+      def dir
+        @dir ||= Operations::Dir.new(self)
       end
 
     public # low-level SFTP operations

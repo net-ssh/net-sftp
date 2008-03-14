@@ -346,7 +346,7 @@ module Net; module SFTP; module Operations
       # Returns all directory entries for the given path, removing the '.'
       # and '..' relative paths.
       def entries_for(local)
-        Dir.entries(local).reject { |v| %w(. ..).include?(v) }
+        ::Dir.entries(local).reject { |v| %w(. ..).include?(v) }
       end
 
       # Attempts to notify the progress monitor (if one was given) about

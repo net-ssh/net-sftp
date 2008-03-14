@@ -15,6 +15,8 @@ Net::SFTP is a pure-Ruby implementation of the SFTP protocol (specifically, vers
 
 == SYNOPSIS:
 
+In a nutshell:
+
   require 'net/sftp'
 
   Net::SFTP.start('host', 'username', :password => 'password') do |sftp|
@@ -39,7 +41,14 @@ Net::SFTP is a pure-Ruby implementation of the SFTP protocol (specifically, vers
 
     # create a directory
     sftp.mkdir! "/path/to/directory"
+
+    # list the entries in a directory
+    sftp.dir.foreach("/path/to/directory") do |entry|
+      puts entry.longname
+    end
   end
+
+For the full documentation, start with Net::SFTP::Session. Also see Net::SFTP::Operations::Upload, Net::SFTP::Operations::Download, Net::SFTP::Operations::FileFactory, Net::SFTP::Operations::File, and Net::SFTP::Operations::Dir.
 
 == REQUIREMENTS:
 
@@ -52,14 +61,14 @@ If you wish to run the tests, you'll need:
 
 == INSTALL:
 
-* sudo gem install net-sftp
+* gem install net-sftp (might need sudo privileges)
 
 Or, if you prefer to do it the hard way (sans Rubygems):
 
 * tar xzf net-ssh-*.tgz
 * cd net-ssh-*
 * ruby setup.rb config
-* sudo ruby setup.rb install
+* ruby setup.rb install (might need sudo privileges)
 
 == LICENSE:
 

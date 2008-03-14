@@ -217,7 +217,7 @@ module Net; module SFTP; module Operations
 
           if entry.directory
             update_progress(:mkdir, entry.local)
-            Dir.mkdir(entry.local) unless ::File.directory?(entry.local)
+            ::Dir.mkdir(entry.local) unless ::File.directory?(entry.local)
             request = sftp.opendir(entry.remote, &method(:on_opendir))
             request[:entry] = entry
           else

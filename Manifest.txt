@@ -1,5 +1,6 @@
 lib/net/sftp/constants.rb
 lib/net/sftp/errors.rb
+lib/net/sftp/operations/dir.rb
 lib/net/sftp/operations/download.rb
 lib/net/sftp/operations/file.rb
 lib/net/sftp/operations/file_factory.rb
@@ -37,6 +38,7 @@ test/protocol/06/test_attributes.rb
 test/protocol/06/test_base.rb
 test/protocol/test_base.rb
 test/test_all.rb
+test/test_dir.rb
 test/test_download.rb
 test/test_file.rb
 test/test_file_factory.rb
