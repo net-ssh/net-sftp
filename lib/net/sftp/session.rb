@@ -816,6 +816,7 @@ module Net; module SFTP
       # request.
       def request(type, *args, &callback)
         request = Request.new(self, type, protocol.send(type, *args), &callback)
+        info { "sending #{type} packet (#{request.id})" }
         pending_requests[request.id] = request
       end
 
