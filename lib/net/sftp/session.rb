@@ -854,7 +854,7 @@ module Net; module SFTP
       def when_subsystem_started(channel, success)
         raise Net::SFTP::Exception, "could not start SFTP subsystem" unless success
 
-        trace { "sftp subsystem successfully started" }
+        debug { "sftp subsystem successfully started" }
         @state = :init
 
         channel.on_data { |c,data| input.append(data) }
@@ -868,7 +868,7 @@ module Net; module SFTP
 
       # Called when the SSH server closes the underlying channel.
       def when_channel_closed(channel)
-        trace { "sftp channel closed" }
+        debug { "sftp channel closed" }
         @channel = nil
         @state = :closed
       end
@@ -890,7 +890,7 @@ module Net; module SFTP
           input.consume!
           @packet_length = nil
 
-          trace { "received sftp packet #{packet.type} len #{packet.length}" }
+          debug { "received sftp packet #{packet.type} len #{packet.length}" }
 
           if packet.type == FXP_VERSION
             do_version(packet)
@@ -904,13 +904,13 @@ module Net; module SFTP
       # version negotiation, instantiating the appropriate Protocol instance
       # and invoking the callback given to #connect, if any.
       def do_version(packet)
-        trace { "negotiating sftp protocol version, mine is #{HIGHEST_PROTOCOL_VERSION_SUPPORTED}" }
+        debug { "negotiating sftp protocol version, mine is #{HIGHEST_PROTOCOL_VERSION_SUPPORTED}" }
 
         server_version = packet.read_long
-        trace { "server reports sftp version #{server_version}" }
+        debug { "server reports sftp version #{server_version}" }
 
         negotiated_version = [server_version, HIGHEST_PROTOCOL_VERSION_SUPPORTED].min
-        debug { "negotiated version is #{negotiated_version}" }
+        info { "negotiated version is #{negotiated_version}" }
 
         extensions = {}
         until packet.eof?
