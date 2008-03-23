@@ -56,7 +56,7 @@ For the full documentation, start with Net::SFTP::Session. Also see Net::SFTP::O
 
 If you wish to run the tests, you'll need:
 
-* Hoe
+* Echoe (if you want to use the Rakefile)
 * Mocha
 
 == INSTALL:
