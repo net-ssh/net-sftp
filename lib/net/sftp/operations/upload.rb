@@ -126,6 +126,9 @@ module Net; module SFTP; module Operations
     # The SFTP session object used by this upload instance
     attr_reader :sftp
 
+    # The properties hash for this object
+    attr_reader :properties
+
     # Instantiates a new uploader process on top of the given SFTP session.
     # +local+ is either an IO object containing data to upload, or a string
     # identifying a file or directory on the local host. +remote+ is a string
@@ -140,6 +143,7 @@ module Net; module SFTP; module Operations
       @remote = remote
       @progress = progress || options[:progress]
       @options = options
+      @properties = {}
       @active = 0
 
       self.logger = sftp.logger
@@ -183,6 +187,18 @@ module Net; module SFTP; module Operations
     def wait
       sftp.loop { active? }
       self
+    end
+
+    # Returns the property with the given name. This allows Upload instances
+    # to store their own state when used as part of a state machine.
+    def [](name)
+      @properties[name.to_sym]
+    end
+
+    # Sets the given property to the given name. This allows Upload instances
+    # to store their own state when used as part of a state machine.
+    def []=(name, value)
+      @properties[name.to_sym] = value
     end
 
     private
