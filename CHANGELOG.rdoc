@@ -1,3 +1,8 @@
+=== *unreleased*
+
+* Custom properties on Upload instances [Jamis Buck]
+
+
 === 2.0 Preview Release 1 (1.99.0) / 22 Mar 2008
 
 * Rewritten! (Never, ever, do this at home.) New and improved API.
