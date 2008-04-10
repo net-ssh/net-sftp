@@ -1,4 +1,4 @@
-=== *unreleased*
+=== 2.0 Preview Release 2 (1.99.1) / 10 Apr 2008
 
 * Custom properties on Upload instances [Jamis Buck]
 
