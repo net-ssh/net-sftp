@@ -38,16 +38,6 @@ module Net; module SFTP; module Protocol; module V04
     F_OWNERGROUP        = 0x00000080
     F_SUBSECOND_TIMES   = 0x00000100
     
-    T_REGULAR      = 1
-    T_DIRECTORY    = 2
-    T_SYMLINK      = 3
-    T_SPECIAL      = 4
-    T_UNKNOWN      = 5
-    T_SOCKET       = 6
-    T_CHAR_DEVICE  = 7
-    T_BLOCK_DEVICE = 8
-    T_FIFO         = 9
-
     # A simple struct for representing a single entry in an Access Control
     # List. (See Net::SFTP::Constants::ACE)
     ACL = Struct.new(:type, :flag, :mask, :who)
@@ -134,21 +124,6 @@ module Net; module SFTP; module Protocol; module V04
     def initialize(attributes={})
       super
       attributes[:type] ||= T_REGULAR
-    end
-
-    # Returns +true+ if #type is T_DIRECTORY.
-    def directory?
-      type == T_DIRECTORY
-    end
-
-    # Returns +true+ if #type is T_SYMLINK.
-    def symlink?
-      type == T_SYMLINK
-    end
-
-    # Returns +true+ if #type is T_REGULAR.
-    def file?
-      type == T_REGULAR
     end
 
     private

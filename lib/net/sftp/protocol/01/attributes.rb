@@ -28,7 +28,17 @@ module Net; module SFTP; module Protocol; module V01
     F_PERMISSIONS = 0x00000004
     F_ACMODTIME   = 0x00000008
     F_EXTENDED    = 0x80000000
-    
+
+    T_REGULAR      = 1
+    T_DIRECTORY    = 2
+    T_SYMLINK      = 3
+    T_SPECIAL      = 4
+    T_UNKNOWN      = 5
+    T_SOCKET       = 6
+    T_CHAR_DEVICE  = 7
+    T_BLOCK_DEVICE = 8
+    T_FIFO         = 9
+
     class <<self
       # Returns the array of attribute meta-data that defines the structure of
       # the attributes packet as described by this version of the protocol.
@@ -191,28 +201,70 @@ module Net; module SFTP; module Protocol; module V01
       attributes[:group]
     end
 
-    # Returns true if these attributes appear to describe a directory. This
-    # is done by comparing the permissions, so if the permissions are not
-    # available, +nil+ is returned.
+    # Inspects the permissions bits to determine what type of entity this
+    # attributes object represents. If will return one of the T_ constants.
+    def type
+      if    permissions & 0140000 == 0140000 then 
+        T_SOCKET
+      elsif permissions & 0120000 == 0120000 then 
+        T_SYMLINK
+      elsif permissions & 0100000 == 0100000 then
+        T_REGULAR
+      elsif permissions &  060000 ==  060000 then
+        T_BLOCK_DEVICE
+      elsif permissions &  040000 ==  040000 then
+        T_DIRECTORY
+      elsif permissions &  020000 ==  020000 then
+        T_CHAR_DEVICE
+      elsif permissions &  010000 ==  010000 then
+        T_FIFO
+      else
+        T_UNKNOWN
+      end
+    end
+
+    # Returns the type as a symbol, rather than an integer, for easier use in
+    # Ruby programs.
+    def symbolic_type
+      case type
+      when T_SOCKET       then :socket
+      when T_SYMLINK      then :symlink
+      when T_REGULAR      then :regular
+      when T_BLOCK_DEVICE then :block_device
+      when T_DIRECTORY    then :directory
+      when T_CHAR_DEVICE  then :char_device
+      when T_FIFO         then :fifo
+      when T_SPECIAL      then :special
+      when T_UNKNOWN      then :unknown
+      else raise NotImplementedError, "unknown file type #{type} (bug?)"
+      end
+    end
+
+    # Returns true if these attributes appear to describe a directory.
     def directory?
-      return nil if permissions.nil?
-      return (permissions & 040000) == 040000
+      case type
+      when T_DIRECTORY then true
+      when T_UNKNOWN   then nil
+      else false
+      end
     end
 
-    # Returns true if these attributes appear to describe a symlink. This
-    # is done by comparing the permissions, so if the permissions are not
-    # available, +nil+ is returned.
+    # Returns true if these attributes appear to describe a symlink.
     def symlink?
-      return nil if permissions.nil?
-      return (permissions & 020000) == 020000
+      case type
+      when T_SYMLINK then true
+      when T_UNKNOWN then nil
+      else false
+      end
     end
 
-    # Returns true if these attributes appear to describe a regular file. This
-    # is done by comparing the permissions, so if the permissions are not
-    # available, +nil+ is returned.
+    # Returns true if these attributes appear to describe a regular file.
     def file?
-      return nil if permissions.nil?
-      return (permissions & 0100000) == 0100000
+      case type
+      when T_REGULAR then true
+      when T_UNKNOWN then nil
+      else false
+      end
     end
 
     # Convert the object to a string suitable for passing in an SFTP
