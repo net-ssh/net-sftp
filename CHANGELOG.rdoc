@@ -1,5 +1,7 @@
 === *unreleased*
 
+* Add #abort! method to Upload and Download operations [Jamis Buck]
+
 * More complete support for file-type detection in protocol versions 1-3 [Jamis Buck]
 
 

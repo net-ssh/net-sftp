@@ -170,6 +170,12 @@ module Net; module SFTP; module Operations
       @active > 0 || stack.any?
     end
 
+    # Forces the transfer to stop.
+    def abort!
+      @active = 0
+      @stack.clear
+    end
+
     # Runs the SSH event loop for as long as the downloader is active (see
     # #active?). This can be used to block until the download completes.
     def wait

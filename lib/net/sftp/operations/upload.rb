@@ -183,6 +183,13 @@ module Net; module SFTP; module Operations
       @active > 0 || @stack.any?
     end
 
+    # Forces the transfer to stop.
+    def abort!
+      @active = 0
+      @stack.clear
+      @uploads.clear
+    end
+
     # Blocks until the upload has completed.
     def wait
       sftp.loop { active? }
