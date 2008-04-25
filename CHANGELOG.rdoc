@@ -1,5 +1,7 @@
 === *unreleased*
 
+* Allow custom properties to be set on upload/download initiation via the :properties option [Jamis Buck]
+
 * Custom properties on Download instances [Jamis Buck]
 
 * Add #abort! method to Upload and Download operations [Jamis Buck]

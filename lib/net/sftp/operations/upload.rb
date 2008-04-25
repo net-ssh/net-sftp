@@ -143,7 +143,7 @@ module Net; module SFTP; module Operations
       @remote = remote
       @progress = progress || options[:progress]
       @options = options
-      @properties = {}
+      @properties = options[:properties] || {}
       @active = 0
 
       self.logger = sftp.logger
