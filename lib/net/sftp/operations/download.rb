@@ -132,6 +132,9 @@ module Net; module SFTP; module Operations
     # The SFTP session instance that drives this download.
     attr_reader :sftp
 
+    # The properties hash for this object
+    attr_reader :properties
+
     # Instantiates a new downloader process on top of the given SFTP session.
     # +local+ is either an IO object that should receive the data, or a string
     # identifying the target file or directory on the local host. +remote+ is
@@ -147,6 +150,7 @@ module Net; module SFTP; module Operations
       @progress = progress || options[:progress]
       @options = options
       @active = 0
+      @properties = {}
 
       self.logger = sftp.logger
 
@@ -181,6 +185,18 @@ module Net; module SFTP; module Operations
     def wait
       sftp.loop { active? }
       self
+    end
+
+    # Returns the property with the given name. This allows Download instances
+    # to store their own state when used as part of a state machine.
+    def [](name)
+      @properties[name.to_sym]
+    end
+
+    # Sets the given property to the given name. This allows Download instances
+    # to store their own state when used as part of a state machine.
+    def []=(name, value)
+      @properties[name.to_sym] = value
     end
 
     private
