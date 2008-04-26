@@ -1,5 +1,7 @@
 === *unreleased*
 
+* Make Net::SSH::Connection::Session#sftp accept an argument determining whether or not to block while the SFTP subsystem initializes (defaults to true) [Jamis Buck]
+
 * Allow Session#connect to be useful even in the open/opening states by invoking or queuing the callback block [Jamis Buck]
 
 * Allow custom properties to be set on upload/download initiation via the :properties option [Jamis Buck]

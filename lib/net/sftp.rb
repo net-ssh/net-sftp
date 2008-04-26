@@ -50,7 +50,11 @@ class Net::SSH::Connection::Session
   #     ssh.sftp.upload!("/local/file.tgz", "/remote/file.tgz")
   #     ssh.exec! "cd /some/path && tar xf /remote/file.tgz && rm /remote/file.tgz"
   #   end
-  def sftp
-    @sftp ||= Net::SFTP::Session.new(self).connect!
+  def sftp(wait=true)
+    @sftp ||= begin
+      sftp = Net::SFTP::Session.new(self)
+      sftp.connect! if wait
+      sftp
+    end
   end
 end
