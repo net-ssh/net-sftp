@@ -746,8 +746,11 @@ module Net; module SFTP
       end
 
       # Attempts to establish an SFTP connection over the SSH session given when
-      # this object was instantiated. If the object is already open (or opening),
-      # this does nothing.
+      # this object was instantiated. If the object is already open, this will
+      # simply execute the given block (if any), passing the SFTP session itself
+      # as argument. If the session is currently being opened, this will add
+      # the given block to the list of callbacks, to be executed when the session
+      # is fully open.
       #
       # This method does not block, and will return immediately. If you pass a
       # block to it, that block will be invoked when the connection has been
@@ -760,12 +763,20 @@ module Net; module SFTP
       # If you just want to block until the connection is ready, see the #connect!
       # method.
       def connect(&block)
-        return unless state == :closed
-        @state = :opening
-        @channel = session.open_channel(&method(:when_channel_confirmed))
-        @packet_length = nil
-        @protocol = nil
-        @on_ready = block
+        case state
+        when :open
+          block.call(self) if block
+        when :closed
+          @state = :opening
+          @channel = session.open_channel(&method(:when_channel_confirmed))
+          @packet_length = nil
+          @protocol = nil
+          @on_ready = Array(block)
+        else # opening
+          @on_ready << block if block
+        end
+
+        self
       end
 
       # Same as the #connect method, but blocks until the SFTP connection has
@@ -924,7 +935,8 @@ module Net; module SFTP
         @pending_requests = {}
 
         @state = :open
-        @on_ready.call(self) if @on_ready
+        @on_ready.each { |callback| callback.call(self) }
+        @on_ready = nil
       end
 
       # Parses the packet, finds the associated Request instance, and tells

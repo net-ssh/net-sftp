@@ -1,5 +1,7 @@
 === *unreleased*
 
+* Allow Session#connect to be useful even in the open/opening states by invoking or queuing the callback block [Jamis Buck]
+
 * Allow custom properties to be set on upload/download initiation via the :properties option [Jamis Buck]
 
 * Custom properties on Download instances [Jamis Buck]
