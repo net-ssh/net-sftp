@@ -13,7 +13,7 @@ class DownloadTest < Net::SFTP::TestCase
     expect_file_transfer(remote, text)
 
     file = StringIO.new
-    File.stubs(:open).with(local, "w").returns(file)
+    File.stubs(:open).with(local, "wb").returns(file)
 
     assert_scripted_command { sftp.download(remote, local) }
     assert_equal text, file.string
@@ -143,7 +143,7 @@ class DownloadTest < Net::SFTP::TestCase
       end
 
       file = StringIO.new
-      File.stubs(:open).with(local, "w").returns(file)
+      File.stubs(:open).with(local, "wb").returns(file)
 
       return file
     end
@@ -244,8 +244,8 @@ class DownloadTest < Net::SFTP::TestCase
 
       file1 = StringIO.new
       file2 = StringIO.new
-      File.expects(:open).with(File.join(local, "file1"), "w").returns(file1)
-      File.expects(:open).with(File.join(local, "subdir1", "file2"), "w").returns(file2)
+      File.expects(:open).with(File.join(local, "file1"), "wb").returns(file1)
+      File.expects(:open).with(File.join(local, "subdir1", "file2"), "wb").returns(file2)
 
       [file1, file2]
     end

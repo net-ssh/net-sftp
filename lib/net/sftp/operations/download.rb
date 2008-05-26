@@ -307,7 +307,7 @@ module Net; module SFTP; module Operations
         raise "open #{entry.remote}: #{response}" unless response.ok?
 
         entry.handle = response[:handle]
-        entry.sink = entry.local.respond_to?(:write) ? entry.local : ::File.open(entry.local, "w")
+        entry.sink = entry.local.respond_to?(:write) ? entry.local : ::File.open(entry.local, "wb")
         entry.offset = 0
 
         download_next_chunk(entry)

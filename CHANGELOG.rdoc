@@ -1,3 +1,8 @@
+=== *unreleased*
+
+* Open files in binary mode to appease Windows [Jamis Buck]
+
+
 === 2.0.0 / 1 May 2008
 
 * Make Net::SSH::Connection::Session#sftp accept an argument determining whether or not to block while the SFTP subsystem initializes (defaults to true) [Jamis Buck]

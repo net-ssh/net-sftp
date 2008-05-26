@@ -276,7 +276,7 @@ module Net; module SFTP; module Operations
           file = local
           name = options[:name] || "<memory>"
         else
-          file = ::File.open(local)
+          file = ::File.open(local, "rb")
           name = local
         end
 
