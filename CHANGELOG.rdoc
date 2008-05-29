@@ -1,4 +1,4 @@
-=== *unreleased*
+=== 2.0.1 / 29 May 2008
 
 * Open files in binary mode to appease Windows [Jamis Buck]
 
