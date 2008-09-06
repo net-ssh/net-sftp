@@ -2,15 +2,13 @@ require 'test/unit'
 require 'mocha'
 
 begin
-  gem 'net-ssh', ">= 2.0.0"
   require 'net/ssh'
+  require 'net/ssh/version'
+  raise LoadError, "wrong version" unless Net::SSH::Version::STRING >= '1.99.0'
 rescue LoadError
-  $LOAD_PATH.unshift "#{File.dirname(__FILE__)}/../../net-ssh/lib"
-
   begin
+    gem 'net-ssh', ">= 2.0.0"
     require 'net/ssh'
-    require 'net/ssh/version'
-    raise LoadError, "wrong version" unless Net::SSH::Version::STRING >= '1.99.0'
   rescue LoadError => e
     abort "could not load net/ssh v2 (#{e.inspect})"
   end

@@ -11,7 +11,11 @@ class Protocol::V04::TestName < Net::SFTP::TestCase
   end
 
   def teardown
-    ENV['TZ'] = @save_tz
+    if @save_tz
+      ENV['TZ'] = @save_tz
+    else
+      ENV.delete('TZ')
+    end
   end
 
   def test_directory?
