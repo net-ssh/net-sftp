@@ -21,7 +21,7 @@ Echoe.new('net-sftp', version) do |p|
   p.summary          = "A pure Ruby implementation of the SFTP client protocol"
   p.url              = "http://net-ssh.rubyforge.org/sftp"
 
-  p.dependencies     = ["net-ssh >=1.99.1"]
+  p.dependencies     = ["net-ssh >=2.0.9"]
 
   p.need_zip         = true
   p.include_rakefile = true

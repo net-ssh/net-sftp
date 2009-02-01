@@ -31,11 +31,21 @@ module Net
       session = Net::SSH.start(host, user, options)
       sftp = Net::SFTP::Session.new(session, &block).connect!
 
-      sftp.loop if block_given?
+      if block_given?
+        sftp.loop
+        session.close
+        return nil
+      end
 
       sftp
-    ensure
-      session.close if session && block_given?
+    rescue Exception => anything
+      begin
+        session.terminate!
+      rescue Exception
+        # swallow exceptions that occur while trying to shutdown
+      end
+
+      raise anything
     end
   end
 

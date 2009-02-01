@@ -1,3 +1,8 @@
+=== (unreleased)
+
+* Avoid using 'ensure' in Net::SFTP.start since it causes unfriendly behavior when exceptions are raised [Jamis Buck]
+
+
 === 2.0.1 / 29 May 2008
 
 * Open files in binary mode to appease Windows [Jamis Buck]
