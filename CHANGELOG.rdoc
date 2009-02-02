@@ -1,4 +1,4 @@
-=== (unreleased)
+=== 2.0.2 / 1 Feb 2009
 
 * Avoid using 'ensure' in Net::SFTP.start since it causes unfriendly behavior when exceptions are raised [Jamis Buck]
 
