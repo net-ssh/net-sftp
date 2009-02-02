@@ -38,9 +38,9 @@ module Net
       end
 
       sftp
-    rescue Exception => anything
+    rescue Object => anything
       begin
-        session.terminate!
+        session.shutdown!
       rescue Exception
         # swallow exceptions that occur while trying to shutdown
       end
