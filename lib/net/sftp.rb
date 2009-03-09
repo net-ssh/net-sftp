@@ -40,7 +40,7 @@ module Net
       sftp
     rescue Object => anything
       begin
-        session.shutdown!
+        session and session.shutdown!
       rescue Exception
         # swallow exceptions that occur while trying to shutdown
       end
