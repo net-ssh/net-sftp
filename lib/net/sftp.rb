@@ -40,8 +40,8 @@ module Net
       sftp
     rescue Object => anything
       begin
-        session and session.shutdown!
-      rescue Exception
+        session.shutdown!
+      rescue ::Exception
         # swallow exceptions that occur while trying to shutdown
       end
 
