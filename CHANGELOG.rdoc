@@ -1,6 +1,6 @@
 === (unreleased)
 
-* Don't try to shutdown the session on error unless the session was successfully opened [Scott Tadman]
+* Reference the correct Exception class when rescuing errors [Scott Tadman]
 
 
 === 2.0.2 / 1 Feb 2009
