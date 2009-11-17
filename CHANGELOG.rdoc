@@ -1,4 +1,4 @@
-=== (unreleased)
+=== 2.0.3 / 17 Nov 2009
 
 * Reference the correct Exception class when rescuing errors [Scott Tadman]
 
