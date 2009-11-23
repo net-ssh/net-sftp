@@ -1,3 +1,8 @@
+=== 2.0.4 / 23 Nov 2009
+
+* Fixed frozen string issue in StatusException.message [appoxy]
+
+
 === 2.0.3 / 17 Nov 2009
 
 * Reference the correct Exception class when rescuing errors [Scott Tadman]
