@@ -30,7 +30,7 @@ module Net; module SFTP
     # Override the default message format, to include the code and
     # description.
     def message
-      m = super
+      m = super.dup
       m << " #{text}" if text
       m << " (#{code}, #{description.inspect})"
     end
