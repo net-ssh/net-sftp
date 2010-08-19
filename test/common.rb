@@ -1,5 +1,6 @@
 require 'test/unit'
 require 'mocha'
+require 'stringio'
 
 begin
   require 'net/ssh'

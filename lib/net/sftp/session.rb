@@ -120,6 +120,7 @@ module Net; module SFTP
       # and returns the result as a string; otherwise, returns the
       # Net::SFTP::Operations::Download instance.
       def download!(remote, local=nil, options={}, &block)
+        require 'stringio' unless defined?(StringIO)
         destination = local || StringIO.new
         result = download(remote, destination, options, &block).wait
         local ? result : destination.string

@@ -141,7 +141,7 @@ class DownloadTest < Net::SFTP::TestCase
         channel.sends_packet(FXP_CLOSE, :long, 12, :string, "handle")
         channel.gets_packet(FXP_STATUS, :long, 12, :long, 0)
       end
-
+      
       file = StringIO.new
       File.stubs(:open).with(local, "wb").returns(file)
 
