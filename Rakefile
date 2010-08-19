@@ -17,7 +17,7 @@ Echoe.new('net-sftp', version) do |p|
   p.changelog        = "CHANGELOG.rdoc"
 
   p.author           = "Jamis Buck"
-  p.email            = "jamis@jamisbuck.org"
+  p.email            = "netsftp@solutious.com"
   p.summary          = "A pure Ruby implementation of the SFTP client protocol"
   p.url              = "http://net-ssh.rubyforge.org/sftp"
 
