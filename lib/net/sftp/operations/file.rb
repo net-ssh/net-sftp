@@ -1,5 +1,4 @@
 require 'net/ssh/loggable'
-require 'net/sftp/operations/file'
 
 module Net; module SFTP; module Operations
 
