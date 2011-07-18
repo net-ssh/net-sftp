@@ -94,12 +94,12 @@ module Net; module SFTP
       #
       #   uploader = sftp.upload("/local/path", "/remote/path")
       #   uploader.wait
-      def upload(local, remote, options={}, &block)
+      def upload(local, remote = File.basename(local), options={}, &block)
         Operations::Upload.new(self, local, remote, options, &block)
       end
 
       # Identical to #upload, but blocks until the upload is complete.
-      def upload!(local, remote, options={}, &block)
+      def upload!(local, remote = File.basename(local), options={}, &block)
         upload(local, remote, options, &block).wait
       end
 

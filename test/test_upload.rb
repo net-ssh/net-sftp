@@ -10,6 +10,20 @@ class UploadTest < Net::SFTP::TestCase
     assert_scripted_command { sftp.upload("/path/to/local", "/path/to/remote") }
   end
 
+  def test_upload_file_without_remote_uses_filename_of_local_file
+    expect_file_transfer("/path/to/local", "local", "here are the contents")
+
+    assert_scripted_command do
+      sftp.upload("/path/to/local") { |*args| record_progress(args) }
+    end
+
+    assert_progress_reported_open(:remote => "local")
+    assert_progress_reported_put(0, "here are the contents", :remote => "local")
+    assert_progress_reported_close(:remote => "local")
+    assert_progress_reported_finish
+    assert_no_more_reported_events
+  end
+
   def test_upload_file_with_progress_should_report_progress
     expect_file_transfer("/path/to/local", "/path/to/remote", "here are the contents")
 
