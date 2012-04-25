@@ -318,7 +318,6 @@ module Net; module SFTP; module Operations
         request = sftp.read(entry.handle, entry.offset, read_size, &method(:on_read))
         request[:entry] = entry
         request[:offset] = entry.offset
-        entry.offset += read_size
       end
 
       # Called when a read from a file finishes. If the read was successful
@@ -335,6 +334,7 @@ module Net; module SFTP; module Operations
         elsif !response.ok?
           raise "read #{entry.remote}: #{response}"
         else
+          entry.offset += response[:data].bytesize
           update_progress(:get, entry, response.request[:offset], response[:data])
           entry.sink.write(response[:data])
           download_next_chunk(entry)
