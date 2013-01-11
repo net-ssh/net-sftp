@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'mocha'
+require 'mocha/setup'
 require 'stringio'
 
 begin
