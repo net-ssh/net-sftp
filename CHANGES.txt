@@ -1,4 +1,8 @@
 
+=== 2.0.6 / 06 Feb 2013
+
+* Added public cert. All gem releases are now signed. See INSTALL in readme.
+
 === 2.0.5 / 19 Aug 2010
 
 * Fixed missing StringIO exception in download! [Toby Bryans, Delano Mandelbaum]

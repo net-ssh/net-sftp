@@ -1,6 +1,12 @@
 = Net::SFTP
 
-* http://net-ssh.rubyforge.org/sftp
+* Docs: http://net-ssh.github.com/net-sftp
+* Issues: https://github.com/net-ssh/net-sftp/issues
+* Codes: https://github.com/net-ssh/net-sftp
+* Email: net-ssh@solutious.com
+
+<em>As of v2.0.6, all gem releases are signed. See INSTALL.</em>
+
 
 == DESCRIPTION:
 
@@ -62,6 +68,19 @@ If you wish to run the tests, you'll need:
 == INSTALL:
 
 * gem install net-sftp (might need sudo privileges)
+
+However, in order to be sure the code you're installing hasn't been tampered with, it's recommended that you verify the signiture[http://docs.rubygems.org/read/chapter/21]. To do this, you need to add my public key as a trusted certificate (you only need to do this once):
+
+    # Add the public key as a trusted certificate
+    # (You only need to do this once)
+    $ curl -O https://raw.github.com/net-ssh/net-ssh/master/gem-public_cert.pem
+    $ gem cert --add gem-public_cert.pem
+
+Then, when install the gem, do so with high security:
+
+    $ gem install net-ssh -P HighSecurity
+
+If you don't add the public key, you'll see an error like "Couldn't verify data signature". If you're still having trouble let me know and I'll give you a hand.
 
 Or, if you prefer to do it the hard way (sans Rubygems):
 
