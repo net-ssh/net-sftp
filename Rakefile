@@ -23,7 +23,7 @@ begin
     s.homepage = "https://github.com/net-ssh/net-sftp"
     s.authors = ["Jamis Buck", "Delano Mandelbaum"]
 
-    s.add_dependency 'net-ssh', ">=2.6.4"
+    s.add_dependency 'net-ssh', ">=2.6.5"
 
     s.add_development_dependency 'test-unit'
     s.add_development_dependency 'mocha'
