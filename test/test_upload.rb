@@ -110,7 +110,7 @@ class UploadTest < Net::SFTP::TestCase
     prepare_directory
 
     assert_scripted_command do
-      sftp.upload("/path/to/local", "/path/to/remote")
+      sftp.upload("/path/to/local", "/path/to/remote", :mkdir => true)
     end
   end
 
@@ -118,7 +118,7 @@ class UploadTest < Net::SFTP::TestCase
     prepare_directory
 
     assert_scripted_command do
-      sftp.upload("/path/to/local", "/path/to/remote") { |*args| record_progress(args) }
+      sftp.upload("/path/to/local", "/path/to/remote", :mkdir => true) { |*args| record_progress(args) }
     end
 
     assert_progress_reported_open(:remote => "/path/to/remote/file1")

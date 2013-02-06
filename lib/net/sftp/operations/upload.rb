@@ -31,7 +31,7 @@ module Net; module SFTP; module Operations
   # and their contents, recursively, to "/path/to/remote" on the remote server.
   #
   # For uploading a directory without creating it, do
-  # sftp.upload!("/path/to/directory", "/path/to/remote", :create_dir => false)
+  # sftp.upload!("/path/to/directory", "/path/to/remote", :mkdir => false)
   #
   # If you want to send data to a file on the remote server, but the data is
   # in memory, you can pass an IO object and upload it's contents:
@@ -160,7 +160,7 @@ module Net; module SFTP; module Operations
         @remote_cwd = remote
 
         @active += 1
-        if @options[:create_dir]
+        if @options[:mkdir]
           sftp.mkdir(remote) do |response|
             @active -= 1
             raise StatusException.new(response, "mkdir `#{remote}'") unless response.ok?
