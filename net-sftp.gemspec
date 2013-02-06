@@ -14,10 +14,12 @@ Gem::Specification.new do |s|
   s.description = "A pure Ruby implementation of the SFTP client protocol"
   s.email = "net-ssh@solutious.com"
   s.extra_rdoc_files = [
+    "LICENSE.txt",
     "README.rdoc"
   ]
   s.files = [
     "CHANGES.txt",
+    "LICENSE.txt",
     "Manifest",
     "README.rdoc",
     "Rakefile",
