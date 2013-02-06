@@ -38,6 +38,11 @@ rescue LoadError
   puts "Jeweler (or a dependency) not available. Install it with: sudo gem install jeweler"
 end
 
+require 'rake/testtask'
+Rake::TestTask.new do |t|
+  t.libs = ["lib", "test"]
+end
+
 extra_files = %w[LICENSE.txt THANKS.txt CHANGES.txt ]
 RDoc::Task.new do |rdoc|
   rdoc.rdoc_dir = "rdoc"
