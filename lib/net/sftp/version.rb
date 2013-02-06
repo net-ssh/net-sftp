@@ -5,8 +5,8 @@ module Net; module SFTP
   # Describes the current version of the Net::SFTP library.
   class Version < Net::SSH::Version
     MAJOR = 2
-    MINOR = 0
-    TINY  = 6
+    MINOR = 1
+    TINY  = 0
 
     # The current version, as a Version instance
     CURRENT = new(MAJOR, MINOR, TINY)
