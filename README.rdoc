@@ -78,7 +78,7 @@ However, in order to be sure the code you're installing hasn't been tampered wit
 
 Then, when install the gem, do so with high security:
 
-    $ gem install net-ssh -P HighSecurity
+    $ gem install net-sftp -P HighSecurity
 
 If you don't add the public key, you'll see an error like "Couldn't verify data signature". If you're still having trouble let me know and I'll give you a hand.
 
