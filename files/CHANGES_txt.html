@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang='en'>
+  <head>
+    <title>CHANGES.txt</title>
+    <meta content='text/html; charset=US-ASCII' http-equiv='Content-Type'>
+    <link href='../css/style.css' media='screen' rel='stylesheet' type='text/css'>
+    <script type='text/javascript'>
+      //<![CDATA[
+        function popupCode(url) {
+          window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+        }
+        
+        function toggleCode(id) {
+          var code = document.getElementById(id)
+        
+          code.style.display = code.style.display != 'block' ? 'block' : 'none'
+          return true
+        }
+        
+        // Make codeblocks hidden by default
+        document.writeln('<' + 'style type="text/css">.method .source pre { display: none }<\/style>')
+      //]]>
+    </script>
+  </head>
+  <body class='page'>
+    <div class='file' id='wrapper'>
+      <div class='header'>
+        <h1 class='name'>CHANGES.txt</h1>
+        <div class='paths'>
+          CHANGES.txt
+        </div>
+        <div class='last-update'>
+          Last Update:
+          <span class='datetime'>2013-02-06 07:20:39 -0800</span>
+        </div>
+      </div>
+      <div id='content'>
+        <div id='text'>
+          <div id='description'>
+            
+            <h3 id="label-2.1.0+%2F+06+Feb+2013">2.1.0 / 06 Feb 2013</h3>
+            <ul><li>
+            <p>Added public cert. All gem releases are now signed. See INSTALL in readme.</p>
+            </li><li>
+            <p>Remove self-require, it causes a warning in Ruby 1.9.2. [jbarnette]</p>
+            </li><li>
+            <p>Allow for upload to use the filename of the local file by default
+            [czarneckid]</p>
+            </li><li>
+            <p>Properly handle receiving less data than requested. [thedarkone]</p>
+            </li><li>
+            <p>Added option to create directory on directory upload [Pablo Merino]</p>
+            </li><li>
+            <p>Remove a warnings in tests [kachick]</p>
+            </li></ul>
+            
+            <h3 id="label-2.0.5+%2F+19+Aug+2010">2.0.5 / 19 Aug 2010</h3>
+            <ul><li>
+            <p>Fixed missing StringIO exception in download! [Toby Bryans, Delano
+            Mandelbaum]</p>
+            </li></ul>
+            
+            <h3 id="label-2.0.4+%2F+23+Nov+2009">2.0.4 / 23 Nov 2009</h3>
+            <ul><li>
+            <p>Fixed frozen string issue in StatusException.message [appoxy]</p>
+            </li></ul>
+            
+            <h3 id="label-2.0.3+%2F+17+Nov+2009">2.0.3 / 17 Nov 2009</h3>
+            <ul><li>
+            <p>Reference the correct Exception class when rescuing errors [Scott Tadman]</p>
+            </li></ul>
+            
+            <h3 id="label-2.0.2+%2F+1+Feb+2009">2.0.2 / 1 Feb 2009</h3>
+            <ul><li>
+            <p>Avoid using 'ensure' in <a
+            href="../classes/Net/SFTP.html#method-c-start">Net::SFTP.start</a> since it
+            causes unfriendly behavior when exceptions are raised [Jamis Buck]</p>
+            </li></ul>
+            
+            <h3 id="label-2.0.1+%2F+29+May+2008">2.0.1 / 29 May 2008</h3>
+            <ul><li>
+            <p>Open files in binary mode to appease Windows [Jamis Buck]</p>
+            </li></ul>
+            
+            <h3 id="label-2.0.0+%2F+1+May+2008">2.0.0 / 1 May 2008</h3>
+            <ul><li>
+            <p>Make <a
+            href="../classes/Net/SSH/Connection/Session.html#method-i-sftp">Net::SSH::Connection::Session#sftp</a>
+            accept an argument determining whether or not to block while the SFTP
+            subsystem initializes (defaults to true) [Jamis Buck]</p>
+            </li><li>
+            <p>Allow Session#connect to be useful even in the open/opening states by
+            invoking or queuing the callback block [Jamis Buck]</p>
+            </li><li>
+            <p>Allow custom properties to be set on upload/download initiation via the
+            :properties option [Jamis Buck]</p>
+            </li><li>
+            <p>Custom properties on Download instances [Jamis Buck]</p>
+            </li><li>
+            <p>Add abort! method to Upload and Download operations [Jamis Buck]</p>
+            </li><li>
+            <p>More complete support for file-type detection in protocol versions 1-3
+            [Jamis Buck]</p>
+            </li></ul>
+            
+            <h3 id="label-2.0+Preview+Release+2+%281.99.1%29+%2F+10+Apr+2008">2.0 Preview Release 2 (1.99.1) / 10 Apr 2008</h3>
+            <ul><li>
+            <p>Custom properties on Upload instances [Jamis Buck]</p>
+            </li></ul>
+            
+            <h3 id="label-2.0+Preview+Release+1+%281.99.0%29+%2F+22+Mar+2008">2.0 Preview Release 1 (1.99.0) / 22 Mar 2008</h3>
+            <ul><li>
+            <p>Rewritten! (Never, ever, do this at home.) New and improved API.</p>
+            </li></ul>
+          </div>
+          <div id='context'>
+          </div>
+        </div>
+      </div>
+      <div id='footer-push'></div>
+    </div>
+    <div id='footer'>
+      <a target="docwin" href="http://github.com/mislav/hanna/tree/master"><strong>Hanna</strong> RDoc template</a>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang='en'>
+  <head>
+    <title>Net::SFTP::Protocol::V04::Attributes</title>
+    <meta content='text/html; charset=US-ASCII' http-equiv='Content-Type'>
+    <link href='../../../../../css/style.css' media='screen' rel='stylesheet' type='text/css'>
+    <script type='text/javascript'>
+      //<![CDATA[
+        function popupCode(url) {
+          window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+        }
+        
+        function toggleCode(id) {
+          var code = document.getElementById(id)
+        
+          code.style.display = code.style.display != 'block' ? 'block' : 'none'
+          return true
+        }
+        
+        // Make codeblocks hidden by default
+        document.writeln('<' + 'style type="text/css">.method .source pre { display: none }<\/style>')
+      //]]>
+    </script>
+  </head>
+  <body class='page'>
+    <div class='class' id='wrapper'>
+      <div class='header'>
+        <h1 class='name'>
+          <span class='type'>class</span>
+          Net::SFTP::Protocol::V04::Attributes
+        </h1>
+        <ol class='paths'>
+          <li>
+            <a target="docwin" href="../../../../../files/lib/net/sftp/protocol/04/attributes_rb.html">lib/net/sftp/protocol/04/attributes.rb</a>
+          </li>
+        </ol>
+        <div class='parent'>
+          Parent:
+          <strong><a target="docwin" href="../V04.html">V04</a></strong>
+        </div>
+      </div>
+      <div id='content'>
+        <div id='text'>
+          <div id='description'>
+            
+            <p>A class representing the attributes of a file or directory on the server.
+            It may be used to specify new attributes, or to query existing attributes.
+            This particular class is specific to versions 4 and 5 of the <a
+            href="../../../SFTP.html">SFTP</a> protocol.</p>
+            
+            <p>To specify new attributes, just pass a hash as the argument to the
+            constructor. The following keys are supported:</p>
+            <ul><li><dl class="rdoc-list note-list"><dt>:type
+            <dd>
+            <p>the type of the item (integer, one of the T_ constants)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:size
+            <dd>
+            <p>the size of the item (integer)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:uid
+            <dd>
+            <p>the user-id that owns the file (integer)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:gid
+            <dd>
+            <p>the group-id that owns the file (integer)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:owner
+            <dd>
+            <p>the name of the user that owns the file (string)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:group
+            <dd>
+            <p>the name of the group that owns the file (string)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:permissions
+            <dd>
+            <p>the permissions on the file (integer, e.g. 0755)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:atime
+            <dd>
+            <p>the access time of the file (integer, seconds since epoch)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:<a href="Attributes.html#attribute-i-atime_nseconds">#atime_nseconds</a>
+            <dd>
+            <p>the nanosecond component of atime (integer)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:createtime
+            <dd>
+            <p>the time at which the file was created (integer, seconds since epoch)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:<a href="Attributes.html#attribute-i-createtime_nseconds">#createtime_nseconds</a>
+            <dd>
+            <p>the nanosecond component of createtime (integer)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:mtime
+            <dd>
+            <p>the modification time of the file (integer, seconds since epoch)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:<a href="Attributes.html#attribute-i-mtime_nseconds">#mtime_nseconds</a>
+            <dd>
+            <p>the nanosecond component of mtime (integer)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:acl
+            <dd>
+            <p>an array of <a href="Attributes.html#ACL">ACL</a> entries for the item</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:extended
+            <dd>
+            <p>a hash of name/value pairs identifying extended info</p>
+            </dd></dl>
+            </li></ul>
+            
+            <p>Likewise, when the server sends an <a href="Attributes.html">Attributes</a>
+            object, all of the above attributes are exposed as methods (though not all
+            will be set with non-nil values from the server).</p>
+          </div>
+          <div id='method-list'>
+            <h2>Methods</h2>
+            <h3>Public Class</h3>
+            <ol>
+              <li><a target="docwin" href="#method-c-new">new</a></li>
+            </ol>
+            <h3>Public Instance</h3>
+            <ol>
+              <li><a target="docwin" href="#attribute-i-acl">acl</a></li>
+              <li><a target="docwin" href="#attribute-i-atime_nseconds">atime_nseconds</a></li>
+              <li><a target="docwin" href="#attribute-i-createtime">createtime</a></li>
+              <li><a target="docwin" href="#attribute-i-createtime_nseconds">createtime_nseconds</a></li>
+              <li><a target="docwin" href="#attribute-i-group">group</a></li>
+              <li><a target="docwin" href="#attribute-i-mtime_nseconds">mtime_nseconds</a></li>
+              <li><a target="docwin" href="#attribute-i-owner">owner</a></li>
+              <li><a target="docwin" href="#attribute-i-type">type</a></li>
+            </ol>
+          </div>
+          <div id='context'>
+          </div>
+          <div id='section'>
+            <div id='constants-list'>
+              <h2>Constants</h2>
+              <div class='name-list'>
+                <table summary='Constants'>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>ACL</td>
+                    <td>=</td>
+                    <td class='context-item-value'>Struct.new(:type, :flag, :mask, :who)</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>A simple struct for representing a single entry in an Access Control List.
+                      (See <a href="../../Constants/ACE.html">Net::SFTP::Constants::ACE</a>)</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>F_ACCESSTIME</td>
+                    <td>=</td>
+                    <td class='context-item-value'>0x00000008</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>F_ACL</td>
+                    <td>=</td>
+                    <td class='context-item-value'>0x00000040</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>F_CREATETIME</td>
+                    <td>=</td>
+                    <td class='context-item-value'>0x00000010</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>F_MODIFYTIME</td>
+                    <td>=</td>
+                    <td class='context-item-value'>0x00000020</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>F_OWNERGROUP</td>
+                    <td>=</td>
+                    <td class='context-item-value'>0x00000080</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>F_SUBSECOND_TIMES</td>
+                    <td>=</td>
+                    <td class='context-item-value'>0x00000100</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div id='attribute-list'>
+              <h2 class='section-bar'>Attributes</h2>
+              <div class='name-list'>
+                <table>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-acl'>acl</a>
+                    </td>
+                    <td class='context-item-value'>[RW]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The array of access control entries for this item.</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-atime_nseconds'>atime_nseconds</a>
+                    </td>
+                    <td class='context-item-value'>[RW]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The nanosecond component of the access time.</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-createtime'>createtime</a>
+                    </td>
+                    <td class='context-item-value'>[RW]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The creation time of the remote item, in seconds since the epoch.</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-createtime_nseconds'>createtime_nseconds</a>
+                    </td>
+                    <td class='context-item-value'>[RW]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The nanosecond component of the creation time.</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-group'>group</a>
+                    </td>
+                    <td class='context-item-value'>[W]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The group of the item on the remote server, as a string.</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-mtime_nseconds'>mtime_nseconds</a>
+                    </td>
+                    <td class='context-item-value'>[RW]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The nanosecond component of the modification time.</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-owner'>owner</a>
+                    </td>
+                    <td class='context-item-value'>[W]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The owner of the item on the remote server, as a string.</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-type'>type</a>
+                    </td>
+                    <td class='context-item-value'>[RW]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The type of the item on the remote server. Must be one of the T_*
+                      constants.</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div id='methods'>
+              <h2>Public Class methods</h2>
+              <div class='method public-class' id='method-method-c-new'>
+                <a name='method-c-new'></a>
+                <div class='synopsis'>
+                  <span class='name'>new</span>
+                  <span class='arguments'>(attributes={})</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Create a new <a href="Attributes.html">Attributes</a> instance with the
+                  given attributes. The following keys are supported:</p>
+                  <ul><li><dl class="rdoc-list note-list"><dt>:type
+                  <dd>
+                  <p>the type of the item (integer, one of the T_ constants)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:size
+                  <dd>
+                  <p>the size of the item (integer)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:uid
+                  <dd>
+                  <p>the user-id that owns the file (integer)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:gid
+                  <dd>
+                  <p>the group-id that owns the file (integer)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:owner
+                  <dd>
+                  <p>the name of the user that owns the file (string)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:group
+                  <dd>
+                  <p>the name of the group that owns the file (string)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:permissions
+                  <dd>
+                  <p>the permissions on the file (integer, e.g. 0755)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:atime
+                  <dd>
+                  <p>the access time of the file (integer, seconds since epoch)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:<a href="Attributes.html#attribute-i-atime_nseconds">#atime_nseconds</a>
+                  <dd>
+                  <p>the nanosecond component of atime (integer)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:createtime
+                  <dd>
+                  <p>the time at which the file was created (integer, seconds since epoch)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:<a href="Attributes.html#attribute-i-createtime_nseconds">#createtime_nseconds</a>
+                  <dd>
+                  <p>the nanosecond component of createtime (integer)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:mtime
+                  <dd>
+                  <p>the modification time of the file (integer, seconds since epoch)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:<a href="Attributes.html#attribute-i-mtime_nseconds">#mtime_nseconds</a>
+                  <dd>
+                  <p>the nanosecond component of mtime (integer)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:acl
+                  <dd>
+                  <p>an array of <a href="Attributes.html#ACL">ACL</a> entries for the item</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:extended
+                  <dd>
+                  <p>a hash of name/value pairs identifying extended info</p>
+                  </dd></dl>
+                  </li></ul>
+                  
+                  <p>All of them default to <code>nil</code> if omitted, except for
+                  <code>type</code>, which defaults to T_REGULAR.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-c-new-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-c-new-source'><span class="ruby-comment"># File lib/net/sftp/protocol/04/attributes.rb, line 124</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">attributes</span>={})&#x000A;  <span class="ruby-keyword">super</span>&#x000A;  <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:type</span>] <span class="ruby-operator">||=</span> <span class="ruby-constant">T_REGULAR</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id='footer-push'></div>
+    </div>
+    <div id='footer'>
+      <a target="docwin" href="http://github.com/mislav/hanna/tree/master"><strong>Hanna</strong> RDoc template</a>
+    </div>
+  </body>
+</html>

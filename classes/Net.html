@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang='en'>
+  <head>
+    <title>Net</title>
+    <meta content='text/html; charset=US-ASCII' http-equiv='Content-Type'>
+    <link href='../css/style.css' media='screen' rel='stylesheet' type='text/css'>
+    <script type='text/javascript'>
+      //<![CDATA[
+        function popupCode(url) {
+          window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+        }
+        
+        function toggleCode(id) {
+          var code = document.getElementById(id)
+        
+          code.style.display = code.style.display != 'block' ? 'block' : 'none'
+          return true
+        }
+        
+        // Make codeblocks hidden by default
+        document.writeln('<' + 'style type="text/css">.method .source pre { display: none }<\/style>')
+      //]]>
+    </script>
+  </head>
+  <body class='page'>
+    <div class='class' id='wrapper'>
+      <div class='header'>
+        <h1 class='name'>
+          <span class='type'>module</span>
+          Net
+        </h1>
+        <ol class='paths'>
+          <li>
+            <a target="docwin" href="../files/lib/net/sftp/constants_rb.html">lib/net/sftp/constants.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/errors_rb.html">lib/net/sftp/errors.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/operations/dir_rb.html">lib/net/sftp/operations/dir.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/operations/download_rb.html">lib/net/sftp/operations/download.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/operations/file_rb.html">lib/net/sftp/operations/file.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/operations/file_factory_rb.html">lib/net/sftp/operations/file_factory.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/operations/upload_rb.html">lib/net/sftp/operations/upload.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/packet_rb.html">lib/net/sftp/packet.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/01/attributes_rb.html">lib/net/sftp/protocol/01/attributes.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/01/base_rb.html">lib/net/sftp/protocol/01/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/01/name_rb.html">lib/net/sftp/protocol/01/name.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/02/base_rb.html">lib/net/sftp/protocol/02/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/03/base_rb.html">lib/net/sftp/protocol/03/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/04/attributes_rb.html">lib/net/sftp/protocol/04/attributes.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/04/base_rb.html">lib/net/sftp/protocol/04/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/04/name_rb.html">lib/net/sftp/protocol/04/name.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/05/base_rb.html">lib/net/sftp/protocol/05/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/06/attributes_rb.html">lib/net/sftp/protocol/06/attributes.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/06/base_rb.html">lib/net/sftp/protocol/06/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol/base_rb.html">lib/net/sftp/protocol/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/protocol_rb.html">lib/net/sftp/protocol.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/request_rb.html">lib/net/sftp/request.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/response_rb.html">lib/net/sftp/response.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/session_rb.html">lib/net/sftp/session.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp/version_rb.html">lib/net/sftp/version.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../files/lib/net/sftp_rb.html">lib/net/sftp.rb</a>
+          </li>
+          <li>
+            <a class='show' href='#' onclick='this.parentNode.parentNode.className += " expanded"; this.parentNode.removeChild(this); return false'>show all</a>
+          </li>
+        </ol>
+        <div class='parent'>
+          Parent:
+          <strong><a target="docwin" href="../files/lib/net/sftp_rb.html">sftp.rb</a></strong>
+        </div>
+      </div>
+      <div id='content'>
+        <div id='text'>
+          <div id='description'></div>
+          <div id='context'>
+          </div>
+          <div id='class-list'>
+            <h2>Classes and Modules</h2>
+            <ol>
+              <li><a target="docwin" href="Net/SFTP.html">Net::SFTP</a></li>
+              <li><a target="docwin" href="Net/SSH.html">Net::SSH</a></li>
+            </ol>
+          </div>
+          <div id='section'>
+          </div>
+        </div>
+      </div>
+      <div id='footer-push'></div>
+    </div>
+    <div id='footer'>
+      <a target="docwin" href="http://github.com/mislav/hanna/tree/master"><strong>Hanna</strong> RDoc template</a>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang='en'>
+  <head>
+    <title>Net::SFTP::StatusException</title>
+    <meta content='text/html; charset=US-ASCII' http-equiv='Content-Type'>
+    <link href='../../../css/style.css' media='screen' rel='stylesheet' type='text/css'>
+    <script type='text/javascript'>
+      //<![CDATA[
+        function popupCode(url) {
+          window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+        }
+        
+        function toggleCode(id) {
+          var code = document.getElementById(id)
+        
+          code.style.display = code.style.display != 'block' ? 'block' : 'none'
+          return true
+        }
+        
+        // Make codeblocks hidden by default
+        document.writeln('<' + 'style type="text/css">.method .source pre { display: none }<\/style>')
+      //]]>
+    </script>
+  </head>
+  <body class='page'>
+    <div class='class' id='wrapper'>
+      <div class='header'>
+        <h1 class='name'>
+          <span class='type'>class</span>
+          Net::SFTP::StatusException
+        </h1>
+        <ol class='paths'>
+          <li>
+            <a target="docwin" href="../../../files/lib/net/sftp/errors_rb.html">lib/net/sftp/errors.rb</a>
+          </li>
+        </ol>
+        <div class='parent'>
+          Parent:
+          <strong><a target="docwin" href="../SFTP.html">SFTP</a></strong>
+        </div>
+      </div>
+      <div id='content'>
+        <div id='text'>
+          <div id='description'>
+            
+            <p>A exception class for reporting a non-success result of an operation.</p>
+          </div>
+          <div id='method-list'>
+            <h2>Methods</h2>
+            <h3>Public Class</h3>
+            <ol>
+              <li><a target="docwin" href="#method-c-new">new</a></li>
+            </ol>
+            <h3>Public Instance</h3>
+            <ol>
+              <li><a target="docwin" href="#attribute-i-code">code</a></li>
+              <li><a target="docwin" href="#attribute-i-description">description</a></li>
+              <li><a target="docwin" href="#method-i-message">message</a></li>
+              <li><a target="docwin" href="#attribute-i-response">response</a></li>
+              <li><a target="docwin" href="#attribute-i-text">text</a></li>
+            </ol>
+          </div>
+          <div id='context'>
+          </div>
+          <div id='section'>
+            <div id='attribute-list'>
+              <h2 class='section-bar'>Attributes</h2>
+              <div class='name-list'>
+                <table>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-code'>code</a>
+                    </td>
+                    <td class='context-item-value'>[R]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The error code (numeric)</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-description'>description</a>
+                    </td>
+                    <td class='context-item-value'>[R]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The description of the error</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-response'>response</a>
+                    </td>
+                    <td class='context-item-value'>[R]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The response object that caused the exception.</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-text'>text</a>
+                    </td>
+                    <td class='context-item-value'>[R]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>Any incident-specific text given when the exception was raised</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div id='methods'>
+              <h2>Public Class methods</h2>
+              <div class='method public-class' id='method-method-c-new'>
+                <a name='method-c-new'></a>
+                <div class='synopsis'>
+                  <span class='name'>new</span>
+                  <span class='arguments'>(response, text=nil)</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Create a new status exception that reports the given code and description.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-c-new-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-c-new-source'><span class="ruby-comment"># File lib/net/sftp/errors.rb, line 23</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">response</span>, <span class="ruby-identifier">text</span>=<span class="ruby-keyword">nil</span>)&#x000A;  <span class="ruby-ivar">@response</span>, <span class="ruby-ivar">@text</span> = <span class="ruby-identifier">response</span>, <span class="ruby-identifier">text</span>&#x000A;  <span class="ruby-ivar">@code</span> = <span class="ruby-identifier">response</span>.<span class="ruby-identifier">code</span>&#x000A;  <span class="ruby-ivar">@description</span> = <span class="ruby-identifier">response</span>.<span class="ruby-identifier">message</span>&#x000A;  <span class="ruby-ivar">@description</span> = <span class="ruby-constant">Response</span><span class="ruby-operator">::</span><span class="ruby-constant">MAP</span>[<span class="ruby-ivar">@code</span>] <span class="ruby-keyword">if</span> <span class="ruby-ivar">@description</span>.<span class="ruby-identifier">nil?</span> <span class="ruby-operator">||</span> <span class="ruby-ivar">@description</span>.<span class="ruby-identifier">empty?</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <h2>Public Instance methods</h2>
+              <div class='method public-instance' id='method-method-i-message'>
+                <a name='method-i-message'></a>
+                <div class='synopsis'>
+                  <span class='name'>message</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Override the default message format, to include the code and description.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-message-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-message-source'><span class="ruby-comment"># File lib/net/sftp/errors.rb, line 32</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">message</span>&#x000A;  <span class="ruby-identifier">m</span> = <span class="ruby-keyword">super</span>.<span class="ruby-identifier">dup</span>&#x000A;  <span class="ruby-identifier">m</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-node">&quot; #{text}&quot;</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">text</span>&#x000A;  <span class="ruby-identifier">m</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-node">&quot; (#{code}, #{description.inspect})&quot;</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id='footer-push'></div>
+    </div>
+    <div id='footer'>
+      <a target="docwin" href="http://github.com/mislav/hanna/tree/master"><strong>Hanna</strong> RDoc template</a>
+    </div>
+  </body>
+</html>

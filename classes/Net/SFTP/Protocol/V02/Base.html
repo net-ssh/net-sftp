@@ -1,0 +1,117 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang='en'>
+  <head>
+    <title>Net::SFTP::Protocol::V02::Base</title>
+    <meta content='text/html; charset=US-ASCII' http-equiv='Content-Type'>
+    <link href='../../../../../css/style.css' media='screen' rel='stylesheet' type='text/css'>
+    <script type='text/javascript'>
+      //<![CDATA[
+        function popupCode(url) {
+          window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+        }
+        
+        function toggleCode(id) {
+          var code = document.getElementById(id)
+        
+          code.style.display = code.style.display != 'block' ? 'block' : 'none'
+          return true
+        }
+        
+        // Make codeblocks hidden by default
+        document.writeln('<' + 'style type="text/css">.method .source pre { display: none }<\/style>')
+      //]]>
+    </script>
+  </head>
+  <body class='page'>
+    <div class='class' id='wrapper'>
+      <div class='header'>
+        <h1 class='name'>
+          <span class='type'>class</span>
+          Net::SFTP::Protocol::V02::Base
+        </h1>
+        <ol class='paths'>
+          <li>
+            <a target="docwin" href="../../../../../files/lib/net/sftp/protocol/02/base_rb.html">lib/net/sftp/protocol/02/base.rb</a>
+          </li>
+        </ol>
+        <div class='parent'>
+          Parent:
+          <strong><a target="docwin" href="../V02.html">V02</a></strong>
+        </div>
+      </div>
+      <div id='content'>
+        <div id='text'>
+          <div id='description'>
+            
+            <p>Wraps the low-level <a href="../../../SFTP.html">SFTP</a> calls for version
+            2 of the <a href="../../../SFTP.html">SFTP</a> protocol.</p>
+            
+            <p>None of these protocol methods block--all of them return immediately,
+            requiring the <a href="../../../SSH.html">SSH</a> event loop to be run
+            while the server response is pending.</p>
+            
+            <p>You will almost certainly never need to use this driver directly. Please
+            see <a href="../../Session.html">Net::SFTP::Session</a> for the recommended
+            interface.</p>
+          </div>
+          <div id='method-list'>
+            <h2>Methods</h2>
+            <h3>Public Instance</h3>
+            <ol>
+              <li><a target="docwin" href="#method-i-rename">rename</a></li>
+              <li><a target="docwin" href="#method-i-version">version</a></li>
+            </ol>
+          </div>
+          <div id='context'>
+          </div>
+          <div id='section'>
+            <div id='methods'>
+              <h2>Public Instance methods</h2>
+              <div class='method public-instance' id='method-method-i-rename'>
+                <a name='method-i-rename'></a>
+                <div class='synopsis'>
+                  <span class='name'>rename</span>
+                  <span class='arguments'>(name, new_name, flags=nil)</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Sends a FXP_RENAME packet to the server to request that the file or
+                  directory with the given <code>name</code> (must be a full path) be changed
+                  to <code>new_name</code> (which must also be a path). The
+                  <code>flags</code> parameter is ignored in this version of the protocol.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-rename-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-rename-source'><span class="ruby-comment"># File lib/net/sftp/protocol/02/base.rb, line 25</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">rename</span>(<span class="ruby-identifier">name</span>, <span class="ruby-identifier">new_name</span>, <span class="ruby-identifier">flags</span>=<span class="ruby-keyword">nil</span>)&#x000A;  <span class="ruby-identifier">send_request</span>(<span class="ruby-constant">FXP_RENAME</span>, <span class="ruby-value">:string</span>, <span class="ruby-identifier">name</span>, <span class="ruby-value">:string</span>, <span class="ruby-identifier">new_name</span>)&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-version'>
+                <a name='method-i-version'></a>
+                <div class='synopsis'>
+                  <span class='name'>version</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns the protocol version implemented by this driver. (2, in this case)</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-version-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-version-source'><span class="ruby-comment"># File lib/net/sftp/protocol/02/base.rb, line 17</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">version</span>&#x000A;  <span class="ruby-value">2</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id='footer-push'></div>
+    </div>
+    <div id='footer'>
+      <a target="docwin" href="http://github.com/mislav/hanna/tree/master"><strong>Hanna</strong> RDoc template</a>
+    </div>
+  </body>
+</html>

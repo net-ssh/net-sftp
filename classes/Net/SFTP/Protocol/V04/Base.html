@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang='en'>
+  <head>
+    <title>Net::SFTP::Protocol::V04::Base</title>
+    <meta content='text/html; charset=US-ASCII' http-equiv='Content-Type'>
+    <link href='../../../../../css/style.css' media='screen' rel='stylesheet' type='text/css'>
+    <script type='text/javascript'>
+      //<![CDATA[
+        function popupCode(url) {
+          window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+        }
+        
+        function toggleCode(id) {
+          var code = document.getElementById(id)
+        
+          code.style.display = code.style.display != 'block' ? 'block' : 'none'
+          return true
+        }
+        
+        // Make codeblocks hidden by default
+        document.writeln('<' + 'style type="text/css">.method .source pre { display: none }<\/style>')
+      //]]>
+    </script>
+  </head>
+  <body class='page'>
+    <div class='class' id='wrapper'>
+      <div class='header'>
+        <h1 class='name'>
+          <span class='type'>class</span>
+          Net::SFTP::Protocol::V04::Base
+        </h1>
+        <ol class='paths'>
+          <li>
+            <a target="docwin" href="../../../../../files/lib/net/sftp/protocol/04/base_rb.html">lib/net/sftp/protocol/04/base.rb</a>
+          </li>
+        </ol>
+        <div class='parent'>
+          Parent:
+          <strong><a target="docwin" href="../V04.html">V04</a></strong>
+        </div>
+      </div>
+      <div id='content'>
+        <div id='text'>
+          <div id='description'>
+            
+            <p>Wraps the low-level <a href="../../../SFTP.html">SFTP</a> calls for version
+            4 of the <a href="../../../SFTP.html">SFTP</a> protocol. Also implements
+            the updated FXP_NAME packet parsing as mandated by v4 of the protocol.</p>
+            
+            <p>None of these protocol methods block--all of them return immediately,
+            requiring the <a href="../../../SSH.html">SSH</a> event loop to be run
+            while the server response is pending.</p>
+            
+            <p>You will almost certainly never need to use this driver directly. Please
+            see <a href="../../Session.html">Net::SFTP::Session</a> for the recommended
+            interface.</p>
+          </div>
+          <div id='method-list'>
+            <h2>Methods</h2>
+            <h3>Public Instance</h3>
+            <ol>
+              <li><a target="docwin" href="#method-i-fstat">fstat</a></li>
+              <li><a target="docwin" href="#method-i-lstat">lstat</a></li>
+              <li><a target="docwin" href="#method-i-parse_name_packet">parse_name_packet</a></li>
+              <li><a target="docwin" href="#method-i-stat">stat</a></li>
+              <li><a target="docwin" href="#method-i-version">version</a></li>
+            </ol>
+            <h3>Protected Instance</h3>
+            <ol>
+              <li><a target="docwin" href="#method-i-attribute_factory">attribute_factory</a></li>
+              <li><a target="docwin" href="#method-i-name_factory">name_factory</a></li>
+            </ol>
+          </div>
+          <div id='context'>
+          </div>
+          <div id='section'>
+            <div id='constants-list'>
+              <h2>Constants</h2>
+              <div class='name-list'>
+                <table summary='Constants'>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>DEFAULT_FLAGS</td>
+                    <td>=</td>
+                    <td class='context-item-value'>
+                      Attributes::F_SIZE |
+                      Attributes::F_PERMISSIONS |
+                      Attributes::F_ACCESSTIME |
+                      Attributes::F_CREATETIME |
+                      Attributes::F_MODIFYTIME |
+                      Attributes::F_ACL |
+                      Attributes::F_OWNERGROUP |
+                      Attributes::F_SUBSECOND_TIMES |
+                      Attributes::F_EXTENDED
+                    </td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The default flags used if the <code>flags</code> parameter is nil for any
+                      of the <a href="Base.html#method-i-stat">stat</a>, <a
+                      href="Base.html#method-i-lstat">lstat</a>, or <a
+                      href="Base.html#method-i-fstat">fstat</a> operations.</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div id='methods'>
+              <h2>Public Instance methods</h2>
+              <div class='method public-instance' id='method-method-i-fstat'>
+                <a name='method-i-fstat'></a>
+                <div class='synopsis'>
+                  <span class='name'>fstat</span>
+                  <span class='arguments'>(handle, flags=nil)</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Sends a FXP_FSTAT packet to the server for the given <code>path</code>, and
+                  with the given <code>flags</code>. If <code>flags</code> is nil, it
+                  defaults to F_SIZE | F_PERMISSIONS | F_ACCESSTIME | F_CREATETIME |
+                  F_MODIFYTIME | F_ACL | F_OWNERGROUP | F_SUBSECOND_TIMES | F_EXTENDED (see
+                  <a href="Attributes.html">Net::SFTP::Protocol::V04::Attributes</a> for
+                  those constants).</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-fstat-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-fstat-source'><span class="ruby-comment"># File lib/net/sftp/protocol/04/base.rb, line 63</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">fstat</span>(<span class="ruby-identifier">handle</span>, <span class="ruby-identifier">flags</span>=<span class="ruby-keyword">nil</span>)&#x000A;  <span class="ruby-identifier">send_request</span>(<span class="ruby-constant">FXP_FSTAT</span>, <span class="ruby-value">:string</span>, <span class="ruby-identifier">handle</span>, <span class="ruby-value">:long</span>, <span class="ruby-identifier">flags</span> <span class="ruby-operator">||</span> <span class="ruby-constant">DEFAULT_FLAGS</span>)&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-lstat'>
+                <a name='method-i-lstat'></a>
+                <div class='synopsis'>
+                  <span class='name'>lstat</span>
+                  <span class='arguments'>(path, flags=nil)</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Sends a FXP_LSTAT packet to the server for the given <code>path</code>, and
+                  with the given <code>flags</code>. If <code>flags</code> is nil, it
+                  defaults to F_SIZE | F_PERMISSIONS | F_ACCESSTIME | F_CREATETIME |
+                  F_MODIFYTIME | F_ACL | F_OWNERGROUP | F_SUBSECOND_TIMES | F_EXTENDED (see
+                  <a href="Attributes.html">Net::SFTP::Protocol::V04::Attributes</a> for
+                  those constants).</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-lstat-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-lstat-source'><span class="ruby-comment"># File lib/net/sftp/protocol/04/base.rb, line 54</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">lstat</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">flags</span>=<span class="ruby-keyword">nil</span>)&#x000A;  <span class="ruby-identifier">send_request</span>(<span class="ruby-constant">FXP_LSTAT</span>, <span class="ruby-value">:string</span>, <span class="ruby-identifier">path</span>, <span class="ruby-value">:long</span>, <span class="ruby-identifier">flags</span> <span class="ruby-operator">||</span> <span class="ruby-constant">DEFAULT_FLAGS</span>)&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-parse_name_packet'>
+                <a name='method-i-parse_name_packet'></a>
+                <div class='synopsis'>
+                  <span class='name'>parse_name_packet</span>
+                  <span class='arguments'>(packet)</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>As of v4 of the <a href="../../../SFTP.html">SFTP</a> protocol, the
+                  "longname" member was removed from the FXP_NAME structure. This method is
+                  essentially the same as the previous implementation, but omits longname.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-parse_name_packet-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-parse_name_packet-source'><span class="ruby-comment"># File lib/net/sftp/protocol/04/base.rb, line 28</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">parse_name_packet</span>(<span class="ruby-identifier">packet</span>)&#x000A;  <span class="ruby-identifier">names</span> = []&#x000A;&#x000A;  <span class="ruby-identifier">packet</span>.<span class="ruby-identifier">read_long</span>.<span class="ruby-identifier">times</span> <span class="ruby-keyword">do</span>&#x000A;    <span class="ruby-identifier">filename</span> = <span class="ruby-identifier">packet</span>.<span class="ruby-identifier">read_string</span>&#x000A;    <span class="ruby-identifier">attrs</span>    = <span class="ruby-identifier">attribute_factory</span>.<span class="ruby-identifier">from_buffer</span>(<span class="ruby-identifier">packet</span>)&#x000A;    <span class="ruby-identifier">names</span>   <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">name_factory</span>.<span class="ruby-identifier">new</span>(<span class="ruby-identifier">filename</span>, <span class="ruby-identifier">attrs</span>)&#x000A;  <span class="ruby-keyword">end</span>&#x000A;&#x000A;  { <span class="ruby-value">:names</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-identifier">names</span> }&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-stat'>
+                <a name='method-i-stat'></a>
+                <div class='synopsis'>
+                  <span class='name'>stat</span>
+                  <span class='arguments'>(path, flags=nil)</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Sends a FXP_STAT packet to the server for the given <code>path</code>, and
+                  with the given <code>flags</code>. If <code>flags</code> is nil, it
+                  defaults to F_SIZE | F_PERMISSIONS | F_ACCESSTIME | F_CREATETIME |
+                  F_MODIFYTIME | F_ACL | F_OWNERGROUP | F_SUBSECOND_TIMES | F_EXTENDED (see
+                  <a href="Attributes.html">Net::SFTP::Protocol::V04::Attributes</a> for
+                  those constants).</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-stat-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-stat-source'><span class="ruby-comment"># File lib/net/sftp/protocol/04/base.rb, line 45</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">stat</span>(<span class="ruby-identifier">path</span>, <span class="ruby-identifier">flags</span>=<span class="ruby-keyword">nil</span>)&#x000A;  <span class="ruby-identifier">send_request</span>(<span class="ruby-constant">FXP_STAT</span>, <span class="ruby-value">:string</span>, <span class="ruby-identifier">path</span>, <span class="ruby-value">:long</span>, <span class="ruby-identifier">flags</span> <span class="ruby-operator">||</span> <span class="ruby-constant">DEFAULT_FLAGS</span>)&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-version'>
+                <a name='method-i-version'></a>
+                <div class='synopsis'>
+                  <span class='name'>version</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns the protocol version implemented by this driver. (4, in this case)</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-version-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-version-source'><span class="ruby-comment"># File lib/net/sftp/protocol/04/base.rb, line 21</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">version</span>&#x000A;  <span class="ruby-value">4</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <h2>Protected Instance methods</h2>
+              <div class='method protected-instance' id='method-method-i-attribute_factory'>
+                <a name='method-i-attribute_factory'></a>
+                <div class='synopsis'>
+                  <span class='name'>attribute_factory</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns the <a href="Attributes.html">Attributes</a> class used by this
+                  version of the protocol (<a
+                  href="Attributes.html">Net::SFTP::Protocol::V04::Attributes</a>, in this
+                  case)</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-attribute_factory-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-attribute_factory-source'><span class="ruby-comment"># File lib/net/sftp/protocol/04/base.rb, line 83</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">attribute_factory</span>&#x000A;  <span class="ruby-constant">V04</span><span class="ruby-operator">::</span><span class="ruby-constant">Attributes</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method protected-instance' id='method-method-i-name_factory'>
+                <a name='method-i-name_factory'></a>
+                <div class='synopsis'>
+                  <span class='name'>name_factory</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns the <a href="Name.html">Name</a> class used by this version of the
+                  protocol (<a href="Name.html">Net::SFTP::Protocol::V04::Name</a>, in this
+                  case)</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-name_factory-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-name_factory-source'><span class="ruby-comment"># File lib/net/sftp/protocol/04/base.rb, line 89</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">name_factory</span>&#x000A;  <span class="ruby-constant">V04</span><span class="ruby-operator">::</span><span class="ruby-constant">Name</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id='footer-push'></div>
+    </div>
+    <div id='footer'>
+      <a target="docwin" href="http://github.com/mislav/hanna/tree/master"><strong>Hanna</strong> RDoc template</a>
+    </div>
+  </body>
+</html>

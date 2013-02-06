@@ -1,0 +1,592 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang='en'>
+  <head>
+    <title>Net::SFTP::Protocol::V01::Attributes</title>
+    <meta content='text/html; charset=US-ASCII' http-equiv='Content-Type'>
+    <link href='../../../../../css/style.css' media='screen' rel='stylesheet' type='text/css'>
+    <script type='text/javascript'>
+      //<![CDATA[
+        function popupCode(url) {
+          window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+        }
+        
+        function toggleCode(id) {
+          var code = document.getElementById(id)
+        
+          code.style.display = code.style.display != 'block' ? 'block' : 'none'
+          return true
+        }
+        
+        // Make codeblocks hidden by default
+        document.writeln('<' + 'style type="text/css">.method .source pre { display: none }<\/style>')
+      //]]>
+    </script>
+  </head>
+  <body class='page'>
+    <div class='class' id='wrapper'>
+      <div class='header'>
+        <h1 class='name'>
+          <span class='type'>class</span>
+          Net::SFTP::Protocol::V01::Attributes
+        </h1>
+        <ol class='paths'>
+          <li>
+            <a target="docwin" href="../../../../../files/lib/net/sftp/protocol/01/attributes_rb.html">lib/net/sftp/protocol/01/attributes.rb</a>
+          </li>
+        </ol>
+        <div class='parent'>
+          Parent:
+          <strong><a target="docwin" href="../V01.html">V01</a></strong>
+        </div>
+      </div>
+      <div id='content'>
+        <div id='text'>
+          <div id='description'>
+            
+            <p>A class representing the attributes of a file or directory on the server.
+            It may be used to specify new attributes, or to query existing attributes.</p>
+            
+            <p>To specify new attributes, just pass a hash as the argument to the
+            constructor. The following keys are supported:</p>
+            <ul><li><dl class="rdoc-list note-list"><dt>:size
+            <dd>
+            <p>the size of the file</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:uid
+            <dd>
+            <p>the user-id that owns the file (integer)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:gid
+            <dd>
+            <p>the group-id that owns the file (integer)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:owner
+            <dd>
+            <p>the name of the user that owns the file (string)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:group
+            <dd>
+            <p>the name of the group that owns the file (string)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:permissions
+            <dd>
+            <p>the permissions on the file (integer, e.g. 0755)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:atime
+            <dd>
+            <p>the access time of the file (integer, seconds since epoch)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:mtime
+            <dd>
+            <p>the modification time of the file (integer, seconds since epoch)</p>
+            </dd></dl>
+            </li><li><dl class="rdoc-list note-list"><dt>:extended
+            <dd>
+            <p>a hash of name/value pairs identifying extended info</p>
+            </dd></dl>
+            </li></ul>
+            
+            <p>Likewise, when the server sends an <a href="Attributes.html">Attributes</a>
+            object, all of the above attributes are exposed as methods (though not all
+            will be set with non-nil values from the server).</p>
+          </div>
+          <div id='method-list'>
+            <h2>Methods</h2>
+            <h3>Public Class</h3>
+            <ol>
+              <li><a target="docwin" href="#method-c-from_buffer">from_buffer</a></li>
+              <li><a target="docwin" href="#method-c-new">new</a></li>
+            </ol>
+            <h3>Public Instance</h3>
+            <ol>
+              <li><a target="docwin" href="#attribute-i-atime">atime</a></li>
+              <li><a target="docwin" href="#attribute-i-attributes">attributes</a></li>
+              <li><a target="docwin" href="#method-i-directory-3F">directory?</a></li>
+              <li><a target="docwin" href="#attribute-i-extended">extended</a></li>
+              <li><a target="docwin" href="#method-i-file-3F">file?</a></li>
+              <li><a target="docwin" href="#method-i-gid">gid</a></li>
+              <li><a target="docwin" href="#attribute-i-gid">gid</a></li>
+              <li><a target="docwin" href="#method-i-group">group</a></li>
+              <li><a target="docwin" href="#attribute-i-mtime">mtime</a></li>
+              <li><a target="docwin" href="#method-i-owner">owner</a></li>
+              <li><a target="docwin" href="#attribute-i-permissions">permissions</a></li>
+              <li><a target="docwin" href="#attribute-i-size">size</a></li>
+              <li><a target="docwin" href="#method-i-symbolic_type">symbolic_type</a></li>
+              <li><a target="docwin" href="#method-i-symlink-3F">symlink?</a></li>
+              <li><a target="docwin" href="#method-i-to_s">to_s</a></li>
+              <li><a target="docwin" href="#method-i-type">type</a></li>
+              <li><a target="docwin" href="#attribute-i-uid">uid</a></li>
+              <li><a target="docwin" href="#method-i-uid">uid</a></li>
+            </ol>
+          </div>
+          <div id='context'>
+          </div>
+          <div id='section'>
+            <div id='constants-list'>
+              <h2>Constants</h2>
+              <div class='name-list'>
+                <table summary='Constants'>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>F_ACMODTIME</td>
+                    <td>=</td>
+                    <td class='context-item-value'>0x00000008</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>F_EXTENDED</td>
+                    <td>=</td>
+                    <td class='context-item-value'>0x80000000</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>F_PERMISSIONS</td>
+                    <td>=</td>
+                    <td class='context-item-value'>0x00000004</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>F_SIZE</td>
+                    <td>=</td>
+                    <td class='context-item-value'>0x00000001</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>F_UIDGID</td>
+                    <td>=</td>
+                    <td class='context-item-value'>0x00000002</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>T_BLOCK_DEVICE</td>
+                    <td>=</td>
+                    <td class='context-item-value'>8</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>T_CHAR_DEVICE</td>
+                    <td>=</td>
+                    <td class='context-item-value'>7</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>T_DIRECTORY</td>
+                    <td>=</td>
+                    <td class='context-item-value'>2</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>T_FIFO</td>
+                    <td>=</td>
+                    <td class='context-item-value'>9</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>T_REGULAR</td>
+                    <td>=</td>
+                    <td class='context-item-value'>1</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>T_SOCKET</td>
+                    <td>=</td>
+                    <td class='context-item-value'>6</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>T_SPECIAL</td>
+                    <td>=</td>
+                    <td class='context-item-value'>4</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>T_SYMLINK</td>
+                    <td>=</td>
+                    <td class='context-item-value'>3</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>T_UNKNOWN</td>
+                    <td>=</td>
+                    <td class='context-item-value'>5</td>
+                    <td>&nbsp;</td>
+                    <td class='context-item-desc'></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div id='attribute-list'>
+              <h2 class='section-bar'>Attributes</h2>
+              <div class='name-list'>
+                <table>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-atime'>atime</a>
+                    </td>
+                    <td class='context-item-value'>[RW]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The last access time of the file</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-attributes'>attributes</a>
+                    </td>
+                    <td class='context-item-value'>[R]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The hash of name/value pairs that backs this <a
+                      href="Attributes.html">Attributes</a> instance</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-extended'>extended</a>
+                    </td>
+                    <td class='context-item-value'>[RW]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The hash of name/value pairs identifying extended information about the
+                      file</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-gid'>gid</a>
+                    </td>
+                    <td class='context-item-value'>[W]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The group-id of the user that owns the file</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-mtime'>mtime</a>
+                    </td>
+                    <td class='context-item-value'>[RW]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The modification time of the file</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-permissions'>permissions</a>
+                    </td>
+                    <td class='context-item-value'>[RW]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The permissions on the file</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-size'>size</a>
+                    </td>
+                    <td class='context-item-value'>[RW]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The size of the file.</p>
+                    </td>
+                  </tr>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-uid'>uid</a>
+                    </td>
+                    <td class='context-item-value'>[W]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The user-id of the user that owns the file</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div id='methods'>
+              <h2>Public Class methods</h2>
+              <div class='method public-class' id='method-method-c-from_buffer'>
+                <a name='method-c-from_buffer'></a>
+                <div class='synopsis'>
+                  <span class='name'>from_buffer</span>
+                  <span class='arguments'>(buffer)</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Parses the given buffer and returns an <a
+                  href="Attributes.html">Attributes</a> object compsed from the data
+                  extracted from it.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-c-from_buffer-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-c-from_buffer-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 59</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">from_buffer</span>(<span class="ruby-identifier">buffer</span>)&#x000A;  <span class="ruby-identifier">flags</span> = <span class="ruby-identifier">buffer</span>.<span class="ruby-identifier">read_long</span>&#x000A;  <span class="ruby-identifier">data</span> = {}&#x000A;&#x000A;  <span class="ruby-identifier">elements</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">name</span>, <span class="ruby-identifier">type</span>, <span class="ruby-identifier">condition</span><span class="ruby-operator">|</span>&#x000A;    <span class="ruby-keyword">if</span> <span class="ruby-identifier">flags</span> &amp; <span class="ruby-identifier">condition</span> <span class="ruby-operator">==</span> <span class="ruby-identifier">condition</span>&#x000A;      <span class="ruby-keyword">if</span> <span class="ruby-identifier">type</span> <span class="ruby-operator">==</span> <span class="ruby-value">:special</span>&#x000A;        <span class="ruby-identifier">data</span>[<span class="ruby-identifier">name</span>] = <span class="ruby-identifier">send</span>(<span class="ruby-node">&quot;parse_#{name}&quot;</span>, <span class="ruby-identifier">buffer</span>)&#x000A;      <span class="ruby-keyword">else</span>&#x000A;        <span class="ruby-identifier">data</span>[<span class="ruby-identifier">name</span>] = <span class="ruby-identifier">buffer</span>.<span class="ruby-identifier">send</span>(<span class="ruby-node">&quot;read_#{type}&quot;</span>)&#x000A;      <span class="ruby-keyword">end</span>&#x000A;    <span class="ruby-keyword">end</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;&#x000A;  <span class="ruby-identifier">new</span>(<span class="ruby-identifier">data</span>)&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-class' id='method-method-c-new'>
+                <a name='method-c-new'></a>
+                <div class='synopsis'>
+                  <span class='name'>new</span>
+                  <span class='arguments'>(attributes={})</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Create a new <a href="Attributes.html">Attributes</a> instance with the
+                  given attributes. The following keys are supported:</p>
+                  <ul><li><dl class="rdoc-list note-list"><dt>:size
+                  <dd>
+                  <p>the size of the file</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:uid
+                  <dd>
+                  <p>the user-id that owns the file (integer)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:gid
+                  <dd>
+                  <p>the group-id that owns the file (integer)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:owner
+                  <dd>
+                  <p>the name of the user that owns the file (string)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:group
+                  <dd>
+                  <p>the name of the group that owns the file (string)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:permissions
+                  <dd>
+                  <p>the permissions on the file (integer, e.g. 0755)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:atime
+                  <dd>
+                  <p>the access time of the file (integer, seconds since epoch)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:mtime
+                  <dd>
+                  <p>the modification time of the file (integer, seconds since epoch)</p>
+                  </dd></dl>
+                  </li><li><dl class="rdoc-list note-list"><dt>:extended
+                  <dd>
+                  <p>a hash of name/value pairs identifying extended info</p>
+                  </dd></dl>
+                  </li></ul>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-c-new-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-c-new-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 152</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">attributes</span>={})&#x000A;  <span class="ruby-ivar">@attributes</span> = <span class="ruby-identifier">attributes</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <h2>Public Instance methods</h2>
+              <div class='method public-instance' id='method-method-i-directory-3F'>
+                <a name='method-i-directory-3F'></a>
+                <div class='synopsis'>
+                  <span class='name'>directory?</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns true if these attributes appear to describe a directory.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-directory-3F-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-directory-3F-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 244</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">directory?</span>&#x000A;  <span class="ruby-keyword">case</span> <span class="ruby-identifier">type</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_DIRECTORY</span> <span class="ruby-keyword">then</span> <span class="ruby-keyword">true</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_UNKNOWN</span>   <span class="ruby-keyword">then</span> <span class="ruby-keyword">nil</span>&#x000A;  <span class="ruby-keyword">else</span> <span class="ruby-keyword">false</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-file-3F'>
+                <a name='method-i-file-3F'></a>
+                <div class='synopsis'>
+                  <span class='name'>file?</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns true if these attributes appear to describe a regular file.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-file-3F-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-file-3F-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 262</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">file?</span>&#x000A;  <span class="ruby-keyword">case</span> <span class="ruby-identifier">type</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_REGULAR</span> <span class="ruby-keyword">then</span> <span class="ruby-keyword">true</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_UNKNOWN</span> <span class="ruby-keyword">then</span> <span class="ruby-keyword">nil</span>&#x000A;  <span class="ruby-keyword">else</span> <span class="ruby-keyword">false</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-gid'>
+                <a name='method-i-gid'></a>
+                <div class='synopsis'>
+                  <span class='name'>gid</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns the group-id of the group that owns the file, or <code>nil</code>
+                  if that information is not available. If a :group key exists, but not a
+                  :gid key, the Etc module will be used to reverse lookup the id from the
+                  name. This might fail on some systems (e.g., Windows).</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-gid-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-gid-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 172</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">gid</span>&#x000A;  <span class="ruby-keyword">if</span> <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:group</span>] <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-operator">!</span><span class="ruby-identifier">attributes</span>.<span class="ruby-identifier">key?</span>(<span class="ruby-value">:gid</span>)&#x000A;    <span class="ruby-identifier">require</span> <span class="ruby-string">'etc'</span>&#x000A;    <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:gid</span>] = <span class="ruby-constant">Etc</span>.<span class="ruby-identifier">getgrnam</span>(<span class="ruby-identifier">attributes</span>[<span class="ruby-value">:group</span>]).<span class="ruby-identifier">gid</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;  <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:gid</span>]&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-group'>
+                <a name='method-i-group'></a>
+                <div class='synopsis'>
+                  <span class='name'>group</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns the group name of the group that owns the file, or <code>nil</code>
+                  if that information is not available. If the :gid is given, but not the
+                  :group, the Etc module will be used to lookup the name from the id. This
+                  might fail on some systems (e.g. Windows).</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-group-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-group-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 196</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">group</span>&#x000A;  <span class="ruby-keyword">if</span> <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:gid</span>] <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-operator">!</span><span class="ruby-identifier">attributes</span>[<span class="ruby-value">:group</span>]&#x000A;    <span class="ruby-identifier">require</span> <span class="ruby-string">'etc'</span>&#x000A;    <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:group</span>] = <span class="ruby-constant">Etc</span>.<span class="ruby-identifier">getgrgid</span>(<span class="ruby-identifier">attributes</span>[<span class="ruby-value">:gid</span>].<span class="ruby-identifier">to_i</span>).<span class="ruby-identifier">name</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;  <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:group</span>]&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-owner'>
+                <a name='method-i-owner'></a>
+                <div class='synopsis'>
+                  <span class='name'>owner</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns the username of the user that owns the file, or <code>nil</code> if
+                  that information is not available. If the :uid is given, but not the
+                  :owner, the Etc module will be used to lookup the name from the id. This
+                  might fail on some systems (e.g. Windows).</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-owner-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-owner-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 184</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">owner</span>&#x000A;  <span class="ruby-keyword">if</span> <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:uid</span>] <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-operator">!</span><span class="ruby-identifier">attributes</span>[<span class="ruby-value">:owner</span>]&#x000A;    <span class="ruby-identifier">require</span> <span class="ruby-string">'etc'</span>&#x000A;    <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:owner</span>] = <span class="ruby-constant">Etc</span>.<span class="ruby-identifier">getpwuid</span>(<span class="ruby-identifier">attributes</span>[<span class="ruby-value">:uid</span>].<span class="ruby-identifier">to_i</span>).<span class="ruby-identifier">name</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;  <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:owner</span>]&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-symbolic_type'>
+                <a name='method-i-symbolic_type'></a>
+                <div class='synopsis'>
+                  <span class='name'>symbolic_type</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns the type as a symbol, rather than an integer, for easier use in
+                  Ruby programs.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-symbolic_type-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-symbolic_type-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 228</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">symbolic_type</span>&#x000A;  <span class="ruby-keyword">case</span> <span class="ruby-identifier">type</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_SOCKET</span>       <span class="ruby-keyword">then</span> <span class="ruby-value">:socket</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_SYMLINK</span>      <span class="ruby-keyword">then</span> <span class="ruby-value">:symlink</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_REGULAR</span>      <span class="ruby-keyword">then</span> <span class="ruby-value">:regular</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_BLOCK_DEVICE</span> <span class="ruby-keyword">then</span> <span class="ruby-value">:block_device</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_DIRECTORY</span>    <span class="ruby-keyword">then</span> <span class="ruby-value">:directory</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_CHAR_DEVICE</span>  <span class="ruby-keyword">then</span> <span class="ruby-value">:char_device</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_FIFO</span>         <span class="ruby-keyword">then</span> <span class="ruby-value">:fifo</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_SPECIAL</span>      <span class="ruby-keyword">then</span> <span class="ruby-value">:special</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_UNKNOWN</span>      <span class="ruby-keyword">then</span> <span class="ruby-value">:unknown</span>&#x000A;  <span class="ruby-keyword">else</span> <span class="ruby-identifier">raise</span> <span class="ruby-constant">NotImplementedError</span>, <span class="ruby-node">&quot;unknown file type #{type} (bug?)&quot;</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-symlink-3F'>
+                <a name='method-i-symlink-3F'></a>
+                <div class='synopsis'>
+                  <span class='name'>symlink?</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns true if these attributes appear to describe a symlink.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-symlink-3F-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-symlink-3F-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 253</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">symlink?</span>&#x000A;  <span class="ruby-keyword">case</span> <span class="ruby-identifier">type</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_SYMLINK</span> <span class="ruby-keyword">then</span> <span class="ruby-keyword">true</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">T_UNKNOWN</span> <span class="ruby-keyword">then</span> <span class="ruby-keyword">nil</span>&#x000A;  <span class="ruby-keyword">else</span> <span class="ruby-keyword">false</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-to_s'>
+                <a name='method-i-to_s'></a>
+                <div class='synopsis'>
+                  <span class='name'>to_s</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Convert the object to a string suitable for passing in an <a
+                  href="../../../SFTP.html">SFTP</a> packet. This is the raw representation
+                  of the attribute packet payload, and is not intended to be human readable.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-to_s-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-to_s-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 273</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">to_s</span>&#x000A;  <span class="ruby-identifier">prepare_serialization!</span>&#x000A;&#x000A;  <span class="ruby-identifier">flags</span> = <span class="ruby-value">0</span>&#x000A;&#x000A;  <span class="ruby-keyword">self</span>.<span class="ruby-identifier">class</span>.<span class="ruby-identifier">elements</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">name</span>, <span class="ruby-identifier">type</span>, <span class="ruby-identifier">condition</span><span class="ruby-operator">|</span>&#x000A;    <span class="ruby-identifier">flags</span> <span class="ruby-operator">|=</span> <span class="ruby-identifier">condition</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">attributes</span>[<span class="ruby-identifier">name</span>]&#x000A;  <span class="ruby-keyword">end</span>&#x000A;&#x000A;  <span class="ruby-identifier">buffer</span> = <span class="ruby-constant">Net</span><span class="ruby-operator">::</span><span class="ruby-constant">SSH</span><span class="ruby-operator">::</span><span class="ruby-constant">Buffer</span>.<span class="ruby-identifier">from</span>(<span class="ruby-value">:long</span>, <span class="ruby-identifier">flags</span>)&#x000A;  <span class="ruby-keyword">self</span>.<span class="ruby-identifier">class</span>.<span class="ruby-identifier">elements</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">name</span>, <span class="ruby-identifier">type</span>, <span class="ruby-identifier">condition</span><span class="ruby-operator">|</span>&#x000A;    <span class="ruby-keyword">if</span> <span class="ruby-identifier">flags</span> &amp; <span class="ruby-identifier">condition</span> <span class="ruby-operator">==</span> <span class="ruby-identifier">condition</span>&#x000A;      <span class="ruby-keyword">if</span> <span class="ruby-identifier">type</span> <span class="ruby-operator">==</span> <span class="ruby-value">:special</span>&#x000A;        <span class="ruby-identifier">send</span>(<span class="ruby-node">&quot;encode_#{name}&quot;</span>, <span class="ruby-identifier">buffer</span>)&#x000A;      <span class="ruby-keyword">else</span>&#x000A;        <span class="ruby-identifier">buffer</span>.<span class="ruby-identifier">send</span>(<span class="ruby-node">&quot;write_#{type}&quot;</span>, <span class="ruby-identifier">attributes</span>[<span class="ruby-identifier">name</span>])&#x000A;      <span class="ruby-keyword">end</span>&#x000A;    <span class="ruby-keyword">end</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;&#x000A;  <span class="ruby-identifier">buffer</span>.<span class="ruby-identifier">to_s</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-type'>
+                <a name='method-i-type'></a>
+                <div class='synopsis'>
+                  <span class='name'>type</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Inspects the permissions bits to determine what type of entity this
+                  attributes object represents. If will return one of the T_ constants.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-type-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-type-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 206</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">type</span>&#x000A;  <span class="ruby-keyword">if</span>    <span class="ruby-identifier">permissions</span> &amp; <span class="ruby-value">0140000</span> <span class="ruby-operator">==</span> <span class="ruby-value">0140000</span> <span class="ruby-keyword">then</span> &#x000A;    <span class="ruby-constant">T_SOCKET</span>&#x000A;  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">permissions</span> &amp; <span class="ruby-value">0120000</span> <span class="ruby-operator">==</span> <span class="ruby-value">0120000</span> <span class="ruby-keyword">then</span> &#x000A;    <span class="ruby-constant">T_SYMLINK</span>&#x000A;  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">permissions</span> &amp; <span class="ruby-value">0100000</span> <span class="ruby-operator">==</span> <span class="ruby-value">0100000</span> <span class="ruby-keyword">then</span>&#x000A;    <span class="ruby-constant">T_REGULAR</span>&#x000A;  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">permissions</span> &amp;  <span class="ruby-value">060000</span> <span class="ruby-operator">==</span>  <span class="ruby-value">060000</span> <span class="ruby-keyword">then</span>&#x000A;    <span class="ruby-constant">T_BLOCK_DEVICE</span>&#x000A;  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">permissions</span> &amp;  <span class="ruby-value">040000</span> <span class="ruby-operator">==</span>  <span class="ruby-value">040000</span> <span class="ruby-keyword">then</span>&#x000A;    <span class="ruby-constant">T_DIRECTORY</span>&#x000A;  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">permissions</span> &amp;  <span class="ruby-value">020000</span> <span class="ruby-operator">==</span>  <span class="ruby-value">020000</span> <span class="ruby-keyword">then</span>&#x000A;    <span class="ruby-constant">T_CHAR_DEVICE</span>&#x000A;  <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">permissions</span> &amp;  <span class="ruby-value">010000</span> <span class="ruby-operator">==</span>  <span class="ruby-value">010000</span> <span class="ruby-keyword">then</span>&#x000A;    <span class="ruby-constant">T_FIFO</span>&#x000A;  <span class="ruby-keyword">else</span>&#x000A;    <span class="ruby-constant">T_UNKNOWN</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <div class='method public-instance' id='method-method-i-uid'>
+                <a name='method-i-uid'></a>
+                <div class='synopsis'>
+                  <span class='name'>uid</span>
+                  <span class='arguments'>()</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Returns the user-id of the user that owns the file, or <code>nil</code> if
+                  that information is not available. If an :owner key exists, but not a :uid
+                  key, the Etc module will be used to reverse lookup the id from the name.
+                  This might fail on some systems (e.g., Windows).</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-uid-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-uid-source'><span class="ruby-comment"># File lib/net/sftp/protocol/01/attributes.rb, line 160</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">uid</span>&#x000A;  <span class="ruby-keyword">if</span> <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:owner</span>] <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-operator">!</span><span class="ruby-identifier">attributes</span>.<span class="ruby-identifier">key?</span>(<span class="ruby-value">:uid</span>)&#x000A;    <span class="ruby-identifier">require</span> <span class="ruby-string">'etc'</span>&#x000A;    <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:uid</span>] = <span class="ruby-constant">Etc</span>.<span class="ruby-identifier">getpwnam</span>(<span class="ruby-identifier">attributes</span>[<span class="ruby-value">:owner</span>]).<span class="ruby-identifier">uid</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;  <span class="ruby-identifier">attributes</span>[<span class="ruby-value">:uid</span>]&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id='footer-push'></div>
+    </div>
+    <div id='footer'>
+      <a target="docwin" href="http://github.com/mislav/hanna/tree/master"><strong>Hanna</strong> RDoc template</a>
+    </div>
+  </body>
+</html>

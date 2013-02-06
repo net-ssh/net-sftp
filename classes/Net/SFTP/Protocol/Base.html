@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang='en'>
+  <head>
+    <title>Net::SFTP::Protocol::Base</title>
+    <meta content='text/html; charset=US-ASCII' http-equiv='Content-Type'>
+    <link href='../../../../css/style.css' media='screen' rel='stylesheet' type='text/css'>
+    <script type='text/javascript'>
+      //<![CDATA[
+        function popupCode(url) {
+          window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+        }
+        
+        function toggleCode(id) {
+          var code = document.getElementById(id)
+        
+          code.style.display = code.style.display != 'block' ? 'block' : 'none'
+          return true
+        }
+        
+        // Make codeblocks hidden by default
+        document.writeln('<' + 'style type="text/css">.method .source pre { display: none }<\/style>')
+      //]]>
+    </script>
+  </head>
+  <body class='page'>
+    <div class='class' id='wrapper'>
+      <div class='header'>
+        <h1 class='name'>
+          <span class='type'>class</span>
+          Net::SFTP::Protocol::Base
+        </h1>
+        <ol class='paths'>
+          <li>
+            <a target="docwin" href="../../../../files/lib/net/sftp/protocol/base_rb.html">lib/net/sftp/protocol/base.rb</a>
+          </li>
+        </ol>
+        <div class='parent'>
+          Parent:
+          <strong><a target="docwin" href="../Protocol.html">Protocol</a></strong>
+        </div>
+      </div>
+      <div id='content'>
+        <div id='text'>
+          <div id='description'>
+            
+            <p>The abstract superclass of the specific implementations for each supported
+            <a href="../../SFTP.html">SFTP</a> protocol version. It implements general
+            packet parsing logic, and provides a way for subclasses to send requests.</p>
+          </div>
+          <div id='method-list'>
+            <h2>Methods</h2>
+            <h3>Public Class</h3>
+            <ol>
+              <li><a target="docwin" href="#method-c-new">new</a></li>
+            </ol>
+            <h3>Public Instance</h3>
+            <ol>
+              <li><a target="docwin" href="#method-i-parse">parse</a></li>
+              <li><a target="docwin" href="#attribute-i-session">session</a></li>
+            </ol>
+          </div>
+          <div id='context'>
+            <div id='includes'>
+              <h2>Included modules</h2>
+              <ol>
+                <li>Net::SSH::Loggable</li>
+                <li><a target="docwin" href="../Constants.html">Net::SFTP::Constants</a></li>
+                <li><a target="docwin" href="../Constants/PacketTypes.html">Net::SFTP::Constants::PacketTypes</a></li>
+              </ol>
+            </div>
+          </div>
+          <div id='section'>
+            <div id='attribute-list'>
+              <h2 class='section-bar'>Attributes</h2>
+              <div class='name-list'>
+                <table>
+                  <tr class='top-aligned-row context-row'>
+                    <td class='context-item-name'>
+                      <a name='attribute-i-session'>session</a>
+                    </td>
+                    <td class='context-item-value'>[R]</td>
+                    <td class='context-item-desc'>
+                      
+                      <p>The <a href="../../SFTP.html">SFTP</a> session object that acts as client
+                      to this protocol instance</p>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div id='methods'>
+              <h2>Public Class methods</h2>
+              <div class='method public-class' id='method-method-c-new'>
+                <a name='method-c-new'></a>
+                <div class='synopsis'>
+                  <span class='name'>new</span>
+                  <span class='arguments'>(session)</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Create a new instance of a protocol driver, servicing the given session.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-c-new-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-c-new-source'><span class="ruby-comment"># File lib/net/sftp/protocol/base.rb, line 18</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">session</span>)&#x000A;  <span class="ruby-ivar">@session</span> = <span class="ruby-identifier">session</span>&#x000A;  <span class="ruby-keyword">self</span>.<span class="ruby-identifier">logger</span> = <span class="ruby-identifier">session</span>.<span class="ruby-identifier">logger</span>&#x000A;  <span class="ruby-ivar">@request_id_counter</span> = <span class="ruby-value">-1</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+              <h2>Public Instance methods</h2>
+              <div class='method public-instance' id='method-method-i-parse'>
+                <a name='method-i-parse'></a>
+                <div class='synopsis'>
+                  <span class='name'>parse</span>
+                  <span class='arguments'>(packet)</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Attept to parse the given packet. If the packet is of an unsupported type,
+                  an exception will be raised. Returns the parsed data as a hash (the keys in
+                  the hash are packet-type specific).</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-i-parse-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-i-parse-source'><span class="ruby-comment"># File lib/net/sftp/protocol/base.rb, line 27</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-identifier">parse</span>(<span class="ruby-identifier">packet</span>)&#x000A;  <span class="ruby-keyword">case</span> <span class="ruby-identifier">packet</span>.<span class="ruby-identifier">type</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">FXP_STATUS</span> <span class="ruby-keyword">then</span> <span class="ruby-identifier">parse_status_packet</span>(<span class="ruby-identifier">packet</span>)&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">FXP_HANDLE</span> <span class="ruby-keyword">then</span> <span class="ruby-identifier">parse_handle_packet</span>(<span class="ruby-identifier">packet</span>)&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">FXP_DATA</span>   <span class="ruby-keyword">then</span> <span class="ruby-identifier">parse_data_packet</span>(<span class="ruby-identifier">packet</span>)&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">FXP_NAME</span>   <span class="ruby-keyword">then</span> <span class="ruby-identifier">parse_name_packet</span>(<span class="ruby-identifier">packet</span>)&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-constant">FXP_ATTRS</span>  <span class="ruby-keyword">then</span> <span class="ruby-identifier">parse_attrs_packet</span>(<span class="ruby-identifier">packet</span>)&#x000A;  <span class="ruby-keyword">else</span> <span class="ruby-identifier">raise</span> <span class="ruby-constant">NotImplementedError</span>, <span class="ruby-node">&quot;unknown packet type: #{packet.type}&quot;</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id='footer-push'></div>
+    </div>
+    <div id='footer'>
+      <a target="docwin" href="http://github.com/mislav/hanna/tree/master"><strong>Hanna</strong> RDoc template</a>
+    </div>
+  </body>
+</html>

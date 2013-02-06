@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang='en'>
+  <head>
+    <title>Net::SFTP::Protocol</title>
+    <meta content='text/html; charset=US-ASCII' http-equiv='Content-Type'>
+    <link href='../../../css/style.css' media='screen' rel='stylesheet' type='text/css'>
+    <script type='text/javascript'>
+      //<![CDATA[
+        function popupCode(url) {
+          window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+        }
+        
+        function toggleCode(id) {
+          var code = document.getElementById(id)
+        
+          code.style.display = code.style.display != 'block' ? 'block' : 'none'
+          return true
+        }
+        
+        // Make codeblocks hidden by default
+        document.writeln('<' + 'style type="text/css">.method .source pre { display: none }<\/style>')
+      //]]>
+    </script>
+  </head>
+  <body class='page'>
+    <div class='class' id='wrapper'>
+      <div class='header'>
+        <h1 class='name'>
+          <span class='type'>module</span>
+          Net::SFTP::Protocol
+        </h1>
+        <ol class='paths'>
+          <li>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/01/attributes_rb.html">lib/net/sftp/protocol/01/attributes.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/01/base_rb.html">lib/net/sftp/protocol/01/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/01/name_rb.html">lib/net/sftp/protocol/01/name.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/02/base_rb.html">lib/net/sftp/protocol/02/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/03/base_rb.html">lib/net/sftp/protocol/03/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/04/attributes_rb.html">lib/net/sftp/protocol/04/attributes.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/04/base_rb.html">lib/net/sftp/protocol/04/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/04/name_rb.html">lib/net/sftp/protocol/04/name.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/05/base_rb.html">lib/net/sftp/protocol/05/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/06/attributes_rb.html">lib/net/sftp/protocol/06/attributes.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/06/base_rb.html">lib/net/sftp/protocol/06/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol/base_rb.html">lib/net/sftp/protocol/base.rb</a>
+          </li>
+          <li class='other'>
+            <a target="docwin" href="../../../files/lib/net/sftp/protocol_rb.html">lib/net/sftp/protocol.rb</a>
+          </li>
+          <li>
+            <a class='show' href='#' onclick='this.parentNode.parentNode.className += " expanded"; this.parentNode.removeChild(this); return false'>show all</a>
+          </li>
+        </ol>
+        <div class='parent'>
+          Parent:
+          <strong><a target="docwin" href="../SFTP.html">SFTP</a></strong>
+        </div>
+      </div>
+      <div id='content'>
+        <div id='text'>
+          <div id='description'>
+            
+            <p>The <a href="Protocol.html">Protocol</a> module contains the definitions
+            for all supported <a href="../SFTP.html">SFTP</a> protocol versions.</p>
+          </div>
+          <div id='method-list'>
+            <h2>Methods</h2>
+            <h3>Public Class</h3>
+            <ol>
+              <li><a target="docwin" href="#method-c-load">load</a></li>
+            </ol>
+          </div>
+          <div id='context'>
+          </div>
+          <div id='class-list'>
+            <h2>Classes and Modules</h2>
+            <ol>
+              <li><a target="docwin" href="Protocol/V01.html">Net::SFTP::Protocol::V01</a></li>
+              <li><a target="docwin" href="Protocol/V02.html">Net::SFTP::Protocol::V02</a></li>
+              <li><a target="docwin" href="Protocol/V03.html">Net::SFTP::Protocol::V03</a></li>
+              <li><a target="docwin" href="Protocol/V04.html">Net::SFTP::Protocol::V04</a></li>
+              <li><a target="docwin" href="Protocol/V05.html">Net::SFTP::Protocol::V05</a></li>
+              <li><a target="docwin" href="Protocol/V06.html">Net::SFTP::Protocol::V06</a></li>
+              <li><a target="docwin" href="Protocol/Base.html">Net::SFTP::Protocol::Base</a></li>
+            </ol>
+          </div>
+          <div id='section'>
+            <div id='methods'>
+              <h2>Public Class methods</h2>
+              <div class='method public-class' id='method-method-c-load'>
+                <a name='method-c-load'></a>
+                <div class='synopsis'>
+                  <span class='name'>load</span>
+                  <span class='arguments'>(session, version)</span>
+                </div>
+                <div class='description'>
+                  
+                  <p>Instantiates and returns a new protocol driver instance for the given
+                  protocol version. <code>session</code> must be a valid <a
+                  href="../SFTP.html">SFTP</a> session object, and <code>version</code> must
+                  be an integer. If an unsupported version is given, an exception will be
+                  raised.</p>
+                </div>
+                <div class='source'>
+                  <a class='source-toggle' href='#' onclick="toggleCode('method-c-load-source'); return false">
+                    [show source]
+                  </a>
+                  <pre id='method-c-load-source'><span class="ruby-comment"># File lib/net/sftp/protocol.rb, line 18</span>&#x000A;<span class="ruby-keyword">def</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">load</span>(<span class="ruby-identifier">session</span>, <span class="ruby-identifier">version</span>)&#x000A;  <span class="ruby-keyword">case</span> <span class="ruby-identifier">version</span>&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-value">1</span> <span class="ruby-keyword">then</span> <span class="ruby-constant">V01</span><span class="ruby-operator">::</span><span class="ruby-constant">Base</span>.<span class="ruby-identifier">new</span>(<span class="ruby-identifier">session</span>)&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-value">2</span> <span class="ruby-keyword">then</span> <span class="ruby-constant">V02</span><span class="ruby-operator">::</span><span class="ruby-constant">Base</span>.<span class="ruby-identifier">new</span>(<span class="ruby-identifier">session</span>)&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-value">3</span> <span class="ruby-keyword">then</span> <span class="ruby-constant">V03</span><span class="ruby-operator">::</span><span class="ruby-constant">Base</span>.<span class="ruby-identifier">new</span>(<span class="ruby-identifier">session</span>)&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-value">4</span> <span class="ruby-keyword">then</span> <span class="ruby-constant">V04</span><span class="ruby-operator">::</span><span class="ruby-constant">Base</span>.<span class="ruby-identifier">new</span>(<span class="ruby-identifier">session</span>)&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-value">5</span> <span class="ruby-keyword">then</span> <span class="ruby-constant">V05</span><span class="ruby-operator">::</span><span class="ruby-constant">Base</span>.<span class="ruby-identifier">new</span>(<span class="ruby-identifier">session</span>)&#x000A;  <span class="ruby-keyword">when</span> <span class="ruby-value">6</span> <span class="ruby-keyword">then</span> <span class="ruby-constant">V06</span><span class="ruby-operator">::</span><span class="ruby-constant">Base</span>.<span class="ruby-identifier">new</span>(<span class="ruby-identifier">session</span>)&#x000A;  <span class="ruby-keyword">else</span> <span class="ruby-identifier">raise</span> <span class="ruby-constant">NotImplementedError</span>, <span class="ruby-node">&quot;unsupported SFTP version #{version.inspect}&quot;</span>&#x000A;  <span class="ruby-keyword">end</span>&#x000A;<span class="ruby-keyword">end</span></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id='footer-push'></div>
+    </div>
+    <div id='footer'>
+      <a target="docwin" href="http://github.com/mislav/hanna/tree/master"><strong>Hanna</strong> RDoc template</a>
+    </div>
+  </body>
+</html>
