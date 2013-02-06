@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "net-sftp"
-  s.version = "2.0.5"
+  s.version = "2.1.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jamis Buck", "Delano Mandelbaum"]
@@ -17,10 +17,11 @@ Gem::Specification.new do |s|
     "README.rdoc"
   ]
   s.files = [
-    "CHANGELOG.rdoc",
+    "CHANGES.txt",
     "Manifest",
     "README.rdoc",
     "Rakefile",
+    "gem-public_cert.pem",
     "lib/net/sftp.rb",
     "lib/net/sftp/constants.rb",
     "lib/net/sftp/errors.rb",
@@ -47,6 +48,7 @@ Gem::Specification.new do |s|
     "lib/net/sftp/response.rb",
     "lib/net/sftp/session.rb",
     "lib/net/sftp/version.rb",
+    "net-sftp.gemspec",
     "setup.rb",
     "test/common.rb",
     "test/protocol/01/test_attributes.rb",
