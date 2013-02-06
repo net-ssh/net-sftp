@@ -1,7 +1,13 @@
 
-=== 2.0.6 / 06 Feb 2013
+=== 2.1.0 / 06 Feb 2013
 
 * Added public cert. All gem releases are now signed. See INSTALL in readme.
+* Remove self-require, it causes a warning in Ruby 1.9.2. [jbarnette]
+* Allow for upload to use the filename of the local file by default [czarneckid]
+* Properly handle receiving less data than requested. [thedarkone]
+* Added option to create directory on directory upload [Pablo Merino]
+* Remove a warnings in tests [kachick]
+
 
 === 2.0.5 / 19 Aug 2010
 

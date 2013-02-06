@@ -5,7 +5,7 @@
 * Codes: https://github.com/net-ssh/net-sftp
 * Email: net-ssh@solutious.com
 
-<em>As of v2.0.6, all gem releases are signed. See INSTALL.</em>
+<em>As of v2.1.0, all gem releases are signed. See INSTALL.</em>
 
 
 == DESCRIPTION:
