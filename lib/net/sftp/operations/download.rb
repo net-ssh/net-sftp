@@ -287,9 +287,16 @@ module Net; module SFTP; module Operations
 
       # Called when a file is to be opened for reading from the remote server.
       def open_file(entry)
-        update_progress(:open, entry)
-        request = sftp.open(entry.remote, &method(:on_open))
-        request[:entry] = entry
+        continue = catch(:skip) do
+          update_progress(:open, entry)
+          request = sftp.open(entry.remote, &method(:on_open))
+          request[:entry] = entry
+          true
+        end
+        unless continue
+          @active -= 1
+          process_next_entry
+        end
       end
 
       # Called when a directory handle is closed.
