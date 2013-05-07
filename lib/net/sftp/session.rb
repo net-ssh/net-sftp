@@ -898,7 +898,7 @@ module Net; module SFTP
             @packet_length = input.read_long
           end
 
-          return unless input.length >= @packet_length
+          return unless input.length >= @packet_length + 4
           packet = Net::SFTP::Packet.new(input.read(@packet_length))
           input.consume!
           @packet_length = nil
