@@ -1,4 +1,8 @@
 
+=== 2.1.2 / 07 May 2013
+
+* Fix fragmentation download failure [accardi]
+
 === 2.1.0 / 06 Feb 2013
 
 * Added public cert. All gem releases are now signed. See INSTALL in readme.

@@ -5,12 +5,12 @@
 
 Gem::Specification.new do |s|
   s.name = "net-sftp"
-  s.version = "2.1.1"
+  s.version = "2.1.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jamis Buck", "Delano Mandelbaum"]
   s.cert_chain = ["gem-public_cert.pem"]
-  s.date = "2013-02-06"
+  s.date = "2013-05-07"
   s.description = "A pure Ruby implementation of the SFTP client protocol"
   s.email = "net-ssh@solutious.com"
   s.extra_rdoc_files = [
