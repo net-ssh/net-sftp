@@ -125,6 +125,18 @@ class Net::SSH::Test::Channel
     gets_data(sftp_packet(type, *args))
   end
 
+  def gets_packet_in_two(fragment_len, type, *args)
+    fragment_len ||= 0
+    whole_packet = sftp_packet(type, *args)
+
+    if 0 < fragment_len && fragment_len < whole_packet.length
+      gets_data(whole_packet[0, whole_packet.length - fragment_len])
+      gets_data(whole_packet[-fragment_len..-1])
+    else
+      gets_data(whole_packet)
+    end
+  end
+
   def sends_packet(type, *args)
     sends_data(sftp_packet(type, *args))
   end
