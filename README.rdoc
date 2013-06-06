@@ -69,7 +69,7 @@ If you wish to run the tests, you'll need:
 
 * gem install net-sftp (might need sudo privileges)
 
-However, in order to be sure the code you're installing hasn't been tampered with, it's recommended that you verify the signiture[http://docs.rubygems.org/read/chapter/21]. To do this, you need to add my public key as a trusted certificate (you only need to do this once):
+However, in order to be sure the code you're installing hasn't been tampered with, it's recommended that you verify the signature[http://docs.rubygems.org/read/chapter/21]. To do this, you need to add my public key as a trusted certificate (you only need to do this once):
 
     # Add the public key as a trusted certificate
     # (You only need to do this once)
