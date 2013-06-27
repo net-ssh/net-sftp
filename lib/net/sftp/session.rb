@@ -106,7 +106,7 @@ module Net; module SFTP
       # Initiates a download from +remote+ to +local+, asynchronously. This
       # method will return a new Net::SFTP::Operations::Download instance, and requires
       # that the event loop be run in order for the download to progress. See
-      # Net::SFTP::Operations::Download for a full discussion of hos this method can be
+      # Net::SFTP::Operations::Download for a full discussion of how this method can be
       # used.
       #
       #   download = sftp.download("/remote/path", "/local/path")
