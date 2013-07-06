@@ -1,5 +1,8 @@
 = Net::SFTP
 
+<em><b>Please note: this project is in maintenance mode. It is not under active development but pull requests are very much welcome. Just be sure to include tests! -- delano</b></em>
+
+
 * Docs: http://net-ssh.github.com/net-sftp
 * Issues: https://github.com/net-ssh/net-sftp/issues
 * Codes: https://github.com/net-ssh/net-sftp
