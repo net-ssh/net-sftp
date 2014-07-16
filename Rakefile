@@ -25,7 +25,7 @@ begin
 
     s.add_dependency 'net-ssh', ">=2.6.5"
 
-    s.add_development_dependency 'test-unit'
+    s.add_development_dependency 'minitest', '>=5'
     s.add_development_dependency 'mocha'
 
     s.license = "MIT"
