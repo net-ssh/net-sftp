@@ -64,12 +64,7 @@ module Net; module SFTP; module Operations
       while queue.any?
         entry = queue.shift
 
-        if entry.directory? && !%w(. ..).include?(::File.basename(entry.name))
-          queue += entries("#{path}/#{entry.name}").map do |e|
-            e.name.replace("#{entry.name}/#{e.name}")
-            e
-          end
-        end
+        queue = enqueue_subtree_if_dir(queue, entry, path)
 
         if ::File.fnmatch(pattern, entry.name, flags)
           if block_given?
@@ -87,6 +82,45 @@ module Net; module SFTP; module Operations
     # Simply returns the matched entries as an array.
     def [](path, pattern)
       glob(path, pattern, 0)
+    end
+
+    # Finds paths matching recursively all directory entries under +path+
+    # against Regexp +regexp+. If a block is given, matches will be yielded
+    # to the block as they are found; otherwise, they will be returned in
+    # an array when the method finishes.
+    def match(path, regexp)
+      path = path.chop if path[-1,1] == "/"
+
+      results = [] unless block_given?
+      queue = entries(path).reject { |e| e.name == "." || e.name == ".." }
+      while queue.any?
+        entry = queue.shift
+
+        queue = enqueue_subtree_if_dir(queue, entry, path)
+
+        if regexp.match(entry.name)
+          if block_given?
+            yield entry
+          else
+            results << entry
+          end
+        end
+      end
+
+      return results unless block_given?
+    end
+
+    private
+
+    # Returns given queue with found subtree entries (Only one level deeper).
+    def enqueue_subtree_if_dir(queue, entry, path)
+      if entry.directory? && !%w(. ..).include?(::File.basename(entry.name))
+        queue += entries("#{path}/#{entry.name}").map do |e|
+          e.name.replace("#{entry.name}/#{e.name}")
+          e
+        end
+      end
+      queue
     end
   end
 
