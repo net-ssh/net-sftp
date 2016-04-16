@@ -1,0 +1,18 @@
+language: ruby
+sudo: false
+rvm:
+  - 2.0.0
+  - 2.1.0
+  - 2.2.0
+  - 2.3.0
+  - jruby-head
+  - rbx-2
+
+install: gem install net-ssh test-unit mocha
+
+script: rake test
+
+matrix:
+  allow_failures:
+    - rvm: jruby-head
+    - rvm: rbx-2
