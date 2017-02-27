@@ -660,8 +660,10 @@ class SessionTest < Net::SFTP::TestCase
 
     def assert_not_implemented(server_version, command, *args)
       expect_sftp_session :server_version => 1
-      sftp.connect!
-      assert_raises(NotImplementedError) { sftp.send(command, *args) }
+      Net::SSH::Test::Extensions::IO.with_test_extension do
+        sftp.connect!
+        assert_raises(NotImplementedError) { sftp.send(command, *args) }
+      end
     end
 
     def assert_command_with_callback(command, *args)

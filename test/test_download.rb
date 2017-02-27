@@ -139,7 +139,9 @@ class DownloadTest < Net::SFTP::TestCase
 
   def test_download_directory_to_buffer_should_fail
     expect_sftp_session :server_version => 3
-    assert_raises(ArgumentError) { sftp.download("/path/to/remote", StringIO.new, :recursive => true) }
+    Net::SSH::Test::Extensions::IO.with_test_extension do
+      assert_raises(ArgumentError) { sftp.download("/path/to/remote", StringIO.new, :recursive => true) }
+    end
   end
 
   private
