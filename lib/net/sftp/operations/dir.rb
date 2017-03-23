@@ -60,7 +60,7 @@ module Net; module SFTP; module Operations
       path = path.chop if path.end_with?('/') && path != '/'
 
       results = [] unless block_given?
-      queue = entries(path).reject { |e| e.name == "." || e.name == ".." }
+      queue = entries(path).reject { |e| %w(. ..).include?(e.name) }
       while queue.any?
         entry = queue.shift
 
