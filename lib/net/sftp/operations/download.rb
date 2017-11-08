@@ -287,7 +287,6 @@ module Net; module SFTP; module Operations
 
       # Called when a file is to be opened for reading from the remote server.
       def open_file(entry)
-        update_progress(:open, entry)
         request = sftp.open(entry.remote, &method(:on_open))
         request[:entry] = entry
       end
@@ -309,6 +308,9 @@ module Net; module SFTP; module Operations
         entry.handle = response[:handle]
         entry.sink = entry.local.respond_to?(:write) ? entry.local : ::File.open(entry.local, "wb")
         entry.offset = 0
+        stat = sftp.fstat!(entry.handle)
+        entry.size = stat.size
+        update_progress(:open, entry)
 
         download_next_chunk(entry)
       end
