@@ -13,6 +13,14 @@ class SessionTest < Net::SFTP::TestCase
     end
   end
 
+  def test_passing_version_should_cause_same_version_to_be_passed_and_used
+    version = 3
+    expect_sftp_session :client_version => version, :server_version => version
+    assert_scripted { sftp({},version).connect! }
+    assert_equal version, sftp.protocol.version
+  end
+
+
   def test_v1_open_read_only_that_succeeds_should_invoke_callback
     expect_open("/path/to/file", "r", nil, :server_version => 1)
     assert_successful_open("/path/to/file")

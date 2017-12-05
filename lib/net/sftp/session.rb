@@ -75,8 +75,9 @@ module Net; module SFTP
     #
     #   sftp = Net::SFTP::Session.new(ssh)
     #   sftp.loop { sftp.opening? }
-    def initialize(session, &block)
+    def initialize(session, version = nil, &block)
       @session    = session
+      @version    = version
       @input      = Net::SSH::Buffer.new
       self.logger = session.logger
       @state      = :closed
@@ -876,7 +877,7 @@ module Net; module SFTP
         channel.on_close(&method(:when_channel_closed))
         channel.on_process(&method(:when_channel_polled))
 
-        send_packet(FXP_INIT, :long, HIGHEST_PROTOCOL_VERSION_SUPPORTED)
+        send_packet(FXP_INIT, :long, @version || HIGHEST_PROTOCOL_VERSION_SUPPORTED)
       end
 
       # Called when the SSH server closes the underlying channel.
