@@ -26,11 +26,12 @@ module Net; module SFTP; module Protocol
     # (the keys in the hash are packet-type specific).
     def parse(packet)
       case packet.type
-      when FXP_STATUS then parse_status_packet(packet)
-      when FXP_HANDLE then parse_handle_packet(packet)
-      when FXP_DATA   then parse_data_packet(packet)
-      when FXP_NAME   then parse_name_packet(packet)
-      when FXP_ATTRS  then parse_attrs_packet(packet)
+      when FXP_STATUS          then parse_status_packet(packet)
+      when FXP_HANDLE          then parse_handle_packet(packet)
+      when FXP_DATA            then parse_data_packet(packet)
+      when FXP_NAME            then parse_name_packet(packet)
+      when FXP_ATTRS           then parse_attrs_packet(packet)
+      when FXP_EXTENDED_REPLY  then parse_extented_reply_packet(packet)
       else raise NotImplementedError, "unknown packet type: #{packet.type}"
       end
     end
