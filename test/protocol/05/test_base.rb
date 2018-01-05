@@ -9,6 +9,11 @@ class Protocol::V05::TestBase < Protocol::V04::TestBase
     assert_equal 5, @base.version
   end
 
+  def test_parse_attrs_packet_should_use_correct_attributes_class
+    Net::SFTP::Protocol::V05::Attributes.expects(:from_buffer).with(:packet).returns(:result)
+    assert_equal({ :attrs => :result }, @base.parse_attrs_packet(:packet))
+  end
+
   undef test_rename_should_ignore_flags_parameter
 
   def test_rename_should_send_rename_packet
