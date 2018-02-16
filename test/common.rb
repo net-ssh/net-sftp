@@ -70,7 +70,7 @@ class Net::SFTP::TestCase < Test::Unit::TestCase
 
     def assert_progress_reported_get(offset, data, expect={})
       assert_equal offset, current_event[3] if offset
-      if data.is_a?(Fixnum)
+      if data.is_a?(Integer)
         assert_equal data, current_event[4].length
       elsif data
         assert_equal data, current_event[4]
