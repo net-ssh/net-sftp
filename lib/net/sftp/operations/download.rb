@@ -81,6 +81,7 @@ module Net; module SFTP; module Operations
   #       puts "creating directory #{args[0]}"
   #     when :finish then
   #       puts "all done!"
+  #     end
   #   end
   #
   # However, for more complex implementations (e.g., GUI interfaces and such)
