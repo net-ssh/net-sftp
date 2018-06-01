@@ -173,7 +173,7 @@ module Net; module SFTP; module Operations
           process_next_entry
         end
       else
-        raise ArgumentError, "expected a file to upload" unless local.respond_to?(:read) || ::File.exists?(local)
+        raise ArgumentError, "expected a file to upload" unless local.respond_to?(:read) || ::File.exist?(local)
         @stack = [[local]]
         process_next_entry
       end
