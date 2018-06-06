@@ -2,15 +2,38 @@ require "rubygems"
 require "rake"
 require "rake/clean"
 require "rdoc/task"
+require "bundler/gem_tasks"
+
+desc "When releasing make sure NET_SSH_BUILDGEM_SIGNED is set"
+task :check_NET_SSH_BUILDGEM_SIGNED do
+  raise "NET_SSH_BUILDGEM_SIGNED should be set to release" unless ENV['NET_SSH_BUILDGEM_SIGNED']
+end
+
+Rake::Task[:release].enhance [:check_NET_SSH_BUILDGEM_SIGNED]
+Rake::Task[:release].prerequisites.unshift(:check_NET_SSH_BUILDGEM_SIGNED)
 
 task :default => ["build"]
 CLEAN.include [ 'pkg', 'rdoc' ]
 name = "net-sftp"
 
-$:.unshift File.join(File.dirname(__FILE__), 'lib')
-require "net/sftp/version"
-version = Net::SFTP::Version::STRING.dup
+require_relative "lib/net/sftp/version"
+version = Net::SFTP::Version::CURRENT
 
+namespace :cert do
+  desc "Update public cert from private - only run if public is expired"
+  task :update_public_when_expired do
+    require 'openssl'
+    require 'time'
+    raw = File.read "net-sftp-public_cert.pem"
+    certificate = OpenSSL::X509::Certificate.new raw
+    raise Exception, "Not yet expired: #{certificate.not_after}" unless certificate.not_after < Time.now
+    sh "gem cert --build netssh@solutious.com --days 365*5 --private-key /mnt/gem/net-ssh-private_key.pem"
+    sh "mv gem-public_cert.pem net-sftp-public_cert.pem"
+    sh "gem cert --add net-sftp-public_cert.pem"
+  end
+end
+
+if false
 begin
   require "jeweler"
   Jeweler::Tasks.new do |s|
@@ -36,6 +59,7 @@ begin
   Jeweler::GemcutterTasks.new
 rescue LoadError
   puts "Jeweler (or a dependency) not available. Install it with: sudo gem install jeweler"
+end
 end
 
 require 'rake/testtask'

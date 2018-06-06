@@ -6,10 +6,11 @@ module Net; module SFTP
   class Version < Net::SSH::Version
     MAJOR = 2
     MINOR = 1
-    TINY  = 2
+    TINY  = 3
+    PRE = "rc1"
 
     # The current version, as a Version instance
-    CURRENT = new(MAJOR, MINOR, TINY)
+    CURRENT = new(MAJOR, MINOR, TINY, PRE)
 
     # The current version, as a String instance
     STRING  = CURRENT.to_s
