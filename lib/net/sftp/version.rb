@@ -1,19 +1,68 @@
-require 'net/ssh/version'
+module Net
+  module SFTP
+    # A class for describing the current version of a library. The version
+    # consists of three parts: the +major+ number, the +minor+ number, and the
+    # +tiny+ (or +patch+) number.
+    #
+    # Two Version instances may be compared, so that you can test that a version
+    # of a library is what you require:
+    #
+    #   require 'net/sftp/version'
+    #
+    #   if Net::SFTP::Version::CURRENT < Net::SFTP::Version[2,1,0]
+    #     abort "your software is too old!"
+    #   end
+    class Version
+      include Comparable
 
-module Net; module SFTP
+      # A convenience method for instantiating a new Version instance with the
+      # given +major+, +minor+, and +tiny+ components.
+      def self.[](major, minor, tiny, pre = nil)
+        new(major, minor, tiny, pre)
+      end
 
-  # Describes the current version of the Net::SFTP library.
-  class Version < Net::SSH::Version
-    MAJOR = 2
-    MINOR = 1
-    TINY  = 3
-    PRE = "rc1"
+      attr_reader :major, :minor, :tiny
 
-    # The current version, as a Version instance
-    CURRENT = new(MAJOR, MINOR, TINY, PRE)
+      # Create a new Version object with the given components.
+      def initialize(major, minor, tiny, pre = nil)
+        @major, @minor, @tiny, @pre = major, minor, tiny, pre
+      end
 
-    # The current version, as a String instance
-    STRING  = CURRENT.to_s
+      # Compare this version to the given +version+ object.
+      def <=>(version)
+        to_i <=> version.to_i
+      end
+
+      # Converts this version object to a string, where each of the three
+      # version components are joined by the '.' character. E.g., 2.0.0.
+      def to_s
+        @to_s ||= [@major, @minor, @tiny, @pre].compact.join(".")
+      end
+
+      # Converts this version to a canonical integer that may be compared
+      # against other version objects.
+      def to_i
+        @to_i ||= @major * 1_000_000 + @minor * 1_000 + @tiny
+      end
+
+      # The major component of this version of the Net::SFTP library
+      MAJOR = 2
+
+      # The minor component of this version of the Net::SFTP library
+      MINOR = 1
+
+      # The tiny component of this version of the Net::SFTP library
+      TINY  = 3
+
+      # The prerelease component of this version of the Net::SFTP library
+      # nil allowed
+      PRE   = "rc2"
+
+      # The current version of the Net::SFTP library as a Version instance
+      CURRENT = new(*[MAJOR, MINOR, TINY, PRE].compact)
+
+      # The current version of the Net::SFTP library as a String
+      STRING = CURRENT.to_s
+    end
   end
-
-end; end
+end
