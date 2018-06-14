@@ -56,7 +56,7 @@ class Net::SSH::Connection::Session
   # SSH session. Blocks until the SFTP session is fully open, and then
   # returns the SFTP session.
   #
-  #   Net::SSH.start("localhost", "user", "password") do |ssh|
+  #   Net::SSH.start("localhost", "user", :password => "password") do |ssh|
   #     ssh.sftp.upload!("/local/file.tgz", "/remote/file.tgz")
   #     ssh.exec! "cd /some/path && tar xf /remote/file.tgz && rm /remote/file.tgz"
   #   end
