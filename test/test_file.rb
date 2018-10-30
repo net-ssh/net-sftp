@@ -91,6 +91,21 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert @file.eof?
   end
 
+  def test_gets_with_integer_argument_should_read_number_of_bytes
+    @sftp.expects(:read!).returns("hello world\ngoodbye world\n\nfarewell!\n")
+    assert_equal "hello w", @file.gets(7)
+  end
+
+  def test_gets_with_delimiter_and_limit_should_read_to_delimiter_if_less_than_limit
+    @sftp.expects(:read!).returns("hello world\ngoodbye world\n\nfarewell!\n")
+    assert_equal "hello w", @file.gets("w", 11)
+  end
+
+  def test_gets_with_delimiter_and_limit_should_read_to_limit_if_less_than_delimiter
+    @sftp.expects(:read!).returns("hello world\ngoodbye world\n\nfarewell!\n")
+    assert_equal "hello", @file.gets("w", 5)
+  end
+
   def test_gets_at_EOF_should_return_nil
     @sftp.expects(:read!).returns(nil)
     assert_nil @file.gets

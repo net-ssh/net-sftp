@@ -82,7 +82,15 @@ module Net; module SFTP; module Operations
     # returns the bytes read (including +sep_string+). If +sep_string+ is
     # omitted, it defaults to +$/+. If EOF is encountered before any data
     # could be read, #gets will return +nil+.
-    def gets(sep_string=$/)
+    def gets(sep_or_limit=$/, limit=Float::INFINITY)
+      if sep_or_limit.is_a? Integer
+        sep_string = $/
+        lim = sep_or_limit
+      else
+        sep_string = sep_or_limit
+        lim = limit
+      end
+
       delim = if sep_string.length == 0
         "#{$/}#{$/}"
       else
@@ -92,7 +100,7 @@ module Net; module SFTP; module Operations
       loop do
         at = @buffer.index(delim)
         if at
-          offset = at + delim.length
+          offset = [at + delim.length, lim].min
           @pos += offset
           line, @buffer = @buffer[0,offset], @buffer[offset..-1]
           return line
