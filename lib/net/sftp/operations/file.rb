@@ -115,8 +115,8 @@ module Net; module SFTP; module Operations
 
     # Same as #gets, but raises EOFError if EOF is encountered before any
     # data could be read.
-    def readline(sep_string=$/)
-      line = gets(sep_string)
+    def readline(sep_or_limit=$/, limit=Float::INFINITY)
+      line = gets(sep_or_limit, limit)
       raise EOFError if line.nil?
       return line
     end
