@@ -81,7 +81,9 @@ module Net; module SFTP; module Operations
     # Reads up to the next instance of +sep_string+ in the stream, and
     # returns the bytes read (including +sep_string+). If +sep_string+ is
     # omitted, it defaults to +$/+. If EOF is encountered before any data
-    # could be read, #gets will return +nil+.
+    # could be read, #gets will return +nil+. If the first argument is an
+    # integer, or optional second argument is given, the returning string
+    # would not be longer than the given value in bytes.
     def gets(sep_or_limit=$/, limit=Float::INFINITY)
       if sep_or_limit.is_a? Integer
         sep_string = $/
