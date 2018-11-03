@@ -93,14 +93,14 @@ module Net; module SFTP; module Operations
         lim = limit
       end
 
-      delim = if sep_string.length == 0
+      delim = if sep_string && sep_string.length == 0
         "#{$/}#{$/}"
       else
         sep_string
       end
 
       loop do
-        at = @buffer.index(delim)
+        at = @buffer.index(delim) if delim
         if at
           offset = [at + delim.length, lim].min
           @pos += offset
