@@ -127,6 +127,14 @@ module Net; module SFTP; module Operations
       return line
     end
 
+    # Resets position to beginning of file
+    def rewind
+      @pos      = 0
+      @real_pos = 0
+      @real_eof = false
+      @buffer   = ""
+    end
+
     # Writes the given data to the stream, incrementing the file position and
     # returning the number of bytes written.
     def write(data)

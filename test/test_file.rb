@@ -133,6 +133,15 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_raises(EOFError) { @file.readline }
   end
 
+  def test_rewind_should_reset_to_beginning_of_file
+    @sftp.expects(:read!).times(2).returns("hello world", nil)
+    @file.read
+    assert @file.eof?
+    @file.rewind
+    assert !@file.eof?
+    assert_equal 0, @file.pos
+  end
+
   def test_write_should_write_data_and_increment_pos_and_return_data_length
     @sftp.expects(:write!).with("handle", 0, "hello world")
     assert_equal 11, @file.write("hello world")
