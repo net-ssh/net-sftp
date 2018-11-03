@@ -106,6 +106,10 @@ module Net; module SFTP; module Operations
           @pos += offset
           line, @buffer = @buffer[0,offset], @buffer[offset..-1]
           return line
+        elsif lim < @buffer.length
+          @pos += lim
+          line, @buffer = @buffer[0,lim], @buffer[lim..-1]
+          return line
         elsif !fill
           return nil if @buffer.empty?
           @pos += @buffer.length

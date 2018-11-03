@@ -106,6 +106,11 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_equal "hello", @file.gets("w", 5)
   end
 
+  def test_gets_when_no_such_delimiter_exists_in_stream_but_limit_provided_should_read_to_limit
+    @sftp.expects(:read!).returns("hello world\ngoodbye world\n\nfarewell!\n")
+    assert_equal "hello w", @file.gets("z", 7)
+  end
+
   def test_gets_at_EOF_should_return_nil
     @sftp.expects(:read!).returns(nil)
     assert_nil @file.gets
