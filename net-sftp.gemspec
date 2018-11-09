@@ -31,16 +31,16 @@ Gem::Specification.new do |spec|
     spec.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      spec.add_runtime_dependency(%q<net-ssh>, [">= 2.6.5", "< 5.0.0"])
+      spec.add_runtime_dependency(%q<net-ssh>, [">= 2.6.5", "< 6.0.0"])
       spec.add_development_dependency(%q<test-unit>, [">= 0"])
       spec.add_development_dependency(%q<mocha>, [">= 0"])
     else
-      spec.add_dependency(%q<net-ssh>, [">= 2.6.5", "< 5.0.0"])
+      spec.add_dependency(%q<net-ssh>, [">= 2.6.5", "< 6.0.0"])
       spec.add_dependency(%q<test-unit>, [">= 0"])
       spec.add_dependency(%q<mocha>, [">= 0"])
     end
   else
-    spec.add_dependency(%q<net-ssh>, [">= 2.6.5", "< 5.0.0"])
+    spec.add_dependency(%q<net-ssh>, [">= 2.6.5", "< 6.0.0"])
     spec.add_dependency(%q<test-unit>, [">= 0"])
     spec.add_dependency(%q<mocha>, [">= 0"])
   end
