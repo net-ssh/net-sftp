@@ -131,9 +131,12 @@ module Net; module SFTP; module Operations
       nil
     end
 
-    # Returns the size of the file from stats
     def size
       stat.size
+    end
+
+    def rewind
+      self.pos = 0
     end
 
     # Writes each argument to the stream, appending a newline to any item

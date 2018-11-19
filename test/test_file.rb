@@ -162,4 +162,14 @@ class FileOperationsTest < Net::SFTP::TestCase
     @sftp.expects(:fstat!).with("handle").returns(stat)
     assert_equal 1024, @file.size
   end
+
+  def test_rewind
+    @sftp.expects(:write!).with("handle", 0, "hello world\n")
+    @sftp.expects(:read!).with("handle", 12, 8192).returns("hello world\n")
+    @sftp.expects(:read!).with("handle", 0, 8192).returns("hello world\n")
+    @file.puts "hello world\n"
+    assert_equal "hello", @file.read(5)
+    @file.rewind
+    assert_equal "hello world", @file.read(11)
+  end
 end
