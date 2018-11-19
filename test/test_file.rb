@@ -156,4 +156,10 @@ class FileOperationsTest < Net::SFTP::TestCase
     @sftp.expects(:fstat!).with("handle").returns(stat)
     assert_equal stat, @file.stat
   end
+
+  def test_size_should_return_size_from_stat
+    stat = stub(size: 1024)
+    @sftp.expects(:fstat!).with("handle").returns(stat)
+    assert_equal 1024, @file.size
+  end
 end

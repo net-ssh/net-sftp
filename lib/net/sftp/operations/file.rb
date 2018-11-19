@@ -131,6 +131,11 @@ module Net; module SFTP; module Operations
       nil
     end
 
+    # Returns the size of the file from stats
+    def size
+      stat.size
+    end
+
     # Writes each argument to the stream, appending a newline to any item
     # that does not already end in a newline. Array arguments are flattened.
     def puts(*items)
