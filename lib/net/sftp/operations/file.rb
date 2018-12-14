@@ -131,6 +131,14 @@ module Net; module SFTP; module Operations
       nil
     end
 
+    def size
+      stat.size
+    end
+
+    def rewind
+      self.pos = 0
+    end
+
     # Writes each argument to the stream, appending a newline to any item
     # that does not already end in a newline. Array arguments are flattened.
     def puts(*items)
