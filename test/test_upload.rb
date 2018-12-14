@@ -207,7 +207,7 @@ class UploadTest < Net::SFTP::TestCase
 
     def expect_file(path, data)
       File.stubs(:directory?).with(path).returns(false)
-      File.stubs(:exists?).with(path).returns(true)
+      File.stubs(:exist?).with(path).returns(true)
       file = StringIO.new(data)
       file.stubs(:stat).returns(stub("stat", :size => data.length))
       File.stubs(:open).with(path, "rb").returns(file)
