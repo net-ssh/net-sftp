@@ -81,20 +81,34 @@ module Net; module SFTP; module Operations
     # Reads up to the next instance of +sep_string+ in the stream, and
     # returns the bytes read (including +sep_string+). If +sep_string+ is
     # omitted, it defaults to +$/+. If EOF is encountered before any data
-    # could be read, #gets will return +nil+.
-    def gets(sep_string=$/)
-      delim = if sep_string.length == 0
+    # could be read, #gets will return +nil+. If the first argument is an
+    # integer, or optional second argument is given, the returning string
+    # would not be longer than the given value in bytes.
+    def gets(sep_or_limit=$/, limit=Float::INFINITY)
+      if sep_or_limit.is_a? Integer
+        sep_string = $/
+        lim = sep_or_limit
+      else
+        sep_string = sep_or_limit
+        lim = limit
+      end
+
+      delim = if sep_string && sep_string.length == 0
         "#{$/}#{$/}"
       else
         sep_string
       end
 
       loop do
-        at = @buffer.index(delim)
+        at = @buffer.index(delim) if delim
         if at
-          offset = at + delim.length
+          offset = [at + delim.length, lim].min
           @pos += offset
           line, @buffer = @buffer[0,offset], @buffer[offset..-1]
+          return line
+        elsif lim < @buffer.length
+          @pos += lim
+          line, @buffer = @buffer[0,lim], @buffer[lim..-1]
           return line
         elsif !fill
           return nil if @buffer.empty?
@@ -107,10 +121,18 @@ module Net; module SFTP; module Operations
 
     # Same as #gets, but raises EOFError if EOF is encountered before any
     # data could be read.
-    def readline(sep_string=$/)
-      line = gets(sep_string)
+    def readline(sep_or_limit=$/, limit=Float::INFINITY)
+      line = gets(sep_or_limit, limit)
       raise EOFError if line.nil?
       return line
+    end
+
+    # Resets position to beginning of file
+    def rewind
+      @pos      = 0
+      @real_pos = 0
+      @real_eof = false
+      @buffer   = ""
     end
 
     # Writes the given data to the stream, incrementing the file position and
