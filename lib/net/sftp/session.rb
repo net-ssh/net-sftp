@@ -829,7 +829,7 @@ module Net; module SFTP
       # request.
       def request(type, *args, &callback)
         request = Request.new(self, type, protocol.send(type, *args), &callback)
-        info { "sending #{type} packet (#{request.id})" }
+        info { "sending #{type} packet (id #{request.id}) args: #{args}" }
         pending_requests[request.id] = request
       end
 
@@ -904,7 +904,11 @@ module Net; module SFTP
           input.consume!
           @packet_length = nil
 
-          debug { "received sftp packet #{packet.type} len #{packet.length}" }
+          readable_type = Net::SFTP::Constants::PacketTypes.constants.find do |constant|
+            Net::SFTP::Constants::PacketTypes.const_get(constant) == packet.type
+          end
+
+          debug { "received sftp packet #{packet.type} (readable_type) len #{packet.length}" }
 
           if packet.type == FXP_VERSION
             do_version(packet)
