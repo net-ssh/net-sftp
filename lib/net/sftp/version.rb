@@ -46,17 +46,17 @@ module Net
       end
 
       # The major component of this version of the Net::SFTP library
-      MAJOR = 2
+      MAJOR = 3
 
       # The minor component of this version of the Net::SFTP library
-      MINOR = 1
+      MINOR = 0
 
       # The tiny component of this version of the Net::SFTP library
-      TINY  = 3
+      TINY  = 0
 
       # The prerelease component of this version of the Net::SFTP library
       # nil allowed
-      PRE   = "rc3"
+      PRE   = "beta1"
 
       # The current version of the Net::SFTP library as a Version instance
       CURRENT = new(*[MAJOR, MINOR, TINY, PRE].compact)
