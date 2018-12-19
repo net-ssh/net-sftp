@@ -256,7 +256,7 @@ module Net; module SFTP; module Operations
       # operation was successful.
       def on_opendir(response)
         entry = response.request[:entry]
-        raise "opendir #{entry.remote}: #{response}" unless response.ok?
+        raise  StatusException.new(response, "opendir #{entry.remote}") unless response.ok?
         entry.handle = response[:handle]
         request = sftp.readdir(response[:handle], &method(:on_readdir))
         request[:parent] = entry
@@ -271,7 +271,7 @@ module Net; module SFTP; module Operations
           request = sftp.close(entry.handle, &method(:on_closedir))
           request[:parent] = entry
         elsif !response.ok?
-          raise "readdir #{entry.remote}: #{response}"
+          raise StatusException.new(response, "readdir #{entry.remote}")
         else
           response[:names].each do |item|
             next if item.name == "." || item.name == ".."
@@ -297,7 +297,7 @@ module Net; module SFTP; module Operations
       def on_closedir(response)
         @active -= 1
         entry = response.request[:parent]
-        raise "close #{entry.remote}: #{response}" unless response.ok?
+        raise StatusException.new(response, "close #{entry.remote}") unless response.ok?
         process_next_entry
       end
 
@@ -305,7 +305,7 @@ module Net; module SFTP; module Operations
       # to initiate the data transfer.
       def on_open(response)
         entry = response.request[:entry]
-        raise "open #{entry.remote}: #{response}" unless response.ok?
+        raise StatusException.new(response, "open #{entry.remote}") unless response.ok?
 
         entry.handle = response[:handle]
         entry.sink = entry.local.respond_to?(:write) ? entry.local : ::File.open(entry.local, "wb")
@@ -333,7 +333,7 @@ module Net; module SFTP; module Operations
           request = sftp.close(entry.handle, &method(:on_close))
           request[:entry] = entry
         elsif !response.ok?
-          raise "read #{entry.remote}: #{response}"
+          raise StatusException.new(response, "read #{entry.remote}")
         else
           entry.offset += response[:data].bytesize
           update_progress(:get, entry, response.request[:offset], response[:data])
@@ -346,7 +346,7 @@ module Net; module SFTP; module Operations
       def on_close(response)
         @active -= 1
         entry = response.request[:entry]
-        raise "close #{entry.remote}: #{response}" unless response.ok?
+        raise StatusException.new(response, "close #{entry.remote}") unless response.ok?
         process_next_entry
       end
 
