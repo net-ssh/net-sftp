@@ -17,4 +17,4 @@ script: rake test
 matrix:
   allow_failures:
     - rvm: jruby-head
-    - rvm: rbx-2
+    - rvm: rbx-3.107
