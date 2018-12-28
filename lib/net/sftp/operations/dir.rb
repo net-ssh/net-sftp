@@ -57,10 +57,10 @@ module Net; module SFTP; module Operations
     # it should be able to handle modest numbers of files in each directory.
     def glob(path, pattern, flags=0)
       flags |= ::File::FNM_PATHNAME
-      path = path.chop if path[-1,1] == "/"
+      path = path.chop if path.end_with?('/') && path != '/'
 
       results = [] unless block_given?
-      queue = entries(path).reject { |e| e.name == "." || e.name == ".." }
+      queue = entries(path).reject { |e| %w(. ..).include?(e.name) }
       while queue.any?
         entry = queue.shift
 
