@@ -26,7 +26,7 @@ Net::SFTP is a pure-Ruby implementation of the SFTP protocol (specifically, vers
 
 In a nutshell:
 
-  require 'net/sftp'
+  require 'net-sftp'
 
   Net::SFTP.start('host', 'username', :password => 'password') do |sftp|
     # upload a file or directory to the remote host
