@@ -76,11 +76,12 @@ module Net; module SFTP
     #   sftp = Net::SFTP::Session.new(ssh)
     #   sftp.loop { sftp.opening? }
     def initialize(session, version = nil, &block)
-      @session    = session
-      @version    = version
-      @input      = Net::SSH::Buffer.new
-      self.logger = session.logger
-      @state      = :closed
+      @session          = session
+      @version          = version
+      @input            = Net::SSH::Buffer.new
+      self.logger       = session.logger
+      @state            = :closed
+      @pending_requests = {}
 
       connect(&block)
     end
@@ -934,7 +935,6 @@ module Net; module SFTP
         end
 
         @protocol = Protocol.load(self, negotiated_version)
-        @pending_requests = {}
 
         @state = :open
         @on_ready.each { |callback| callback.call(self) }
