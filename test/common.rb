@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'mocha/setup'
 require 'stringio'
+require 'pathname'
 
 begin
   require 'net/ssh'
