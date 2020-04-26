@@ -44,7 +44,7 @@ class Protocol::V01::TestBase < Net::SFTP::TestCase
       :string, "name2", :string, "long2", :long, 0x4, :long, 0550)
     names = @base.parse_name_packet(packet)[:names]
 
-    assert_not_nil names
+    refute_nil names
     assert_equal 2, names.length
     assert_instance_of Net::SFTP::Protocol::V01::Name, names.first
 

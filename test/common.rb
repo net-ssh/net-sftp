@@ -1,4 +1,4 @@
-require 'test/unit'
+require 'minitest/autorun'
 require 'mocha/setup'
 require 'stringio'
 
@@ -20,7 +20,7 @@ require 'net/sftp'
 require 'net/sftp/constants'
 require 'net/ssh/test'
 
-class Net::SFTP::TestCase < Test::Unit::TestCase
+class Net::SFTP::TestCase < Minitest::Test
   include Net::SFTP::Constants::PacketTypes
   include Net::SSH::Test
 

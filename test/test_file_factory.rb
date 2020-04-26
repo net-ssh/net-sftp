@@ -2,7 +2,7 @@ require "common"
 
 class FileFactoryTest < Net::SFTP::TestCase
   def setup
-    @sftp = stub(:sftp)
+    @sftp = stub('sftp')
     @factory = Net::SFTP::Operations::FileFactory.new(@sftp)
   end
 
