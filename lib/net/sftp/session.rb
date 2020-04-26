@@ -81,6 +81,7 @@ module Net; module SFTP
       @input      = Net::SSH::Buffer.new
       self.logger = session.logger
       @state      = :closed
+      @pending_requests = {}
 
       connect(&block)
     end
