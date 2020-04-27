@@ -1,3 +1,7 @@
+=== 3.0.0
+
+* Pass protocol version via Net::SFTP.start [#107]
+* Net-ssh 6.0 support [#106]
 
 === 2.1.2 / 07 May 2013
 
