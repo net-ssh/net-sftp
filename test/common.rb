@@ -182,3 +182,7 @@ module Protocol
   module V05; end
   module V06; end
 end
+
+if Object.const_defined?(:Warning)
+  Warning[:deprecated] = false
+end
