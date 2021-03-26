@@ -419,7 +419,7 @@ module Net; module SFTP
 
       # :call-seq:
       #   readdir(handle) -> request
-      #   raeddir(handle) { |response| ... } -> request
+      #   readdir(handle) { |response| ... } -> request
       #
       # Reads a set of entries from the given directory handle (which must
       # have been obtained via #opendir). If the response is EOF, then there
