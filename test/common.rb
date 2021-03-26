@@ -1,5 +1,5 @@
 require 'minitest/autorun'
-require 'mocha/setup'
+require 'mocha/minitest'
 require 'stringio'
 
 begin
@@ -181,4 +181,8 @@ module Protocol
   module V04; end
   module V05; end
   module V06; end
+end
+
+if Object.const_defined?(:Warning)
+  Warning[:deprecated] = false
 end
