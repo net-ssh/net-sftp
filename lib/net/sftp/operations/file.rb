@@ -137,6 +137,8 @@ module Net; module SFTP; module Operations
       data.bytes.length
     end
 
+    alias << write
+
     # Writes each argument to the stream. If +$\+ is set, it will be written
     # after all arguments have been written.
     def print(*items)
