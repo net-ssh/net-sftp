@@ -1,6 +1,7 @@
 require 'minitest/autorun'
 require 'mocha/setup'
 require 'stringio'
+require 'pathname'
 
 begin
   require 'net/ssh'

@@ -141,6 +141,9 @@ module Net; module SFTP; module Operations
     # This will return immediately, and requires that the SSH event loop be
     # run in order to effect the upload. (See #wait.)
     def initialize(sftp, local, remote, options={}, &progress) #:nodoc:
+      local = local.to_path if local.respond_to?(:to_path)
+      remote = remote.to_path if remote.respond_to?(:to_path)
+
       @sftp = sftp
       @local = local
       @remote = remote

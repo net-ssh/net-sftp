@@ -10,6 +10,13 @@ class UploadTest < Net::SFTP::TestCase
     assert_scripted_command { sftp.upload("/path/to/local", "/path/to/remote") }
   end
 
+  def test_upload_file_should_handle_Pathname
+    local = Pathname.new("/path/to/local").freeze
+    remote = Pathname.new("/path/to/remote").freeze
+    expect_file_transfer(local.to_s, remote.to_s, "here are the contents")
+    assert_scripted_command { sftp.upload(local, remote) }
+  end
+
   def test_upload_file_without_remote_uses_filename_of_local_file
     expect_file_transfer("/path/to/local", "local", "here are the contents")
 

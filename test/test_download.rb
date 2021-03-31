@@ -35,6 +35,20 @@ class DownloadTest < Net::SFTP::TestCase
     assert_equal text, file.string
   end
 
+  def test_download_file_should_handle_Pathname
+    local = Pathname.new("/path/to/local").freeze
+    remote = Pathname.new("/path/to/remote").freeze
+    text = "this is some text\n"
+
+    expect_file_transfer(remote.to_s, text)
+
+    file = StringIO.new
+    File.stubs(:open).with(local.to_s, "wb").returns(file)
+
+    assert_scripted_command { sftp.download(remote, local) }
+    assert_equal text, file.string
+  end
+
   def test_download_large_file_should_transfer_remote_to_local
     local = "/path/to/local"
     remote = "/path/to/remote"
