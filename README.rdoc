@@ -79,7 +79,7 @@ However, in order to be sure the code you're installing hasn't been tampered wit
     $ curl -O https://raw.githubusercontent.com/net-ssh/net-sftp/master/net-sftp-public_cert.pem
     $ gem cert --add net-sftp-public_cert.pem
 
-Then, when install the gem, do so with high security:
+Then, when installing the gem, do so with high security:
 
     $ gem install net-sftp -P HighSecurity
 
