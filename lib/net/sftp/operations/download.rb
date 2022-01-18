@@ -27,7 +27,7 @@ module Net; module SFTP; module Operations
   #
   #   sftp.download!("/path/to/remotedir", "/path/to/local", :recursive => true)
   #
-  # This will download "/path/to/remotedir", it's contents, it's subdirectories,
+  # This will download "/path/to/remotedir", its contents, its subdirectories,
   # and their contents, recursively, to "/path/to/local" on the local host.
   # (If you specify :recursive => true and the source is not a directory,
   # you'll get an error!)

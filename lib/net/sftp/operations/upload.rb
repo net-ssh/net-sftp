@@ -27,14 +27,14 @@ module Net; module SFTP; module Operations
   #
   #   sftp.upload!("/path/to/directory", "/path/to/remote")
   #
-  # This will upload "/path/to/directory", it's contents, it's subdirectories,
+  # This will upload "/path/to/directory", its contents, its subdirectories,
   # and their contents, recursively, to "/path/to/remote" on the remote server.
   #
   # For uploading a directory without creating it, do
   # sftp.upload!("/path/to/directory", "/path/to/remote", :mkdir => false)
   #
   # If you want to send data to a file on the remote server, but the data is
-  # in memory, you can pass an IO object and upload it's contents:
+  # in memory, you can pass an IO object and upload its contents:
   #
   #   require 'stringio'
   #   io = StringIO.new(data)
