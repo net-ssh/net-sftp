@@ -722,7 +722,7 @@ module Net; module SFTP
 
     public # miscellaneous methods
 
-      # Closes the SFTP connection, but not the SSH connection. Blocks until the
+      # Closes the SFTP channel, but not the SSH connection. Blocks until the
       # session has terminated. Once the session has terminated, further operations
       # on this object will result in errors. You can reopen the SFTP session
       # via the #connect method.
