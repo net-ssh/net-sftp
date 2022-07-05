@@ -1,4 +1,5 @@
 require 'net/sftp/protocol/04/base'
+require 'net/sftp/protocol/05/attributes'
 
 module Net; module SFTP; module Protocol; module V05
 
@@ -59,6 +60,14 @@ module Net; module SFTP; module Protocol; module V05
       attributes = attribute_factory.new(options)
 
       send_request(FXP_OPEN, :string, path, :long, desired_access, :long, sftp_flags, :raw, attributes.to_s)
+    end
+
+    protected
+
+    # Returns the Attributes class used by this version of the protocol
+    # (Net::SFTP::Protocol::V05::Attributes, in this case)
+    def attribute_factory
+      V05::Attributes
     end
 
   end
