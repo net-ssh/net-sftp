@@ -3,7 +3,7 @@
 <em><b>Please note: this project is in maintenance mode. It is not under active development but pull requests are very much welcome. Just be sure to include tests! -- delano</b></em>
 
 
-* Docs: http://net-ssh.github.com/net-sftp
+* Docs: http://net-ssh.github.io/net-sftp
 * Issues: https://github.com/net-ssh/net-sftp/issues
 * Codes: https://github.com/net-ssh/net-sftp
 * Email: net-ssh@solutious.com
@@ -76,8 +76,8 @@ However, in order to be sure the code you're installing hasn't been tampered wit
 
     # Add the public key as a trusted certificate
     # (You only need to do this once)
-    $ curl -O https://raw.github.com/net-ssh/net-ssh/master/gem-public_cert.pem
-    $ gem cert --add gem-public_cert.pem
+    $ curl -O https://raw.githubusercontent.com/net-ssh/net-sftp/master/net-sftp-public_cert.pem
+    $ gem cert --add net-sftp-public_cert.pem
 
 Then, when install the gem, do so with high security:
 

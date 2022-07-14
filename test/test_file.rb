@@ -165,6 +165,12 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_equal 26, @file.pos
   end
 
+  def test_write_should_write_mutlibyte_string_data_and_increment_pos_and_return_data_length
+    @sftp.expects(:write!).with("handle", 0, "hello world, 你好，世界")
+    assert_equal 28, @file.write("hello world, 你好，世界")
+    assert_equal 28, @file.pos
+  end
+
   def test_print_with_no_arguments_should_write_nothing_if_dollar_bslash_is_nil
     assert_nil $\
     @sftp.expects(:write!).never
