@@ -1,4 +1,4 @@
-require 'net/sftp/protocol/01/attributes'
+require 'net/sftp/protocol/04/attributes'
 
 module Net; module SFTP; module Protocol; module V05
 
@@ -24,41 +24,38 @@ module Net; module SFTP; module Protocol; module V05
   # * :mtime:: the modification time of the file (integer, seconds since epoch)
   # * :mtime_nseconds:: the nanosecond component of mtime (integer)
   # * :acl:: an array of ACL entries for the item
+  # * :attrib_bits:: other attributes of the file or directory (as a bit field) (integer)
   # * :extended:: a hash of name/value pairs identifying extended info
   #
   # Likewise, when the server sends an Attributes object, all of the
   # above attributes are exposed as methods (though not all will be set with
   # non-nil values from the server).
   class Attributes < V04::Attributes
+    F_BITS       = 0x00000200
 
-    F_ATTRIB_BITS       = 0x00000200
-
-    class <<self
-      # The list of supported elements in the attributes structure as defined
-      # by v5 of the sftp protocol.
-      def elements #:nodoc:
-        @elements ||= [
-          [:type,                :byte,    0],
-          [:size,                :int64,   V01::Attributes::F_SIZE],
-          [:owner,               :string,  V04::Attributes::F_OWNERGROUP],
-          [:group,               :string,  V04::Attributes::F_OWNERGROUP],
-          [:permissions,         :long,    V01::Attributes::F_PERMISSIONS],
-          [:atime,               :int64,   V04::Attributes::F_ACCESSTIME],
-          [:atime_nseconds,      :long,    V04::Attributes::F_ACCESSTIME | V04::Attributes::F_SUBSECOND_TIMES],
-          [:createtime,          :int64,   V04::Attributes::F_CREATETIME],
-          [:createtime_nseconds, :long,    V04::Attributes::F_CREATETIME | V04::Attributes::F_SUBSECOND_TIMES],
-          [:mtime,               :int64,   V04::Attributes::F_MODIFYTIME],
-          [:mtime_nseconds,      :long,    V04::Attributes::F_MODIFYTIME | V04::Attributes::F_SUBSECOND_TIMES],
-          [:acl,                 :special, V04::Attributes::F_ACL],
-          [:attrib_bits,         :long,    F_ATTRIB_BITS],
-          [:extended,            :special, V01::Attributes::F_EXTENDED]
-        ]
-      end
+    # The list of supported elements in the attributes structure as defined
+    # by v5 of the sftp protocol.
+    def self.elements #:nodoc:
+      @elements ||= [
+        [:type,                :byte,    0],
+        [:size,                :int64,   F_SIZE],
+        [:owner,               :string,  F_OWNERGROUP],
+        [:group,               :string,  F_OWNERGROUP],
+        [:permissions,         :long,    F_PERMISSIONS],
+        [:atime,               :int64,   F_ACCESSTIME],
+        [:atime_nseconds,      :long,    F_ACCESSTIME | F_SUBSECOND_TIMES],
+        [:createtime,          :int64,   F_CREATETIME],
+        [:createtime_nseconds, :long,    F_CREATETIME | F_SUBSECOND_TIMES],
+        [:mtime,               :int64,   F_MODIFYTIME],
+        [:mtime_nseconds,      :long,    F_MODIFYTIME | F_SUBSECOND_TIMES],
+        [:acl,                 :special, F_ACL],
+        [:attrib_bits,         :long,    F_BITS],
+        [:extended,            :special, F_EXTENDED]
+      ]
     end
 
     # The type of the item on the remote server. Must be one of the T_* constants.
     attr_accessor :attrib_bits
-
   end
 
 end ; end ; end ; end
