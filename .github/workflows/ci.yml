@@ -1,0 +1,35 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-18.04
+    continue-on-error: ${{ matrix.flaky }}
+    strategy:
+      matrix:
+        ruby-version: ["2.5", "2.6", "2.7", "3.0", "3.1", "truffleruby-22", "truffleruby-21"]
+        flaky: [false]
+        include:
+          - ruby-version: "ruby-head"
+            flaky: true
+          - ruby-version: "jruby-9.2"
+            flaky: true
+          - ruby-version: "jruby-9.3"
+            flaky: true
+          - ruby-version: "jruby-head"
+            flaky: true
+          - ruby-version: "truffleruby-head"
+            flaky: true
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Set up Ruby ${{ matrix.ruby-version }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+
+      - name: Bundle install
+        run: |
+          gem install bundler
+          bundle install
+      - name: Run Tests
+        run: bundle exec rake test
