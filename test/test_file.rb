@@ -158,6 +158,12 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_equal 11, @file.pos
   end
 
+  def test_double_less_should_write_data_and_increment_pos_and_return_data_length
+    @sftp.expects(:write!).with("handle", 0, "hello world")
+    assert_equal 11, @file << ("hello world")
+    assert_equal 11, @file.pos
+  end
+
   def test_write_after_pos_assignment_should_write_at_position
     @sftp.expects(:write!).with("handle", 15, "hello world")
     @file.pos = 15
