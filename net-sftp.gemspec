@@ -17,6 +17,12 @@ Gem::Specification.new do |spec|
   spec.license       = "MIT"
   spec.required_rubygems_version = Gem::Requirement.new(">= 0") if spec.respond_to? :required_rubygems_version=
 
+  spec.metadata["bug_tracker_uri"]   = "https://github.com/net-ssh/net-sftp/issues"
+  spec.metadata["changelog_uri"]     = "https://github.com/net-ssh/net-sftp/blob/master/CHANGES.txt"
+  spec.metadata["documentation_uri"] = "https://net-ssh.github.io/net-sftp"
+  spec.metadata["homepage_uri"]      = "https://github.com/net-ssh/net-sftp"
+  spec.metadata["source_code_uri"]   = "https://github.com/net-ssh/net-sftp"
+
   spec.extra_rdoc_files = [
     "LICENSE.txt",
     "README.rdoc"
