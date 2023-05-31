@@ -1,3 +1,12 @@
+=== 4.0.0
+
+> we've upped net-ssh, and since net-ssh interface is leaking through to net-sftp
+> interface, and net-ssh was a major version. We drop support for deprecated ruby
+> versions at net-ssh and remove deprecated insecure cyphers. Also it's just safer
+> for me to release a major new release, as there is no risk of breaking my
+> consumers, in unexpected ways.
+> https://github.com/net-ssh/net-sftp/issues/142#issuecomment-1463286259
+
 === 3.0.0
 
 * Pass protocol version via Net::SFTP.start [#107]
