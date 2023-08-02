@@ -38,7 +38,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: vendor/bundle
-          key: ${{ runner.os }}-${{ matrix.ruby-version }}-gems-${{ hashFiles('../../Gemfile.lock') }}
+          key: ${{ runner.os }}-${{ matrix.ruby-version }}-gems-${{ hashFiles('**/Gemfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-gems-
 
