@@ -2,34 +2,51 @@ name: CI
 on: [push, pull_request]
 jobs:
   test:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.flaky }}
+    name: "Tests: Ruby ${{ matrix.ruby-version }}"
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     strategy:
       matrix:
-        ruby-version: ["2.5", "2.6", "2.7", "3.0", "3.1", "truffleruby-22", "truffleruby-21"]
+        ruby-version:
+          - 2.7
+          - 3.0
+          - 3.1
+          - 3.2
+          - truffleruby-22
+          - truffleruby-23
         flaky: [false]
         include:
-          - ruby-version: "ruby-head"
+          - ruby-version: "head"
             flaky: true
-          - ruby-version: "jruby-9.2"
+          - ruby-version: "jruby-9.3" # Ruby 2.6.x support
             flaky: true
-          - ruby-version: "jruby-9.3"
+          - ruby-version: "jruby-9.4" # Ruby 3.1.x support
             flaky: true
           - ruby-version: "jruby-head"
             flaky: true
           - ruby-version: "truffleruby-head"
             flaky: true
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
 
       - name: Set up Ruby ${{ matrix.ruby-version }}
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
 
+      - uses: actions/cache@v3
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-${{ matrix.ruby-version }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gems-
+
       - name: Bundle install
         run: |
           gem install bundler
-          bundle install
+          bundle config path vendor/bundle
+          bundle install -j $(getconf _NPROCESSORS_ONLN) --retry 3
+
       - name: Run Tests
         run: bundle exec rake test
