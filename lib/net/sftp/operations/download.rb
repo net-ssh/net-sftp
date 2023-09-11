@@ -218,7 +218,7 @@ module Net; module SFTP; module Operations
       def progress; @progress; end
 
       # The default read size.
-      DEFAULT_READ_SIZE = 32_000
+      DEFAULT_READ_SIZE = 32_768
 
       # The number of bytes to read at a time from remote files.
       def read_size
