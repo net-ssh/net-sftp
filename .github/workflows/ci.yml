@@ -36,11 +36,5 @@ jobs:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true
 
-      - name: Bundle install
-        run: |
-          gem install bundler
-          bundle config path vendor/bundle
-          bundle install -j $(getconf _NPROCESSORS_ONLN) --retry 3
-
       - name: Run Tests
         run: bundle exec rake test
