@@ -28,7 +28,7 @@ jobs:
           - ruby-version: "truffleruby-head"
             flaky: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Ruby ${{ matrix.ruby-version }}
         uses: ruby/setup-ruby@v1
