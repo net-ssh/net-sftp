@@ -6,7 +6,7 @@ jobs:
     continue-on-error: ${{ matrix.flaky }}
     strategy:
       matrix:
-        ruby-version: ["2.5", "2.6", "2.7", "3.0", "3.1", "truffleruby-22", "truffleruby-21"]
+        ruby-version: ["2.5", "2.6", "2.7", "3.0", "3.1", "3.2", "3.3", "truffleruby-22", "truffleruby-21"]
         flaky: [false]
         include:
           - ruby-version: "ruby-head"
