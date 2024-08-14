@@ -4,3 +4,5 @@ coverage
 ri
 *.swp
 Gemfile.lock
+vendor
+.bundle
