@@ -1,0 +1,1 @@
+Fixed `FrozenError` from `File#read`, `gets`, `readline` and `eof?`, and from `Dir#glob` on frozen entry names, when running with frozen string literals enabled. Based on #157 by @frederikspang [#190, #157]
