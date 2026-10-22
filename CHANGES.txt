@@ -1,6 +1,11 @@
 === 4.0.1
 
-* Allow net-ssh 8
+* Allow net-ssh 8 [#181]
+
+=== 4.0.0
+
+* Allow net-ssh 7
+* Fix multibyte string write [#110]
 
 === 3.0.0
 
