@@ -5,13 +5,17 @@ class FileOperationsTest < Net::SFTP::TestCase
   def setup
     @sftp = mock("sftp")
     @file = Net::SFTP::Operations::File.new(@sftp, "handle")
-    @save_dollar_fslash, $/ = $/, "\n"
-    @save_dollar_bslash, $\ = $\, nil
+    without_deprecation_warnings do
+      @save_dollar_fslash, $/ = $/, "\n"
+      @save_dollar_bslash, $\ = $\, nil
+    end
   end
 
   def teardown
-    $/ = @save_dollar_fslash
-    $\ = @save_dollar_bslash
+    without_deprecation_warnings do
+      $/ = @save_dollar_fslash
+      $\ = @save_dollar_bslash
+    end
   end
 
   def test_pos_assignment_should_set_position
@@ -349,7 +353,7 @@ class FileOperationsTest < Net::SFTP::TestCase
   end
 
   def test_print_with_no_arguments_should_write_dollar_bslash_if_dollar_bslash_is_not_nil
-    $\ = "-"
+    without_deprecation_warnings { $\ = "-" }
     @sftp.expects(:write!).with("handle", 0, "-")
     @file.print
   end
@@ -409,10 +413,8 @@ class FileOperationsTest < Net::SFTP::TestCase
   end
 
   def test_puts_should_ignore_output_record_separator
-    old_separator, $\ = $\, "!"
+    without_deprecation_warnings { $\ = "!" }
     assert_puts_like_io "a"
-  ensure
-    $\ = old_separator
   end
 
   def test_puts_should_expand_objects_convertible_to_arrays
@@ -457,6 +459,15 @@ class FileOperationsTest < Net::SFTP::TestCase
   end
 
   private
+
+    # Ruby 4.0 deprecates setting $/ and $\, but File honours them like IO does.
+    def without_deprecation_warnings
+      deprecated = Warning[:deprecated] if Warning.respond_to?(:[])
+      Warning[:deprecated] = false if deprecated
+      yield
+    ensure
+      Warning[:deprecated] = true if deprecated
+    end
 
     def assert_puts_like_io(*items)
       expected = StringIO.new
