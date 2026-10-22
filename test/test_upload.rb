@@ -159,11 +159,18 @@ class UploadTest < Net::SFTP::TestCase
   def test_upload_should_reject_nonpositive_requests_and_read_size
     session = stub("sftp", :logger => nil)
 
-    assert_raises(ArgumentError) do
-      Net::SFTP::Operations::Upload.new(session, StringIO.new, "/path/to/remote", :requests => 0)
+    [{ :requests => 0 }, { :requests => -1 }, { :requests => "many" },
+     { :read_size => 0 }, { :read_size => -1 }].each do |opts|
+      assert_raises(ArgumentError, opts.inspect) do
+        Net::SFTP::Operations::Upload.new(session, StringIO.new, "/path/to/remote", opts)
+      end
     end
-    assert_raises(ArgumentError) do
-      Net::SFTP::Operations::Upload.new(session, StringIO.new, "/path/to/remote", :read_size => -1)
+  end
+
+  def test_upload_with_nil_requests_and_read_size_should_use_defaults
+    expect_file_transfer("/path/to/local", "/path/to/remote", "here are the contents")
+    assert_scripted_command do
+      sftp.upload("/path/to/local", "/path/to/remote", :requests => nil, :read_size => nil)
     end
   end
 

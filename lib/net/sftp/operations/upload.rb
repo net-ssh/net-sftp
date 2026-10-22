@@ -50,7 +50,9 @@ module Net; module SFTP; module Operations
   #   higher might improve throughput. Reducing it will reduce throughput.
   # * <tt>:read_size</tt> - the maximum number of bytes to read at a time
   #   from the source. Increasing this value might improve throughput. It
-  #   defaults to 32,000 bytes.
+  #   defaults to 32,000 bytes. Each chunk is sent as one write request, so
+  #   it must stay within the server's packet limit (OpenSSH drops the
+  #   connection on packets over 256 KiB).
   # * <tt>:name</tt> - the filename to report to the progress monitor when
   #   an IO object is given as +local+. This defaults to "<memory>".
   #

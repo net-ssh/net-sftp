@@ -1,0 +1,1 @@
+Uploads keep exactly `:requests` writes in flight (one more was sent before, so the default is now 2 rather than 3), and a zero, negative or non-numeric `:requests` or `:read_size` on `upload` or `download` now raises `ArgumentError` when the transfer is set up instead of stalling. Thanks @OskarEichler [#178]

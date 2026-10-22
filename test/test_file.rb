@@ -122,6 +122,73 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_equal "hello w", @file.gets(nil, 7)
   end
 
+  def test_gets_with_delimiter_and_negative_limit_should_read_to_delimiter
+    @sftp.expects(:read!).returns("hello world\ngoodbye world\n\nfarewell!\n")
+    assert_equal "hello world\n", @file.gets("\n", -1)
+    assert_equal 12, @file.pos
+  end
+
+  def test_gets_with_negative_integer_argument_should_read_to_dollar_fslash
+    @sftp.expects(:read!).returns("hello world\ngoodbye world\n\nfarewell!\n")
+    assert_equal "hello world\n", @file.gets(-1)
+    assert_equal 12, @file.pos
+  end
+
+  def test_gets_with_delimiter_and_nil_limit_should_read_to_delimiter
+    @sftp.expects(:read!).returns("hello world\ngoodbye world\n\nfarewell!\n")
+    assert_equal "hello world\n", @file.gets("\n", nil)
+    assert_equal 12, @file.pos
+  end
+
+  def test_gets_should_find_crlf_split_across_reads
+    @sftp.expects(:read!).times(2).returns("hello\r", "\nworld\r\n")
+    assert_equal "hello\r\n", @file.gets("\r\n")
+    assert_equal 7, @file.pos
+    assert_equal "world\r\n", @file.gets("\r\n")
+    assert_equal 14, @file.pos
+  end
+
+  def test_gets_should_find_multichar_delimiter_split_across_reads
+    @sftp.expects(:read!).times(2).returns("xxa", "byy")
+    assert_equal "xxab", @file.gets("ab")
+    assert_equal 4, @file.pos
+  end
+
+  def test_gets_should_find_delimiter_after_repeated_prefix_across_reads
+    @sftp.expects(:read!).times(3).returns("xa", "a", "b")
+    assert_equal "xaab", @file.gets("ab")
+    assert_equal 4, @file.pos
+  end
+
+  def test_gets_should_return_line_spanning_several_reads
+    @sftp.expects(:read!).times(4).returns("a" * 8192, "b" * 8192, "c" * 100 + "\nrest", nil)
+    assert_equal "a" * 8192 + "b" * 8192 + "c" * 100 + "\n", @file.gets
+    assert_equal 16385 + 100, @file.pos
+    assert_equal "rest", @file.gets
+    assert @file.eof?
+  end
+
+  def test_gets_with_empty_argument_should_find_paragraph_split_across_reads
+    @sftp.expects(:read!).times(2).returns("one\n", "\ntwo\n\n")
+    assert_equal "one\n\n", @file.gets("")
+    assert_equal 5, @file.pos
+  end
+
+  def test_gets_when_nil_delimiter_should_read_several_reads_to_EOF
+    @sftp.expects(:read!).times(3).returns("one\n", "two\n", nil)
+    assert_equal "one\ntwo\n", @file.gets(nil)
+    assert @file.eof?
+  end
+
+  def test_gets_should_search_only_new_data_after_each_read
+    offsets = []
+    buffer = @file.instance_variable_get(:@buffer)
+    buffer.define_singleton_method(:index) { |*args| offsets << args[1]; super(*args) }
+    @sftp.expects(:read!).times(3).returns("aaaaa", "aaaaa", "a\r\n")
+    assert_equal "aaaaaaaaaaa\r\n", @file.gets("\r\n")
+    assert_equal [0, 0, 4, 9], offsets
+  end
+
   def test_gets_at_EOF_should_return_nil
     @sftp.expects(:read!).returns(nil)
     assert_nil @file.gets
@@ -165,10 +232,58 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_equal 26, @file.pos
   end
 
+  def test_write_after_buffered_read_should_write_at_logical_position
+    @sftp.expects(:read!).with("handle", 0, 8192).returns("hello world")
+    @sftp.expects(:write!).with("handle", 2, "XY")
+    assert_equal "he", @file.read(2)
+    assert_equal 2, @file.write("XY")
+    assert_equal 4, @file.pos
+  end
+
+  def test_read_after_write_should_read_from_new_position
+    @sftp.expects(:read!).with("handle", 0, 8192).returns("hello world")
+    @sftp.expects(:write!).with("handle", 2, "XY")
+    @sftp.expects(:read!).with("handle", 4, 8192).returns("o world")
+    @file.read(2)
+    @file.write("XY")
+    assert_equal "o w", @file.read(3)
+    assert_equal 7, @file.pos
+  end
+
   def test_write_should_write_mutlibyte_string_data_and_increment_pos_and_return_data_length
     @sftp.expects(:write!).with("handle", 0, "hello world, 你好，世界")
     assert_equal 28, @file.write("hello world, 你好，世界")
     assert_equal 28, @file.pos
+  end
+
+  def test_write_should_split_large_data_into_chunks_at_consecutive_offsets
+    data = Random.new(99).bytes(100_000)
+    sequence = sequence("writes")
+    [0, 32_768, 65_536, 98_304].each do |offset|
+      @sftp.expects(:write!).with("handle", 10 + offset, data.byteslice(offset, 32_768)).in_sequence(sequence)
+    end
+    @file.pos = 10
+    assert_equal 100_000, @file.write(data)
+    assert_equal 100_010, @file.pos
+  end
+
+  def test_write_should_split_multibyte_data_on_byte_boundaries
+    data = "你好" * 10_000
+    chunks = []
+    @sftp.expects(:write!).times(2).with { |handle, offset, chunk| chunks << [offset, chunk.b] }
+    assert_equal 60_000, @file.write(data)
+    assert_equal [0, 32_768], chunks.map(&:first)
+    assert_equal data.b, chunks.map(&:last).join
+    assert_equal 60_000, @file.pos
+  end
+
+  def test_write_should_stop_at_failed_chunk_and_keep_pos_at_bytes_written
+    data = "x" * 100_000
+    response = stub("response", ok?: false, eof?: false, code: 4, message: "failure")
+    @sftp.expects(:write!).with("handle", 0, data.byteslice(0, 32_768))
+    @sftp.expects(:write!).with("handle", 32_768, data.byteslice(32_768, 32_768)).raises(Net::SFTP::StatusException.new(response))
+    assert_raises(Net::SFTP::StatusException) { @file.write(data) }
+    assert_equal 32_768, @file.pos
   end
 
   def test_print_with_no_arguments_should_write_nothing_if_dollar_bslash_is_nil

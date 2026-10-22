@@ -44,21 +44,30 @@ module Net; module SFTP; module Protocol; module V04
           "l"
         else
           "-"
+        end.dup
+
+        # Fields the server omitted are shown as "?", like GNU ls -l does for entries it cannot stat.
+        if (permissions = attributes.permissions)
+          longname << (permissions & 0400 != 0 ? "r" : "-")
+          longname << (permissions & 0200 != 0 ? "w" : "-")
+          longname << (permissions & 0100 != 0 ? "x" : "-")
+          longname << (permissions & 0040 != 0 ? "r" : "-")
+          longname << (permissions & 0020 != 0 ? "w" : "-")
+          longname << (permissions & 0010 != 0 ? "x" : "-")
+          longname << (permissions & 0004 != 0 ? "r" : "-")
+          longname << (permissions & 0002 != 0 ? "w" : "-")
+          longname << (permissions & 0001 != 0 ? "x" : "-")
+        else
+          longname << "?" * 9
         end
 
-        longname << (attributes.permissions & 0400 != 0 ? "r" : "-")
-        longname << (attributes.permissions & 0200 != 0 ? "w" : "-")
-        longname << (attributes.permissions & 0100 != 0 ? "x" : "-")
-        longname << (attributes.permissions & 0040 != 0 ? "r" : "-")
-        longname << (attributes.permissions & 0020 != 0 ? "w" : "-")
-        longname << (attributes.permissions & 0010 != 0 ? "x" : "-")
-        longname << (attributes.permissions & 0004 != 0 ? "r" : "-")
-        longname << (attributes.permissions & 0002 != 0 ? "w" : "-")
-        longname << (attributes.permissions & 0001 != 0 ? "x" : "-")
+        longname << (" %-8s %-8s %8s " % [attributes.owner || "?", attributes.group || "?", attributes.size || "?"])
 
-        longname << (" %-8s %-8s %8d " % [attributes.owner, attributes.group, attributes.size])
-
-        longname << Time.at(attributes.mtime).strftime("%b %e %H:%M ")
+        longname << if attributes.mtime
+          Time.at(attributes.mtime).strftime("%b %e %H:%M ")
+        else
+          "%12s " % "?"
+        end
         longname << name
       end
     end

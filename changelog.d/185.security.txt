@@ -1,0 +1,1 @@
+Recursive downloads reject file names from the server that are not a single path component (such as `../x` or `a/b`) instead of writing outside the target directory. Reported in #162 by srosenhamer [#185, #162]
