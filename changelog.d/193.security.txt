@@ -1,0 +1,1 @@
+An `FXP_VERSION` packet after the session is open now raises `Net::SFTP::Exception` instead of switching protocol version mid-session and dropping pending requests.
