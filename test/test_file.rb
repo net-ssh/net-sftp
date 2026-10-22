@@ -289,8 +289,10 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_puts_like_io false
   end
 
+  # Not compared with StringIO, whose puts([]) writes a newline on JRuby.
   def test_puts_should_write_nothing_for_empty_array
-    assert_puts_like_io []
+    @sftp.expects(:write!).never
+    assert_nil @file.puts([])
   end
 
   def test_puts_should_not_double_newline
