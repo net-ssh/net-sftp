@@ -273,6 +273,41 @@ class FileOperationsTest < Net::SFTP::TestCase
     @file.puts "a", "b\n", "c"
   end
 
+  def test_puts_without_arguments_should_write_newline
+    assert_puts_like_io
+  end
+
+  def test_puts_should_write_newline_for_nil
+    assert_puts_like_io nil
+  end
+
+  def test_puts_should_write_newline_for_array_containing_nil
+    assert_puts_like_io [nil]
+  end
+
+  def test_puts_should_write_false_as_string
+    assert_puts_like_io false
+  end
+
+  def test_puts_should_write_nothing_for_empty_array
+    assert_puts_like_io []
+  end
+
+  def test_puts_should_not_double_newline
+    assert_puts_like_io "a\n", "b"
+  end
+
+  def test_puts_should_convert_numbers_and_symbols
+    assert_puts_like_io 1, :sym
+  end
+
+  def test_puts_should_ignore_output_record_separator
+    old_separator, $\ = $\, "!"
+    assert_puts_like_io "a"
+  ensure
+    $\ = old_separator
+  end
+
   def test_puts_should_expand_objects_convertible_to_arrays
     item = stub("array-like")
     item.stubs(:to_ary).returns(["a", ["b"]])
@@ -313,4 +348,23 @@ class FileOperationsTest < Net::SFTP::TestCase
     @sftp.expects(:fstat!).with("handle").returns(stat)
     assert_equal 1024, @file.size
   end
+
+  private
+
+    def assert_puts_like_io(*items)
+      expected = StringIO.new
+      expected.puts(*items)
+      writes = []
+      @sftp.stubs(:write!).with { |handle, offset, data| writes << [handle, offset, data] }
+      assert_nil @file.puts(*items)
+
+      offset = 0
+      writes.each do |handle, at, data|
+        assert_equal ["handle", offset], [handle, at]
+        refute_empty data
+        offset += data.bytesize
+      end
+      assert_equal expected.string, writes.map(&:last).join
+    end
+
 end

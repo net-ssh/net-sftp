@@ -169,7 +169,8 @@ module Net; module SFTP; module Operations
     end
 
     # Writes each argument to the stream, appending a newline to any item
-    # that does not already end in a newline. Array arguments are flattened.
+    # that does not already end in a newline, like IO#puts. Array arguments
+    # are flattened, and with no arguments a single newline is written.
     def puts(*items)
       items = [""] if items.empty?
       recursion = {}.compare_by_identity
@@ -201,7 +202,7 @@ module Net; module SFTP; module Operations
         end
 
         item = item.to_s
-        write(item)
+        write(item) unless item.empty?
         write("\n") unless item[-1] == ?\n
       end
 
