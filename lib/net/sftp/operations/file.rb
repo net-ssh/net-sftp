@@ -97,6 +97,7 @@ module Net; module SFTP; module Operations
         sep_string = sep_or_limit
         lim = limit
       end
+      lim = Float::INFINITY if lim.nil? || lim < 0
 
       delim = if sep_string && sep_string.length == 0
         "#{$/}#{$/}"
