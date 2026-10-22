@@ -189,6 +189,36 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_equal 28, @file.pos
   end
 
+  def test_write_should_split_large_data_into_chunks_at_consecutive_offsets
+    data = Random.new(99).bytes(100_000)
+    sequence = sequence("writes")
+    [0, 32_768, 65_536, 98_304].each do |offset|
+      @sftp.expects(:write!).with("handle", 10 + offset, data.byteslice(offset, 32_768)).in_sequence(sequence)
+    end
+    @file.pos = 10
+    assert_equal 100_000, @file.write(data)
+    assert_equal 100_010, @file.pos
+  end
+
+  def test_write_should_split_multibyte_data_on_byte_boundaries
+    data = "你好" * 10_000
+    chunks = []
+    @sftp.expects(:write!).times(2).with { |handle, offset, chunk| chunks << [offset, chunk.b] }
+    assert_equal 60_000, @file.write(data)
+    assert_equal [0, 32_768], chunks.map(&:first)
+    assert_equal data.b, chunks.map(&:last).join
+    assert_equal 60_000, @file.pos
+  end
+
+  def test_write_should_stop_at_failed_chunk_and_keep_pos_at_bytes_written
+    data = "x" * 100_000
+    response = stub("response", ok?: false, eof?: false, code: 4, message: "failure")
+    @sftp.expects(:write!).with("handle", 0, data.byteslice(0, 32_768))
+    @sftp.expects(:write!).with("handle", 32_768, data.byteslice(32_768, 32_768)).raises(Net::SFTP::StatusException.new(response))
+    assert_raises(Net::SFTP::StatusException) { @file.write(data) }
+    assert_equal 32_768, @file.pos
+  end
+
   def test_print_with_no_arguments_should_write_nothing_if_dollar_bslash_is_nil
     assert_nil $\
     @sftp.expects(:write!).never

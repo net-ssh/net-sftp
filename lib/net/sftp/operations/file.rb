@@ -12,6 +12,11 @@ module Net; module SFTP; module Operations
   #   puts file.gets
   #   file.close
   class File
+    # The largest amount of data sent in a single write request. Servers drop
+    # the connection on oversized packets (OpenSSH's limit is 256 KiB including
+    # headers), and the SFTP drafts only guarantee packets of about 34000 bytes.
+    MAX_WRITE_SIZE = 32 * 1024
+
     # A reference to the Net::SFTP::Session instance that drives this wrapper
     attr_reader :sftp
 
@@ -128,12 +133,21 @@ module Net; module SFTP; module Operations
     end
 
     # Writes the given data to the stream, incrementing the file position and
-    # returning the number of bytes written.
+    # returning the number of bytes written. Data larger than MAX_WRITE_SIZE
+    # is sent as several sequential write requests; if one fails, the
+    # position reflects the bytes written before it.
     def write(data)
       data = data.to_s
-      sftp.write!(handle, @pos, data)
-      self.pos = @pos + data.bytes.length unless data.empty?
-      data.bytes.length
+      size = data.bytesize
+      written = 0
+      loop do
+        chunk = data.byteslice(written, MAX_WRITE_SIZE)
+        sftp.write!(handle, @pos, chunk)
+        written += chunk.bytesize
+        self.pos = @pos + chunk.bytesize unless chunk.empty?
+        break if written >= size
+      end
+      size
     end
 
     # Writes each argument to the stream. If +$\+ is set, it will be written
