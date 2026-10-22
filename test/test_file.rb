@@ -212,6 +212,33 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_equal [0, 0, 4, 9], offsets
   end
 
+  def test_gets_with_limit_satisfied_by_buffer_should_not_read_again
+    @sftp.expects(:read!).with("handle", 0, 8192).once.returns("a" * 8192)
+    assert_equal "a" * 8192, @file.gets(8192)
+    assert_equal 8192, @file.pos
+  end
+
+  def test_gets_after_exactly_satisfied_limit_should_return_remainder_then_nil
+    @sftp.expects(:read!).with("handle", 0, 8192).once.returns("a" * 8192)
+    @sftp.expects(:read!).with("handle", 8192, 8192).once.returns("b")
+    @sftp.expects(:read!).with("handle", 8193, 8192).at_least_once.returns(nil)
+    assert_equal "a" * 8192, @file.gets(8192)
+    assert !@file.eof?
+    assert_equal "b", @file.gets
+    assert_equal 8193, @file.pos
+    assert_nil @file.gets
+    assert @file.eof?
+  end
+
+  def test_gets_with_zero_limit_should_return_empty_string_even_at_EOF
+    @sftp.expects(:read!).times(2).returns("hello", nil)
+    assert_equal "", @file.gets(0)
+    assert_equal 0, @file.pos
+    assert_equal "hello", @file.read
+    assert @file.eof?
+    assert_equal "", @file.gets(0)
+  end
+
   def test_gets_at_EOF_should_return_nil
     @sftp.expects(:read!).returns(nil)
     assert_nil @file.gets
