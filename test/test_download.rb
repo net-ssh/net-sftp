@@ -145,6 +145,17 @@ class DownloadTest < Net::SFTP::TestCase
     end
   end
 
+  def test_download_should_reject_nonpositive_requests_and_read_size
+    session = stub("sftp", :logger => nil)
+
+    [{ :requests => 0 }, { :requests => -1 }, { :requests => "many" },
+     { :read_size => 0 }, { :read_size => -1 }].each do |opts|
+      assert_raises(ArgumentError, opts.inspect) do
+        Net::SFTP::Operations::Download.new(session, StringIO.new, "/path/to/remote", opts)
+      end
+    end
+  end
+
   UNSAFE_NAMES = {
     "parent_relative" => "../x",
     "grandparent" => "../..",

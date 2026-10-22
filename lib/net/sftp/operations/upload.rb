@@ -155,6 +155,8 @@ module Net; module SFTP; module Operations
 
       @uploads = []
       @recursive = local.respond_to?(:read) ? false : ::File.directory?(local)
+      requests
+      read_size
 
       if recursive?
         @stack = [entries_for(local)]
@@ -166,7 +168,7 @@ module Net; module SFTP; module Operations
           sftp.mkdir(remote) do |response|
             @active -= 1
             raise StatusException.new(response, "mkdir `#{remote}'") unless response.ok?
-            (options[:requests] || RECURSIVE_READERS).to_i.times do
+            requests.times do
               break unless process_next_entry
             end
           end
@@ -226,6 +228,21 @@ module Net; module SFTP; module Operations
 
       # The progress handler for this instance. Possibly nil.
       def progress; @progress; end
+
+      def requests
+        @requests ||= positive_option(:requests, recursive? ? RECURSIVE_READERS : SINGLE_FILE_READERS)
+      end
+
+      def read_size
+        @read_size ||= positive_option(:read_size, DEFAULT_READ_SIZE)
+      end
+
+      def positive_option(name, default)
+        value = (options[name] || default).to_i
+        raise ArgumentError, ":#{name} must be positive" unless value > 0
+
+        value
+      end
 
       # A simple struct for recording metadata about the file currently being
       # uploaded.
@@ -328,7 +345,7 @@ module Net; module SFTP; module Operations
         write_next_chunk(file)
 
         if !recursive?
-          (options[:requests] || SINGLE_FILE_READERS).to_i.times { write_next_chunk(file) }
+          (requests - 1).times { write_next_chunk(file) }
         end
       end
 
@@ -360,7 +377,7 @@ module Net; module SFTP; module Operations
         else
           @active += 1
           offset = file.io.pos
-          data = file.io.read(options[:read_size] || DEFAULT_READ_SIZE)
+          data = file.io.read(read_size)
           if data.nil?
             update_progress(:close, file)
             request = sftp.close(file.handle, &method(:on_close))

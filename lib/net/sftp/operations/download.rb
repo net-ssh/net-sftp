@@ -152,6 +152,8 @@ module Net; module SFTP; module Operations
       @options = options
       @active = 0
       @properties = options[:properties] || {}
+      requests
+      read_size
 
       self.logger = sftp.logger
 
@@ -222,13 +224,20 @@ module Net; module SFTP; module Operations
 
       # The number of bytes to read at a time from remote files.
       def read_size
-        options[:read_size] || DEFAULT_READ_SIZE
+        @read_size ||= positive_option(:read_size, DEFAULT_READ_SIZE)
       end
 
       # The number of simultaneou SFTP requests to use to effect the download.
       # Defaults to 16 for recursive downloads.
       def requests
-        options[:requests] || (recursive? ? 16 : 2)
+        @requests ||= positive_option(:requests, recursive? ? 16 : 2)
+      end
+
+      def positive_option(name, default)
+        value = (options[name] || default).to_i
+        raise ArgumentError, ":#{name} must be positive" unless value > 0
+
+        value
       end
 
       # Enqueues as many files and directories from the stack as possible
