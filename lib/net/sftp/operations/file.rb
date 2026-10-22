@@ -105,8 +105,9 @@ module Net; module SFTP; module Operations
         sep_string
       end
 
+      search_from = 0
       loop do
-        at = @buffer.index(delim) if delim
+        at = @buffer.index(delim, search_from) if delim
         if at
           offset = [at + delim.length, lim].min
           @pos += offset
@@ -116,11 +117,14 @@ module Net; module SFTP; module Operations
           @pos += lim
           line, @buffer = @buffer[0,lim], @buffer[lim..-1]
           return line
-        elsif !fill
-          return nil if @buffer.empty?
-          @pos += @buffer.length
-          line, @buffer = @buffer, ""
-          return line
+        else
+          search_from = [@buffer.length - delim.length + 1, 0].max if delim
+          unless fill
+            return nil if @buffer.empty?
+            @pos += @buffer.length
+            line, @buffer = @buffer, ""
+            return line
+          end
         end
       end
     end

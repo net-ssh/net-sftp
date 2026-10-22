@@ -140,6 +140,55 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_equal 12, @file.pos
   end
 
+  def test_gets_should_find_crlf_split_across_reads
+    @sftp.expects(:read!).times(2).returns("hello\r", "\nworld\r\n")
+    assert_equal "hello\r\n", @file.gets("\r\n")
+    assert_equal 7, @file.pos
+    assert_equal "world\r\n", @file.gets("\r\n")
+    assert_equal 14, @file.pos
+  end
+
+  def test_gets_should_find_multichar_delimiter_split_across_reads
+    @sftp.expects(:read!).times(2).returns("xxa", "byy")
+    assert_equal "xxab", @file.gets("ab")
+    assert_equal 4, @file.pos
+  end
+
+  def test_gets_should_find_delimiter_after_repeated_prefix_across_reads
+    @sftp.expects(:read!).times(3).returns("xa", "a", "b")
+    assert_equal "xaab", @file.gets("ab")
+    assert_equal 4, @file.pos
+  end
+
+  def test_gets_should_return_line_spanning_several_reads
+    @sftp.expects(:read!).times(4).returns("a" * 8192, "b" * 8192, "c" * 100 + "\nrest", nil)
+    assert_equal "a" * 8192 + "b" * 8192 + "c" * 100 + "\n", @file.gets
+    assert_equal 16385 + 100, @file.pos
+    assert_equal "rest", @file.gets
+    assert @file.eof?
+  end
+
+  def test_gets_with_empty_argument_should_find_paragraph_split_across_reads
+    @sftp.expects(:read!).times(2).returns("one\n", "\ntwo\n\n")
+    assert_equal "one\n\n", @file.gets("")
+    assert_equal 5, @file.pos
+  end
+
+  def test_gets_when_nil_delimiter_should_read_several_reads_to_EOF
+    @sftp.expects(:read!).times(3).returns("one\n", "two\n", nil)
+    assert_equal "one\ntwo\n", @file.gets(nil)
+    assert @file.eof?
+  end
+
+  def test_gets_should_search_only_new_data_after_each_read
+    offsets = []
+    buffer = @file.instance_variable_get(:@buffer)
+    buffer.define_singleton_method(:index) { |*args| offsets << args[1]; super(*args) }
+    @sftp.expects(:read!).times(3).returns("aaaaa", "aaaaa", "a\r\n")
+    assert_equal "aaaaaaaaaaa\r\n", @file.gets("\r\n")
+    assert_equal [0, 0, 4, 9], offsets
+  end
+
   def test_gets_at_EOF_should_return_nil
     @sftp.expects(:read!).returns(nil)
     assert_nil @file.gets
