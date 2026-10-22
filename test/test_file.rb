@@ -207,13 +207,12 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert @file.eof?
   end
 
-  def test_gets_with_zero_limit_should_return_empty_string_like_stringio
+  def test_gets_with_zero_limit_should_return_empty_string_even_at_EOF
     @sftp.expects(:read!).times(2).returns("hello", nil)
-    io = StringIO.new("hello")
-    assert_equal io.gets(0), @file.gets(0)
     assert_equal "", @file.gets(0)
-    assert_equal io.read, @file.read
-    assert_equal io.gets(0), @file.gets(0)
+    assert_equal 0, @file.pos
+    assert_equal "hello", @file.read
+    assert @file.eof?
     assert_equal "", @file.gets(0)
   end
 
