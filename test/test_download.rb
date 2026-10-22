@@ -161,7 +161,7 @@ class DownloadTest < Net::SFTP::TestCase
   end
 
   def test_download_directory_should_refuse_to_follow_symlink_at_server_named_file
-    omit "File::NOFOLLOW not supported" unless defined?(File::NOFOLLOW)
+    skip "File::NOFOLLOW not supported" unless defined?(File::NOFOLLOW)
     with_tmpdir do |tmp|
       Dir.mkdir("#{tmp}/local")
       File.write("#{tmp}/victim", "original")
