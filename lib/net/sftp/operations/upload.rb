@@ -230,7 +230,7 @@ module Net; module SFTP; module Operations
       LiveFile = Struct.new(:local, :remote, :io, :size, :handle)
 
       # The default # of bytes to read from disk at a time.
-      DEFAULT_READ_SIZE   = 32_000
+      DEFAULT_READ_SIZE   = 32_768
 
       # The number of readers to use when uploading a single file.
       SINGLE_FILE_READERS = 2
