@@ -26,6 +26,19 @@ class SessionTest < Net::SFTP::TestCase
     assert_equal 0, session.send(:input).length
   end
 
+  def test_extensions_should_be_empty_when_server_advertises_none
+    expect_sftp_session :server_version => 3
+    assert_scripted { sftp.connect! }
+    assert_equal({}, sftp.extensions)
+  end
+
+  def test_extensions_should_expose_those_advertised_by_server
+    extensions = { "posix-rename@openssh.com" => "1", "statvfs@openssh.com" => "2" }
+    expect_sftp_session :server_version => 3, :extensions => extensions
+    assert_scripted { sftp.connect! }
+    assert_equal extensions, sftp.extensions
+  end
+
   def test_passing_version_should_cause_same_version_to_be_passed_and_used
     version = 3
     expect_sftp_session :client_version => version, :server_version => version
