@@ -275,6 +275,7 @@ module Net; module SFTP; module Operations
         else
           response[:names].each do |item|
             next if item.name == "." || item.name == ".."
+            validate_entry_name!(entry, item.name)
             stack << Entry.new(::File.join(entry.remote, item.name), ::File.join(entry.local, item.name), item.directory?, item.attributes.size)
           end
 
@@ -283,6 +284,15 @@ module Net; module SFTP; module Operations
 
           request = sftp.readdir(entry.handle, &method(:on_readdir))
           request[:parent] = entry
+        end
+      end
+
+      # The name comes from the server, so anything but a single path component
+      # would let a malicious server write outside the target directory.
+      def validate_entry_name!(entry, name)
+        if name.empty? || name.include?("/") || name.include?("\0") ||
+           (::File::ALT_SEPARATOR && name.include?(::File::ALT_SEPARATOR))
+          raise Net::SFTP::Exception, "readdir #{entry.remote} returned an invalid file name: #{name.inspect}"
         end
       end
 
