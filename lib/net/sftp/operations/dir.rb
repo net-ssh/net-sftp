@@ -58,17 +58,18 @@ module Net; module SFTP; module Operations
     def glob(path, pattern, flags=0)
       flags |= ::File::FNM_PATHNAME
       path = path.chop if path.end_with?('/') && path != '/'
+      recursive = !pattern.is_a?(String) || pattern.include?('/')
 
       results = [] unless block_given?
       queue = entries(path).reject { |e| %w(. ..).include?(e.name) }
       while queue.any?
         entry = queue.shift
 
-        if entry.directory? && !%w(. ..).include?(::File.basename(entry.name))
-          queue += entries("#{path}/#{entry.name}").map do |e|
+        if recursive && entry.directory? && !%w(. ..).include?(::File.basename(entry.name))
+          queue.concat(entries("#{path}/#{entry.name}").map do |e|
             e.name.replace("#{entry.name}/#{e.name}")
             e
-          end
+          end)
         end
 
         if ::File.fnmatch(pattern, entry.name, flags)
