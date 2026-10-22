@@ -929,7 +929,9 @@ module Net; module SFTP
         server_version = packet.read_long
         debug { "server reports sftp version #{server_version}" }
 
-        negotiated_version = [server_version, HIGHEST_PROTOCOL_VERSION_SUPPORTED].min
+        # Servers reply with their own version whatever we offered (OpenSSH
+        # always says 3), so cap at the version we offered as well.
+        negotiated_version = [server_version, @version, HIGHEST_PROTOCOL_VERSION_SUPPORTED].compact.min
         info { "negotiated version is #{negotiated_version}" }
 
         extensions = {}
