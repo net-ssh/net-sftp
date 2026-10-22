@@ -50,4 +50,72 @@ class Protocol::V04::TestName < Net::SFTP::TestCase
     assert_equal "-rwxr-xr-x jamis    users       10240 Mar 12 03:40 test",
       @file.longname
   end
+
+  def test_longname_should_tolerate_omitted_optional_attributes
+    sparse = Net::SFTP::Protocol::V04::Name.new(
+      "test",
+      Net::SFTP::Protocol::V04::Attributes.new(:type => 1)
+    )
+
+    assert_equal "-????????? ?        ?               ?            ? test", sparse.longname
+  end
+
+  def test_longname_without_mtime_should_show_unknown_timestamp
+    assert_equal "-rwxr-xr-x jamis    users       10240            ? test",
+      sparse_file(:mtime).longname
+  end
+
+  def test_longname_without_size_should_show_unknown_size
+    assert_equal "-rwxr-xr-x jamis    users           ? Mar 12 03:40 test",
+      sparse_file(:size).longname
+  end
+
+  def test_longname_without_permissions_should_show_unknown_permission_bits
+    assert_equal "-????????? jamis    users       10240 Mar 12 03:40 test",
+      sparse_file(:permissions).longname
+  end
+
+  def test_longname_without_owner_and_group_should_show_unknown_owner_and_group
+    assert_equal "-rwxr-xr-x ?        ?           10240 Mar 12 03:40 test",
+      sparse_file(:owner, :group).longname
+  end
+
+  def test_longname_with_no_permission_bits_should_still_show_dashes
+    assert_equal "---------- jamis    users       10240 Mar 12 03:40 test",
+      file_with(:permissions => 0).longname
+  end
+
+  def test_longname_without_any_optional_attribute_should_keep_columns_aligned
+    sparse = sparse_file(:mtime, :size, :permissions, :owner, :group)
+    assert_equal "-????????? ?        ?               ?            ? test", sparse.longname
+    assert_equal @file.longname.length, sparse.longname.length
+  end
+
+  def test_longname_with_each_omitted_attribute_should_keep_columns_aligned
+    [:mtime, :size, :permissions, :owner].each do |key|
+      omitted = key == :owner ? [:owner, :group] : [key]
+      assert_equal @file.longname.length, sparse_file(*omitted).longname.length, "omitting #{omitted.inspect}"
+    end
+  end
+
+  def test_longname_should_tolerate_sparse_v06_attributes
+    name = Net::SFTP::Protocol::V04::Name.new("test", Net::SFTP::Protocol::V06::Attributes.new(:type => 2))
+    assert_equal "d????????? ?        ?               ?            ? test", name.longname
+  end
+
+  private
+
+  def file_attributes
+    { :type => 1, :mtime => 1205293237, :owner => "jamis", :group => "users", :size => 10240, :permissions => 0755 }
+  end
+
+  def file_with(overrides)
+    Net::SFTP::Protocol::V04::Name.new("test", Net::SFTP::Protocol::V04::Attributes.new(file_attributes.merge(overrides)))
+  end
+
+  def sparse_file(*omitted)
+    attributes = file_attributes
+    omitted.each { |key| attributes.delete(key) }
+    Net::SFTP::Protocol::V04::Name.new("test", Net::SFTP::Protocol::V04::Attributes.new(attributes))
+  end
 end

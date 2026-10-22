@@ -61,6 +61,15 @@ class Protocol::V01::TestAttributes < Net::SFTP::TestCase
     assert_equal "jamis", attributes.owner
   end
 
+  def test_owner_lookup_should_not_modify_the_given_hash
+    input = { :uid => 100 }
+    attributes = attributes_factory.new(input)
+    attributes.expects(:require).with("etc")
+    Etc.expects(:getpwuid).with(100).returns(mock('user', :name => "jamis"))
+    assert_equal "jamis", attributes.owner
+    assert_equal({ :uid => 100 }, input)
+  end
+
   def test_group_should_translate_from_gid
     attributes = attributes_factory.new(:gid => 200)
     attributes.expects(:require).with("etc")
