@@ -1,0 +1,1 @@
+Reconnecting a closed `Net::SFTP::Session` now discards partially received packet data from the old channel, so stale bytes are no longer parsed as the start of the new channel's first packet. Thanks @OskarEichler [#177]
