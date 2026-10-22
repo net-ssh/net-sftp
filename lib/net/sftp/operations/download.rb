@@ -297,7 +297,6 @@ module Net; module SFTP; module Operations
         end
       end
 
-      # Called when a file is to be opened for reading from the remote server.
       # The caller's own +local+ may be a symlink on purpose; anything below it
       # was named by the server (net-sftp#162).
       def server_named?(entry)
@@ -319,6 +318,7 @@ module Net; module SFTP; module Operations
         raise Net::SFTP::Exception, "#{path} is a symlink, refusing to follow it"
       end
 
+      # Called when a file is to be opened for reading from the remote server.
       def open_file(entry)
         update_progress(:open, entry)
         request = sftp.open(entry.remote, &method(:on_open))
