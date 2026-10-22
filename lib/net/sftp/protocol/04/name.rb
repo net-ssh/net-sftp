@@ -9,7 +9,7 @@ module Net; module SFTP; module Protocol; module V04
   # a directory listing.
   class Name
     # The name of the item on the remote server.
-    attr_reader :name
+    attr_accessor :name
 
     # Attributes instance describing this item.
     attr_reader :attributes
