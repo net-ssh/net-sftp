@@ -123,7 +123,7 @@ module Net; module SFTP; module Protocol; module V04
     # to T_REGULAR.
     def initialize(attributes={})
       super
-      attributes[:type] ||= T_REGULAR
+      self.type ||= T_REGULAR
     end
 
     private
