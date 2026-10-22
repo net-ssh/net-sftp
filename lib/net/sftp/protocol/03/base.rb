@@ -18,6 +18,16 @@ module Net; module SFTP; module Protocol; module V03
       3
     end
 
+    # Version 3 adds a message and language tag to status responses.
+    def parse_status_packet(packet)
+      data = super
+      unless packet.eof?
+        data[:message] = packet.read_string
+        data[:language] = packet.read_string
+      end
+      data
+    end
+
     # Sends a FXP_READLINK packet to the server to request that the target of
     # the given symlink on the remote host (+path+) be returned.
     def readlink(path)
