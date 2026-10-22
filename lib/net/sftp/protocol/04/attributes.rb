@@ -69,7 +69,8 @@ module Net; module SFTP; module Protocol; module V04
         def parse_acl(buffer)
           acl_buf = Net::SSH::Buffer.new(buffer.read_string)
           acl = []
-          acl_buf.read_long.times do
+          # Each entry is three longs and a string, at least 16 bytes.
+          read_bounded_count!(acl_buf, 16, "ACL").times do
             acl << ACL.new(acl_buf.read_long, acl_buf.read_long, acl_buf.read_long, acl_buf.read_string)
           end
           acl
