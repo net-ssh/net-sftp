@@ -144,7 +144,43 @@ class DownloadTest < Net::SFTP::TestCase
     end
   end
 
+  UNSAFE_NAMES = {
+    "parent_relative" => "../x",
+    "grandparent" => "../..",
+    "nested" => "a/b",
+    "absolute" => "/abs",
+    "empty" => "",
+    "nul" => "a\0b"
+  }
+
+  UNSAFE_NAMES.each do |label, name|
+    define_method("test_download_directory_should_reject_#{label}_name_from_server") do
+      assert_rejects_readdir_name(name)
+    end
+  end
+
   private
+
+    def assert_rejects_readdir_name(name)
+      expect_sftp_session :server_version => 3 do |channel|
+        channel.sends_packet(FXP_OPENDIR, :long, 0, :string, "/path/to/remote")
+        channel.gets_packet(FXP_HANDLE, :long, 0, :string, "dir1")
+        channel.sends_packet(FXP_READDIR, :long, 1, :string, "dir1")
+        channel.gets_packet(FXP_NAME, :long, 1, :long, 3,
+          :string, "..",  :string, "drwxr-xr-x  4 bob bob  136 Aug  1 ..", :long, 0x04, :long, 040755,
+          :string, ".",   :string, "drwxr-xr-x  4 bob bob  136 Aug  1 .", :long, 0x04, :long, 040755,
+          :string, name,  :string, "-rw-rw-r--  1 bob bob  100 Aug  1 #{name}", :long, 0x04, :long, 0100644)
+      end
+
+      File.expects(:directory?).with("/path/to/local").returns(true)
+      Dir.expects(:mkdir).never
+      File.expects(:open).never
+
+      e = assert_raises(Net::SFTP::Exception) do
+        assert_scripted_command { sftp.download("/path/to/remote", "/path/to/local", :recursive => true) }
+      end
+      assert_match(/invalid file name/, e.message)
+    end
 
     def expect_file_transfer(remote, text, opts={})
       expect_sftp_session :server_version => 3 do |channel|
