@@ -33,6 +33,12 @@ class SessionTest < Net::SFTP::TestCase
     assert_equal version, sftp.protocol.version
   end
 
+  def test_passing_version_should_cap_negotiation_when_server_reports_higher
+    expect_sftp_session :client_version => 3, :server_version => 6
+    assert_scripted { sftp({}, 3).connect! }
+    assert_equal 3, sftp.protocol.version
+  end
+
 
   def test_v1_open_read_only_that_succeeds_should_invoke_callback
     expect_open("/path/to/file", "r", nil, :server_version => 1)
