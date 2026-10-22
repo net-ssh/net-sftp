@@ -269,6 +269,10 @@ module Net; module SFTP
       # Request object. If a block is given, it will be invoked when the
       # server responds.
       #
+      # +data+ is sent as a single request, so it must stay within the
+      # server's packet limit (OpenSSH drops the connection on packets over
+      # 256 KiB). Net::SFTP::Operations::File#write splits large data for you.
+      #
       #   request = sftp.write(handle, 0, "hello, world!\n")
       #   request.wait
       def write(handle, offset, data, &callback)
