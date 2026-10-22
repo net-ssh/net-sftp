@@ -66,10 +66,10 @@ module Net; module SFTP; module Operations
         entry = queue.shift
 
         if recursive && entry.directory? && !%w(. ..).include?(::File.basename(entry.name))
-          queue += entries("#{path}/#{entry.name}").map do |e|
+          queue.concat(entries("#{path}/#{entry.name}").map do |e|
             e.name.replace("#{entry.name}/#{e.name}")
             e
-          end
+          end)
         end
 
         if ::File.fnmatch(pattern, entry.name, flags)
