@@ -1,0 +1,1 @@
+`Net::SFTP.start` with a block now closes the SSH session when the block exits with `break`, `return` or `throw`, instead of leaking it. Thanks @OskarEichler [#167]

@@ -1,0 +1,1 @@
+`File#gets` no longer rescans the whole line after each chunk, so reading very long lines is no longer quadratic (a 16 MiB line ending in `"\r\n"` went from about 5 s to 0.01 s). Thanks @OskarEichler [#172]
