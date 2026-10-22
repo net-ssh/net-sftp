@@ -58,6 +58,41 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_equal 5, @file.pos
   end
 
+  def test_read_with_positive_length_at_eof_should_return_nil
+    @sftp.expects(:read!).once.returns(nil)
+    assert_nil @file.read(1)
+    assert_nil @file.read(1)
+    assert_equal 0, @file.pos
+  end
+
+  def test_read_with_zero_length_should_not_read_remotely
+    @sftp.expects(:read!).never
+    assert_equal "", @file.read(0)
+  end
+
+  def test_read_with_negative_length_should_raise_argument_error
+    @sftp.expects(:read!).never
+    assert_raises(ArgumentError) { @file.read(-1) }
+  end
+
+  def test_read_should_coerce_length_with_to_int
+    length = Object.new
+    length.define_singleton_method(:to_int) { 5 }
+    @sftp.expects(:read!).returns("hello world")
+    assert_equal "hello", @file.read(length)
+  end
+
+  def test_read_should_reject_non_integer_lengths
+    @sftp.expects(:read!).never
+    assert_raises(TypeError) { @file.read("5") }
+  end
+
+  def test_read_should_treat_empty_data_response_as_eof
+    @sftp.expects(:read!).once.returns("")
+    assert_nil @file.read(1)
+    assert @file.eof?
+  end
+
   def test_read_after_pos_assignment_should_read_from_specified_position
     @sftp.expects(:read!).with("handle", 5, 8192).returns("hello world")
     @file.pos = 5

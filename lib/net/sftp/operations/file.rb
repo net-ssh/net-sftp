@@ -63,6 +63,15 @@ module Net; module SFTP; module Operations
     #
     # This will advance the file pointer (#pos).
     def read(n=nil)
+      unless n.nil? || n.is_a?(Integer)
+        converted = n.to_int if n.respond_to?(:to_int)
+        raise TypeError, "no implicit conversion of #{n.class} into Integer" unless converted.is_a?(Integer)
+
+        n = converted
+      end
+      raise ArgumentError, "negative length #{n} given" if n && n < 0
+      return "" if n == 0
+
       loop do
         break if n && @buffer.length >= n
         break unless fill
@@ -73,6 +82,8 @@ module Net; module SFTP; module Operations
       else
         result, @buffer = @buffer, ""
       end
+
+      return nil if n && result.empty? && @real_eof
 
       @pos += result.length
       return result
@@ -181,9 +192,11 @@ module Net; module SFTP; module Operations
       # Fills the buffer. Returns +true+ if it succeeded, and +false+ if
       # EOF was encountered before any data was read.
       def fill
+        return false if @real_eof
+
         data = sftp.read!(handle, @real_pos, 8192)
 
-        if data.nil?
+        if data.nil? || data.empty?
           @real_eof = true
           return false
         else
