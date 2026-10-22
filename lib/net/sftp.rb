@@ -32,6 +32,10 @@ module Net
     # - The Net::SSH connection options (see Net::SSH for more information)
     # - The Net::SFTP connection options (only :version is supported, to let you 
     #   set the SFTP protocol version to be used)
+    #
+    # Note, if one wants to mix Net::SSH and Net::SFTP interactions  over the same connection
+    # then us Net::SSH to get a session (as a block or directly), and then pass that into
+    # Net::SFTP::Session.new().
     def self.start(host, user, ssh_options={}, sftp_options={}, &block)
       session = Net::SSH.start(host, user, ssh_options)
       # We only use a single option here, but this leaves room for more later
