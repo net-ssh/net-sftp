@@ -122,6 +122,24 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_equal "hello w", @file.gets(nil, 7)
   end
 
+  def test_gets_with_delimiter_and_negative_limit_should_read_to_delimiter
+    @sftp.expects(:read!).returns("hello world\ngoodbye world\n\nfarewell!\n")
+    assert_equal "hello world\n", @file.gets("\n", -1)
+    assert_equal 12, @file.pos
+  end
+
+  def test_gets_with_negative_integer_argument_should_read_to_dollar_fslash
+    @sftp.expects(:read!).returns("hello world\ngoodbye world\n\nfarewell!\n")
+    assert_equal "hello world\n", @file.gets(-1)
+    assert_equal 12, @file.pos
+  end
+
+  def test_gets_with_delimiter_and_nil_limit_should_read_to_delimiter
+    @sftp.expects(:read!).returns("hello world\ngoodbye world\n\nfarewell!\n")
+    assert_equal "hello world\n", @file.gets("\n", nil)
+    assert_equal 12, @file.pos
+  end
+
   def test_gets_at_EOF_should_return_nil
     @sftp.expects(:read!).returns(nil)
     assert_nil @file.gets
