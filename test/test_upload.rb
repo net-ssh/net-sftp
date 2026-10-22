@@ -151,9 +151,32 @@ class UploadTest < Net::SFTP::TestCase
       channel.gets_packet(FXP_STATUS, :long, 2, :long, 0)
     end
 
-    assert_scripted_command do
-      sftp.upload(StringIO.new("this is some text"), "/path/to/remote")
+    source = StringIO.new("this is some text")
+    assert_scripted_command { sftp.upload(source, "/path/to/remote") }
+
+    assert !source.closed?
+  end
+
+  def test_upload_should_accept_a_read_only_stream
+    expect_file_transfer_from_stream("/path/to/remote", "this is some text")
+    chunks = ["this is some text", nil]
+    source = Object.new
+    source.define_singleton_method(:read) { |_size| chunks.shift }
+
+    assert_scripted_command { sftp.upload(source, "/path/to/remote") }
+  end
+
+  def test_upload_should_treat_an_empty_chunk_as_end_of_file
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/remote", :long, 0x1A, :long, 0)
+      channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+      channel.sends_packet(FXP_CLOSE, :long, 1, :string, "handle")
+      channel.gets_packet(FXP_STATUS, :long, 1, :long, 0)
     end
+    source = Object.new
+    source.define_singleton_method(:read) { |_size| "" }
+
+    assert_scripted_command { sftp.upload(source, "/path/to/remote") }
   end
 
   private
@@ -229,5 +252,16 @@ class UploadTest < Net::SFTP::TestCase
       end
 
       expect_file(local, data)
+    end
+
+    def expect_file_transfer_from_stream(remote, data)
+      expect_sftp_session :server_version => 3 do |channel|
+        channel.sends_packet(FXP_OPEN, :long, 0, :string, remote, :long, 0x1A, :long, 0)
+        channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+        channel.sends_packet(FXP_WRITE, :long, 1, :string, "handle", :int64, 0, :string, data)
+        channel.sends_packet(FXP_CLOSE, :long, 2, :string, "handle")
+        channel.gets_packet(FXP_STATUS, :long, 1, :long, 0)
+        channel.gets_packet(FXP_STATUS, :long, 2, :long, 0)
+      end
     end
 end

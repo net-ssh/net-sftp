@@ -227,7 +227,7 @@ module Net; module SFTP; module Operations
 
       # A simple struct for recording metadata about the file currently being
       # uploaded.
-      LiveFile = Struct.new(:local, :remote, :io, :size, :handle)
+      LiveFile = Struct.new(:local, :remote, :io, :size, :handle, :owned, :offset)
 
       # The default # of bytes to read from disk at a time.
       DEFAULT_READ_SIZE   = 32_000
@@ -283,18 +283,20 @@ module Net; module SFTP; module Operations
         if local.respond_to?(:read)
           file = local
           name = options[:name] || "<memory>"
+          owned = false
         else
           file = ::File.open(local, "rb")
           name = local
+          owned = true
         end
 
         if file.respond_to?(:stat)
           size = file.stat.size
-        else
+        elsif file.respond_to?(:size)
           size = file.size
         end
 
-        metafile = LiveFile.new(name, remote, file, size)
+        metafile = LiveFile.new(name, remote, file, size, nil, owned, 0)
         update_progress(:open, metafile)
 
         request = sftp.open(remote, "w", &method(:on_open))
@@ -357,16 +359,17 @@ module Net; module SFTP; module Operations
           process_next_entry
         else
           @active += 1
-          offset = file.io.pos
+          offset = file.offset
           data = file.io.read(options[:read_size] || DEFAULT_READ_SIZE)
-          if data.nil?
+          if data.nil? || data.empty?
             update_progress(:close, file)
             request = sftp.close(file.handle, &method(:on_close))
             request[:file] = file
-            file.io.close
+            file.io.close if file.owned
             file.io = nil
             @uploads.delete(file)
           else
+            file.offset += data.bytesize
             update_progress(:put, file, offset, data)
             request = sftp.write(file.handle, offset, data, &method(:on_write))
             request[:file] = file

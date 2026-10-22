@@ -204,7 +204,7 @@ module Net; module SFTP; module Operations
 
       # A simple struct for encapsulating information about a single remote
       # file or directory that needs to be downloaded.
-      Entry = Struct.new(:remote, :local, :directory, :size, :handle, :offset, :sink)
+      Entry = Struct.new(:remote, :local, :directory, :size, :handle, :offset, :sink, :owned)
 
       #--
       # "ruby -w" hates private attributes, so we have to do these longhand
@@ -308,7 +308,13 @@ module Net; module SFTP; module Operations
         raise StatusException.new(response, "open #{entry.remote}") unless response.ok?
 
         entry.handle = response[:handle]
-        entry.sink = entry.local.respond_to?(:write) ? entry.local : ::File.open(entry.local, "wb")
+        if entry.local.respond_to?(:write)
+          entry.sink = entry.local
+          entry.owned = false
+        else
+          entry.sink = ::File.open(entry.local, "wb")
+          entry.owned = true
+        end
         entry.offset = 0
 
         download_next_chunk(entry)
@@ -327,9 +333,9 @@ module Net; module SFTP; module Operations
       def on_read(response)
         entry = response.request[:entry]
 
-        if response.eof?
+        if response.eof? || (response.ok? && response[:data].empty?)
           update_progress(:close, entry)
-          entry.sink.close
+          entry.sink.close if entry.owned
           request = sftp.close(entry.handle, &method(:on_close))
           request[:entry] = entry
         elsif !response.ok?

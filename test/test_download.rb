@@ -135,6 +135,22 @@ class DownloadTest < Net::SFTP::TestCase
 
     assert_scripted_command { sftp.download(remote, local) }
     assert_equal text, local.string
+    assert !local.closed?
+  end
+
+  def test_download_should_treat_empty_data_as_end_of_file
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/remote", :long, 0x01, :long, 0)
+      channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+      channel.sends_packet(FXP_READ, :long, 1, :string, "handle", :int64, 0, :long, 32_000)
+      channel.gets_packet(FXP_DATA, :long, 1, :string, "")
+      channel.sends_packet(FXP_CLOSE, :long, 2, :string, "handle")
+      channel.gets_packet(FXP_STATUS, :long, 2, :long, 0)
+    end
+    local = StringIO.new
+
+    assert_scripted_command { sftp.download("/path/to/remote", local) }
+    assert_equal "", local.string
   end
 
   def test_download_directory_to_buffer_should_fail
