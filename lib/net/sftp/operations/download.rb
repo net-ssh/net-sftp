@@ -240,6 +240,7 @@ module Net; module SFTP; module Operations
 
           if entry.directory
             update_progress(:mkdir, entry.local)
+            refuse_symlink!(entry.local) if server_named?(entry) && ::File.symlink?(entry.local)
             ::Dir.mkdir(entry.local) unless ::File.directory?(entry.local)
             request = sftp.opendir(entry.remote, &method(:on_opendir))
             request[:entry] = entry
@@ -297,6 +298,27 @@ module Net; module SFTP; module Operations
       end
 
       # Called when a file is to be opened for reading from the remote server.
+      # The caller's own +local+ may be a symlink on purpose; anything below it
+      # was named by the server (net-sftp#162).
+      def server_named?(entry)
+        entry.local != local
+      end
+
+      def open_local_file(entry)
+        return ::File.open(entry.local, "wb") unless server_named?(entry) && defined?(::File::NOFOLLOW)
+
+        begin
+          ::File.open(entry.local, "wb", :flags => ::File::NOFOLLOW)
+        rescue SystemCallError
+          raise unless ::File.symlink?(entry.local)
+          refuse_symlink!(entry.local)
+        end
+      end
+
+      def refuse_symlink!(path)
+        raise Net::SFTP::Exception, "#{path} is a symlink, refusing to follow it"
+      end
+
       def open_file(entry)
         update_progress(:open, entry)
         request = sftp.open(entry.remote, &method(:on_open))
@@ -318,7 +340,7 @@ module Net; module SFTP; module Operations
         raise StatusException.new(response, "open #{entry.remote}") unless response.ok?
 
         entry.handle = response[:handle]
-        entry.sink = entry.local.respond_to?(:write) ? entry.local : ::File.open(entry.local, "wb")
+        entry.sink = entry.local.respond_to?(:write) ? entry.local : open_local_file(entry)
         entry.offset = 0
 
         download_next_chunk(entry)

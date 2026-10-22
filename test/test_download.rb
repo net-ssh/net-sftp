@@ -1,4 +1,5 @@
 require "common"
+require "tmpdir"
 
 class DownloadTest < Net::SFTP::TestCase
   FXP_DATA_CHUNK_SIZE = 1024
@@ -159,7 +160,105 @@ class DownloadTest < Net::SFTP::TestCase
     end
   end
 
+  def test_download_directory_should_refuse_to_follow_symlink_at_server_named_file
+    omit "File::NOFOLLOW not supported" unless defined?(File::NOFOLLOW)
+    with_tmpdir do |tmp|
+      Dir.mkdir("#{tmp}/local")
+      File.write("#{tmp}/victim", "original")
+      File.symlink("#{tmp}/victim", "#{tmp}/local/file1")
+
+      expect_sftp_session :server_version => 3 do |channel|
+        expect_readdir(channel, "/path/to/remote", "file1" => 0100644)
+        channel.sends_packet(FXP_OPEN, :long, 2, :string, "/path/to/remote/file1", :long, 0x01, :long, 0)
+        channel.sends_packet(FXP_READDIR, :long, 3, :string, "dir1")
+        channel.gets_packet(FXP_HANDLE, :long, 2, :string, "file1")
+      end
+
+      e = assert_raises(Net::SFTP::Exception) do
+        assert_scripted_command { sftp.download("/path/to/remote", "#{tmp}/local", :recursive => true) }
+      end
+      assert_match(/symlink/, e.message)
+      assert_equal "original", File.read("#{tmp}/victim")
+    end
+  end
+
+  def test_download_directory_should_refuse_to_descend_into_symlinked_directory
+    with_tmpdir do |tmp|
+      Dir.mkdir("#{tmp}/local")
+      Dir.mkdir("#{tmp}/outside")
+      File.symlink("#{tmp}/outside", "#{tmp}/local/subdir1")
+
+      expect_sftp_session :server_version => 3 do |channel|
+        expect_readdir(channel, "/path/to/remote", "subdir1" => 040755)
+      end
+
+      e = assert_raises(Net::SFTP::Exception) do
+        assert_scripted_command { sftp.download("/path/to/remote", "#{tmp}/local", :recursive => true) }
+      end
+      assert_match(/symlink/, e.message)
+      assert_equal [], Dir.children("#{tmp}/outside")
+    end
+  end
+
+  def test_download_file_to_symlink_given_by_caller_should_write_through_it
+    with_tmpdir do |tmp|
+      File.write("#{tmp}/target", "")
+      File.symlink("#{tmp}/target", "#{tmp}/link")
+      text = "this is some text\n"
+
+      expect_file_transfer("/path/to/remote", text)
+
+      assert_scripted_command { sftp.download("/path/to/remote", "#{tmp}/link") }
+      assert_equal text, File.read("#{tmp}/target")
+    end
+  end
+
+  def test_download_directory_to_symlink_given_by_caller_should_write_through_it
+    with_tmpdir do |tmp|
+      Dir.mkdir("#{tmp}/target")
+      File.symlink("#{tmp}/target", "#{tmp}/link")
+      text = "contents of file1"
+
+      expect_sftp_session :server_version => 3 do |channel|
+        expect_readdir(channel, "/path/to/remote", "file1" => 0100644)
+        channel.sends_packet(FXP_OPEN, :long, 2, :string, "/path/to/remote/file1", :long, 0x01, :long, 0)
+        channel.sends_packet(FXP_READDIR, :long, 3, :string, "dir1")
+        channel.gets_packet(FXP_HANDLE, :long, 2, :string, "file1")
+        channel.sends_packet(FXP_READ, :long, 4, :string, "file1", :int64, 0, :long, 32_000)
+        channel.gets_packet(FXP_STATUS, :long, 3, :long, 1)
+        channel.sends_packet(FXP_CLOSE, :long, 5, :string, "dir1")
+        channel.gets_packet(FXP_DATA, :long, 4, :string, text)
+        channel.sends_packet(FXP_READ, :long, 6, :string, "file1", :int64, text.bytesize, :long, 32_000)
+        channel.gets_packet(FXP_STATUS, :long, 5, :long, 0)
+        channel.gets_packet(FXP_STATUS, :long, 6, :long, 1)
+        channel.sends_packet(FXP_CLOSE, :long, 7, :string, "file1")
+        channel.gets_packet(FXP_STATUS, :long, 7, :long, 0)
+      end
+
+      assert_scripted_command { sftp.download("/path/to/remote", "#{tmp}/link", :recursive => true) }
+      assert_equal text, File.read("#{tmp}/target/file1")
+    end
+  end
+
   private
+
+    def nofollow
+      defined?(File::NOFOLLOW) ? [{ :flags => File::NOFOLLOW }] : []
+    end
+
+    def with_tmpdir
+      Dir.mktmpdir("net-sftp-test") { |tmp| yield File.realpath(tmp) }
+    end
+
+    def expect_readdir(channel, remote, entries)
+      channel.sends_packet(FXP_OPENDIR, :long, 0, :string, remote)
+      channel.gets_packet(FXP_HANDLE, :long, 0, :string, "dir1")
+      channel.sends_packet(FXP_READDIR, :long, 1, :string, "dir1")
+      names = entries.flat_map do |name, mode|
+        [:string, name, :string, "#{name} longname", :long, 0x04, :long, mode]
+      end
+      channel.gets_packet(FXP_NAME, :long, 1, :long, entries.size, *names)
+    end
 
     def assert_rejects_readdir_name(name)
       expect_sftp_session :server_version => 3 do |channel|
@@ -317,8 +416,8 @@ class DownloadTest < Net::SFTP::TestCase
 
       file1 = StringIO.new
       file2 = StringIO.new
-      File.expects(:open).with(File.join(local, "file1"), "wb").returns(file1)
-      File.expects(:open).with(File.join(local, "subdir1", "file2"), "wb").returns(file2)
+      File.expects(:open).with(File.join(local, "file1"), "wb", *nofollow).returns(file1)
+      File.expects(:open).with(File.join(local, "subdir1", "file2"), "wb", *nofollow).returns(file2)
 
       [file1, file2]
     end
