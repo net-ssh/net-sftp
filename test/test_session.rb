@@ -13,6 +13,19 @@ class SessionTest < Net::SFTP::TestCase
     end
   end
 
+  def test_reconnect_should_discard_partial_input_from_the_closed_channel
+    ssh = mock("ssh")
+    ssh.stubs(:logger).returns(nil)
+    ssh.expects(:open_channel).twice.returns(mock("channel"))
+    session = Net::SFTP::Session.new(ssh)
+    session.send(:input).append("partial packet")
+    session.send(:when_channel_closed, nil)
+
+    session.connect
+
+    assert_equal 0, session.send(:input).length
+  end
+
   def test_passing_version_should_cause_same_version_to_be_passed_and_used
     version = 3
     expect_sftp_session :client_version => version, :server_version => version
