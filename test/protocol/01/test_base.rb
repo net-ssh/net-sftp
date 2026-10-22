@@ -28,6 +28,12 @@ class Protocol::V01::TestBase < Net::SFTP::TestCase
     assert_equal({ :code => 15 }, @base.parse_status_packet(packet))
   end
 
+  def test_parse_status_packet_should_not_read_beyond_code
+    packet = Net::SSH::Buffer.from(:long, 4, :string, "Disk full", :string, "en")
+    assert_equal({ :code => 4 }, @base.parse_status_packet(packet))
+    assert_equal 4, packet.position
+  end
+
   def test_parse_data_packet_should_read_string_from_packet_and_return_data_in_hash
     packet = Net::SSH::Buffer.from(:string, "here is a string")
     assert_equal({ :data => "here is a string" }, @base.parse_data_packet(packet))
