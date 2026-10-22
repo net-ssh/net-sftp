@@ -150,7 +150,7 @@ module Net; module SFTP; module Protocol; module V01
     # * :mtime:: the modification time of the file (integer, seconds since epoch)
     # * :extended:: a hash of name/value pairs identifying extended info
     def initialize(attributes={})
-      @attributes = attributes
+      @attributes = attributes.dup
     end
 
     # Returns the user-id of the user that owns the file, or +nil+ if that
