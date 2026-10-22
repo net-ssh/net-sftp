@@ -1,0 +1,1 @@
+Don't crash formatting a directory listing (`longname`) when an SFTP v4+ server omits the modification time, size or permissions, and don't show omitted permissions as `rwxrwxrwx`. Thanks @OskarEichler [#175, #146]

@@ -1,35 +1,23 @@
 name: CI
-on: [push, pull_request]
+on:
+  pull_request:
+  push: { branches: master }
+permissions:
+  contents: read
 jobs:
   test:
-    runs-on: ubuntu-18.04
-    continue-on-error: ${{ matrix.flaky }}
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        ruby-version: ["2.5", "2.6", "2.7", "3.0", "3.1", "truffleruby-22", "truffleruby-21"]
-        flaky: [false]
-        include:
-          - ruby-version: "ruby-head"
-            flaky: true
-          - ruby-version: "jruby-9.2"
-            flaky: true
-          - ruby-version: "jruby-9.3"
-            flaky: true
-          - ruby-version: "jruby-head"
-            flaky: true
-          - ruby-version: "truffleruby-head"
-            flaky: true
+        ruby-version: ['2.6', '2.7', '3.0', '3.1', '3.2', '3.3', '3.4', '4.0', 'ruby-head', 'jruby', 'truffleruby']
+    continue-on-error: ${{ contains(fromJSON('["ruby-head", "jruby", "truffleruby"]'), matrix.ruby-version) }}
     steps:
-      - uses: actions/checkout@v1
-
+      - uses: actions/checkout@v4
       - name: Set up Ruby ${{ matrix.ruby-version }}
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
-
-      - name: Bundle install
-        run: |
-          gem install bundler
-          bundle install
+          bundler-cache: true
       - name: Run Tests
         run: bundle exec rake test
