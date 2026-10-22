@@ -108,6 +108,18 @@ class Protocol::V04::TestAttributes < Net::SFTP::TestCase
     assert_equal Net::SSH::Buffer.from(:long, 0x8, :byte, 1, :int64, 100).to_s, attributes.to_s
   end
 
+  def test_new_should_accept_a_frozen_hash
+    attributes = attributes_factory.new({ :size => 5 }.freeze)
+    assert_equal attributes_factory::T_REGULAR, attributes.type
+    assert_equal Net::SSH::Buffer.from(:long, 0x1, :byte, 1, :int64, 5).to_s, attributes.to_s
+  end
+
+  def test_new_should_not_add_the_default_type_to_the_given_hash
+    input = { :size => 5 }
+    attributes_factory.new(input)
+    assert_equal({ :size => 5 }, input)
+  end
+
   def test_directory_should_be_true_only_when_type_is_directory
     assert @directory.directory?
     assert !@symlink.directory?
