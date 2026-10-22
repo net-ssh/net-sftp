@@ -68,6 +68,8 @@ module Net; module SFTP; module Operations
     #
     # This will advance the file pointer (#pos).
     def read(n=nil)
+      raise ArgumentError, "negative length #{n} given" if n && n < 0
+
       loop do
         break if n && @buffer.length >= n
         break unless fill
@@ -215,7 +217,7 @@ module Net; module SFTP; module Operations
       def fill
         data = sftp.read!(handle, @real_pos, 8192)
 
-        if data.nil?
+        if data.nil? || data.empty?
           @real_eof = true
           return false
         else

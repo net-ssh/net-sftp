@@ -1,4 +1,5 @@
 require 'common'
+require 'timeout'
 
 class FileOperationsTest < Net::SFTP::TestCase
   def setup
@@ -56,6 +57,28 @@ class FileOperationsTest < Net::SFTP::TestCase
     @sftp.expects(:read!).returns("hello world")
     assert_equal "hello", @file.read(5)
     assert_equal 5, @file.pos
+  end
+
+  def test_read_with_negative_length_should_raise_argument_error
+    @sftp.expects(:read!).never
+    assert_raises(ArgumentError) { @file.read(-1) }
+  end
+
+  def test_read_with_argument_at_eof_should_return_empty_string
+    @sftp.expects(:read!).returns(nil)
+    assert_equal "", @file.read(1)
+  end
+
+  def test_read_should_treat_empty_data_response_as_eof
+    @sftp.expects(:read!).once.returns("")
+    assert_equal "", Timeout.timeout(5) { @file.read }
+    assert @file.eof?
+  end
+
+  def test_read_with_argument_should_treat_empty_data_response_as_eof
+    @sftp.expects(:read!).twice.returns("hello", "")
+    assert_equal "hello", Timeout.timeout(5) { @file.read(10) }
+    assert @file.eof?
   end
 
   def test_read_after_pos_assignment_should_read_from_specified_position
@@ -192,6 +215,12 @@ class FileOperationsTest < Net::SFTP::TestCase
   def test_gets_at_EOF_should_return_nil
     @sftp.expects(:read!).returns(nil)
     assert_nil @file.gets
+    assert @file.eof?
+  end
+
+  def test_gets_should_treat_empty_data_response_as_eof
+    @sftp.expects(:read!).twice.returns("hello", "")
+    assert_equal "hello", Timeout.timeout(5) { @file.gets }
     assert @file.eof?
   end
 
