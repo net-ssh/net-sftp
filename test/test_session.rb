@@ -13,6 +13,19 @@ class SessionTest < Net::SFTP::TestCase
     end
   end
 
+  def test_reconnect_should_discard_partial_input_from_the_closed_channel
+    ssh = mock("ssh")
+    ssh.stubs(:logger).returns(nil)
+    ssh.expects(:open_channel).twice.returns(mock("channel"))
+    session = Net::SFTP::Session.new(ssh)
+    session.send(:input).append("partial packet")
+    session.send(:when_channel_closed, nil)
+
+    session.connect
+
+    assert_equal 0, session.send(:input).length
+  end
+
   def test_passing_version_should_cause_same_version_to_be_passed_and_used
     version = 3
     expect_sftp_session :client_version => version, :server_version => version
@@ -389,6 +402,34 @@ class SessionTest < Net::SFTP::TestCase
 
     response = assert_synchronous_command(:remove!, "/path/to/file")
     assert response.ok?
+  end
+
+  def test_remove_bang_should_raise_exception_with_server_message
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_REMOVE, :long, 0, :string, "/path/to/file")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 3, :string, "Permission denied by policy", :string, "en")
+    end
+
+    error = assert_raises(Net::SFTP::StatusException) do
+      assert_synchronous_command(:remove!, "/path/to/file")
+    end
+    assert_equal 3, error.code
+    assert_equal "Permission denied by policy", error.description
+    assert_includes error.message, "Permission denied by policy"
+    assert_equal "Permission denied by policy (permission denied, 3)", error.response.to_s
+  end
+
+  def test_v1_remove_bang_should_raise_exception_with_code_description
+    expect_sftp_session :server_version => 1 do |channel|
+      channel.sends_packet(FXP_REMOVE, :long, 0, :string, "/path/to/file")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 3)
+    end
+
+    error = assert_raises(Net::SFTP::StatusException) do
+      assert_synchronous_command(:remove!, "/path/to/file")
+    end
+    assert_equal "permission denied", error.description
+    assert_includes error.message, '(3, "permission denied")'
   end
 
   def test_mkdir_should_send_mkdir_packet

@@ -31,6 +31,18 @@ class Protocol::V05::TestBase < Protocol::V04::TestBase
     assert_equal 0, @base.open("/path/to/file", IO::RDWR | IO::CREAT | IO::EXCL, {})
   end
 
+  { "wronly_trunc" => [IO::WRONLY | IO::TRUNC, FV5::TRUNCATE_EXISTING, ACE::Mask::WRITE_DATA | ACE::Mask::WRITE_ATTRIBUTES],
+    "rdwr_trunc"   => [IO::RDWR | IO::TRUNC, FV5::TRUNCATE_EXISTING, ACE::Mask::READ_DATA | ACE::Mask::READ_ATTRIBUTES | ACE::Mask::WRITE_DATA | ACE::Mask::WRITE_ATTRIBUTES],
+    "rdonly_creat" => [IO::RDONLY | IO::CREAT, FV5::OPEN_OR_CREATE, ACE::Mask::READ_DATA | ACE::Mask::READ_ATTRIBUTES]
+  }.each do |name, (io_flags, flags, access)|
+    define_method("test_open_with_numeric_#{name}_should_translate_disposition") do
+      @session.expects(:send_packet).with(FXP_OPEN, :long, 0,
+        :string, "/path/to/file", :long, access, :long, flags, :raw, attributes.new.to_s)
+
+      assert_equal 0, @base.open("/path/to/file", io_flags, {})
+    end
+  end
+
   { "r"  => [FV5::OPEN_EXISTING, ACE::Mask::READ_DATA | ACE::Mask::READ_ATTRIBUTES],
     "rb" => [FV5::OPEN_EXISTING, ACE::Mask::READ_DATA | ACE::Mask::READ_ATTRIBUTES],
     "r+" => [FV5::OPEN_EXISTING, ACE::Mask::READ_DATA | ACE::Mask::READ_ATTRIBUTES | ACE::Mask::WRITE_DATA | ACE::Mask::WRITE_ATTRIBUTES],
