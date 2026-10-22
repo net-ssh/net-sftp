@@ -165,6 +165,24 @@ class FileOperationsTest < Net::SFTP::TestCase
     assert_equal 26, @file.pos
   end
 
+  def test_write_after_buffered_read_should_write_at_logical_position
+    @sftp.expects(:read!).with("handle", 0, 8192).returns("hello world")
+    @sftp.expects(:write!).with("handle", 2, "XY")
+    assert_equal "he", @file.read(2)
+    assert_equal 2, @file.write("XY")
+    assert_equal 4, @file.pos
+  end
+
+  def test_read_after_write_should_read_from_new_position
+    @sftp.expects(:read!).with("handle", 0, 8192).returns("hello world")
+    @sftp.expects(:write!).with("handle", 2, "XY")
+    @sftp.expects(:read!).with("handle", 4, 8192).returns("o world")
+    @file.read(2)
+    @file.write("XY")
+    assert_equal "o w", @file.read(3)
+    assert_equal 7, @file.pos
+  end
+
   def test_write_should_write_mutlibyte_string_data_and_increment_pos_and_return_data_length
     @sftp.expects(:write!).with("handle", 0, "hello world, 你好，世界")
     assert_equal 28, @file.write("hello world, 你好，世界")

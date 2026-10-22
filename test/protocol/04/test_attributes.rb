@@ -120,6 +120,13 @@ class Protocol::V04::TestAttributes < Net::SFTP::TestCase
     assert_equal({ :size => 5 }, input)
   end
 
+  def test_attributes_with_mixed_subsecond_times_should_zero_fill_missing_nseconds
+    attributes = attributes_factory.new(:atime => 100, :atime_nseconds => 123, :mtime => 200)
+    assert_equal Net::SSH::Buffer.from(:long, 0x128, :byte, 1,
+      :int64, 100, :long, 123,
+      :int64, 200, :long, 0).to_s, attributes.to_s
+  end
+
   def test_directory_should_be_true_only_when_type_is_directory
     assert @directory.directory?
     assert !@symlink.directory?

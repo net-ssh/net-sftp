@@ -1,0 +1,1 @@
+Fixed SFTP v4+ attribute serialization raising `TypeError` when nanoseconds were given for only some timestamps (e.g. `atime_nseconds` with `mtime` but no `mtime_nseconds`); the missing subsecond fields are now sent as 0. Thanks @OskarEichler [#168]

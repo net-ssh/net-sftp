@@ -134,6 +134,15 @@ module Net; module SFTP; module Protocol; module V04
         # were given on instantiation
         owner
         group
+
+        # The subsecond flag applies to every timestamp present in the packet.
+        subseconds = self.class.elements.select { |_name, _type, flags| flags & F_SUBSECOND_TIMES != 0 }
+        if subseconds.any? { |name, _type, _flags| attributes[name] }
+          subseconds.each do |name, _type, _flags|
+            seconds = name.to_s.sub(/_nseconds\z/, "").to_sym
+            attributes[name] ||= 0 if attributes[seconds]
+          end
+        end
       end
 
       # Performs protocol-version-specific encoding of the access control

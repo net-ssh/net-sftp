@@ -131,9 +131,8 @@ module Net; module SFTP; module Operations
     # returning the number of bytes written.
     def write(data)
       data = data.to_s
-      sftp.write!(handle, @real_pos, data)
-      @real_pos += data.bytes.length
-      @pos = @real_pos
+      sftp.write!(handle, @pos, data)
+      self.pos = @pos + data.bytes.length unless data.empty?
       data.bytes.length
     end
 

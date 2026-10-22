@@ -772,6 +772,7 @@ module Net; module SFTP
         when :closed
           @state = :opening
           @channel = session.open_channel(&method(:when_channel_confirmed))
+          @input = Net::SSH::Buffer.new
           @packet_length = nil
           @protocol = nil
           @on_ready = Array(block)

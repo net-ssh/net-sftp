@@ -1,0 +1,1 @@
+Fixed `Net::SFTP::Operations::File#write` writing at the read-ahead offset instead of the current position after a buffered read (e.g. `read(2)` on an `r+` file), which corrupted data. Thanks @OskarEichler [#163]
