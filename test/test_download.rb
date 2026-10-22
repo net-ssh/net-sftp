@@ -253,8 +253,12 @@ class DownloadTest < Net::SFTP::TestCase
 
   private
 
-    def nofollow
-      defined?(File::NOFOLLOW) ? [{ :flags => File::NOFOLLOW }] : []
+    def expect_open_for_write(path)
+      if defined?(File::NOFOLLOW)
+        File.expects(:open).with(path, "wb", :flags => File::NOFOLLOW)
+      else
+        File.expects(:open).with(path, "wb")
+      end
     end
 
     def with_tmpdir
@@ -427,8 +431,8 @@ class DownloadTest < Net::SFTP::TestCase
 
       file1 = StringIO.new
       file2 = StringIO.new
-      File.expects(:open).with(File.join(local, "file1"), "wb", *nofollow).returns(file1)
-      File.expects(:open).with(File.join(local, "subdir1", "file2"), "wb", *nofollow).returns(file2)
+      expect_open_for_write(File.join(local, "file1")).returns(file1)
+      expect_open_for_write(File.join(local, "subdir1", "file2")).returns(file2)
 
       [file1, file2]
     end
