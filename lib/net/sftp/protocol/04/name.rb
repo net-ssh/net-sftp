@@ -38,7 +38,6 @@ module Net; module SFTP; module Protocol; module V04
     # used by the unix "ls" utility.
     def longname
       @longname ||= begin
-        permissions = attributes.permissions || 0
         longname = if directory?
           "d"
         elsif symlink?
@@ -47,22 +46,27 @@ module Net; module SFTP; module Protocol; module V04
           "-"
         end.dup
 
-        longname << (permissions & 0400 != 0 ? "r" : "-")
-        longname << (permissions & 0200 != 0 ? "w" : "-")
-        longname << (permissions & 0100 != 0 ? "x" : "-")
-        longname << (permissions & 0040 != 0 ? "r" : "-")
-        longname << (permissions & 0020 != 0 ? "w" : "-")
-        longname << (permissions & 0010 != 0 ? "x" : "-")
-        longname << (permissions & 0004 != 0 ? "r" : "-")
-        longname << (permissions & 0002 != 0 ? "w" : "-")
-        longname << (permissions & 0001 != 0 ? "x" : "-")
+        # Fields the server omitted are shown as "?", like GNU ls -l does for entries it cannot stat.
+        if (permissions = attributes.permissions)
+          longname << (permissions & 0400 != 0 ? "r" : "-")
+          longname << (permissions & 0200 != 0 ? "w" : "-")
+          longname << (permissions & 0100 != 0 ? "x" : "-")
+          longname << (permissions & 0040 != 0 ? "r" : "-")
+          longname << (permissions & 0020 != 0 ? "w" : "-")
+          longname << (permissions & 0010 != 0 ? "x" : "-")
+          longname << (permissions & 0004 != 0 ? "r" : "-")
+          longname << (permissions & 0002 != 0 ? "w" : "-")
+          longname << (permissions & 0001 != 0 ? "x" : "-")
+        else
+          longname << "?" * 9
+        end
 
-        longname << (" %-8s %-8s %8s " % [attributes.owner, attributes.group, attributes.size || "-"])
+        longname << (" %-8s %-8s %8s " % [attributes.owner || "?", attributes.group || "?", attributes.size || "?"])
 
         longname << if attributes.mtime
           Time.at(attributes.mtime).strftime("%b %e %H:%M ")
         else
-          " " * 13
+          "%12s " % "?"
         end
         longname << name
       end

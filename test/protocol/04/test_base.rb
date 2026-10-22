@@ -32,7 +32,7 @@ class Protocol::V04::TestBase < Protocol::V03::TestBase
     packet = Net::SSH::Buffer.from(:long, 1, :string, "name1", :long, 0, :byte, 1)
     names = @base.parse_name_packet(packet)[:names]
 
-    assert_equal "----------                          -              name1", names.first.longname
+    assert_equal "-????????? ?        ?               ?            ? name1", names.first.longname
   end
 
   undef test_fstat_should_ignore_flags_parameter
