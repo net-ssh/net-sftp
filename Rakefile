@@ -19,6 +19,16 @@ name = "net-sftp"
 require_relative "lib/net/sftp/version"
 version = Net::SFTP::Version::CURRENT
 
+begin
+  require "changelogd/rake"
+rescue LoadError
+  # A git gem isn't on the load path under plain `rake`, as the release workflow runs it; bundler/setup could clash with the running rake.
+  require "bundler"
+  $LOAD_PATH.unshift(*Bundler.definition.specs["changelogd"].flat_map(&:full_require_paths))
+  require "changelogd/rake"
+end
+Changelogd::RakeTasks.new(version_file: "lib/net/sftp/version.rb")
+
 namespace :cert do
   desc "Update public cert from private - only run if public is expired"
   task :update_public_when_expired do
@@ -53,6 +63,7 @@ RDoc::Task.new do |rdoc|
 end
 
 def change_version(&block)
+  Rake::Task["changelog:check"].invoke
   version_file = 'lib/net/sftp/version.rb'
   require_relative version_file
   pre = Net::SFTP::Version::PRE
@@ -102,6 +113,7 @@ def change_version(&block)
 
   FileUtils.mv version_file, "#{version_file}.old"
   FileUtils.mv "#{version_file}.new", version_file
+  Rake::Task["changelog:release"].invoke
 end
 
 namespace :vbump do
