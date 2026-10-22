@@ -1,0 +1,1 @@
+Include the server's error message in `StatusException` and `Response#to_s` for SFTP protocol v3 and later, instead of only the status code. Thanks @OskarEichler [#169, #156]
