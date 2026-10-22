@@ -1,0 +1,1 @@
+Fixed SFTP v5/v6 `open` ignoring `IO::TRUNC` and `IO::CREAT` in numeric flags: `IO::WRONLY | IO::TRUNC` now requests `TRUNCATE_EXISTING` instead of opening without truncation, and read-only opens with `IO::CREAT` now request `OPEN_OR_CREATE`. Thanks @OskarEichler [#170]

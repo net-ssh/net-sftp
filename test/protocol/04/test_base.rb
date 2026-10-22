@@ -28,6 +28,13 @@ class Protocol::V04::TestBase < Protocol::V03::TestBase
     assert_equal 0550, names.last.attributes.permissions
   end
 
+  def test_parse_name_packet_with_only_type_attribute_should_format_longname
+    packet = Net::SSH::Buffer.from(:long, 1, :string, "name1", :long, 0, :byte, 1)
+    names = @base.parse_name_packet(packet)[:names]
+
+    assert_equal "----------                          -              name1", names.first.longname
+  end
+
   undef test_fstat_should_ignore_flags_parameter
   undef test_lstat_should_ignore_flags_parameter
   undef test_stat_should_ignore_flags_parameter

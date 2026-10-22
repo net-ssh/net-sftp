@@ -50,4 +50,47 @@ class Protocol::V04::TestName < Net::SFTP::TestCase
     assert_equal "-rwxr-xr-x jamis    users       10240 Mar 12 03:40 test",
       @file.longname
   end
+
+  def test_longname_should_tolerate_omitted_optional_attributes
+    sparse = Net::SFTP::Protocol::V04::Name.new(
+      "test",
+      Net::SFTP::Protocol::V04::Attributes.new(:type => 1)
+    )
+
+    assert_equal "----------                          -              test", sparse.longname
+  end
+
+  def test_longname_without_mtime_should_leave_timestamp_blank
+    assert_equal "-rwxr-xr-x jamis    users       10240              test",
+      sparse_file(:mtime).longname
+  end
+
+  def test_longname_without_size_should_show_placeholder
+    assert_equal "-rwxr-xr-x jamis    users           - Mar 12 03:40 test",
+      sparse_file(:size).longname
+  end
+
+  def test_longname_without_permissions_should_show_no_permission_bits
+    assert_equal "---------- jamis    users       10240 Mar 12 03:40 test",
+      sparse_file(:permissions).longname
+  end
+
+  def test_longname_without_mtime_size_and_permissions_should_keep_columns_aligned
+    assert_equal @file.longname.length, sparse_file(:mtime, :size, :permissions).longname.length
+    assert_equal "---------- jamis    users           -              test",
+      sparse_file(:mtime, :size, :permissions).longname
+  end
+
+  def test_longname_should_tolerate_sparse_v06_attributes
+    name = Net::SFTP::Protocol::V04::Name.new("test", Net::SFTP::Protocol::V06::Attributes.new(:type => 2))
+    assert_equal "d---------                          -              test", name.longname
+  end
+
+  private
+
+  def sparse_file(*omitted)
+    attributes = { :type => 1, :mtime => 1205293237, :owner => "jamis", :group => "users", :size => 10240, :permissions => 0755 }
+    omitted.each { |key| attributes.delete(key) }
+    Net::SFTP::Protocol::V04::Name.new("test", Net::SFTP::Protocol::V04::Attributes.new(attributes))
+  end
 end

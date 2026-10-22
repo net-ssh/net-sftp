@@ -142,10 +142,9 @@ module Net; module SFTP; module Operations
       written = 0
       loop do
         chunk = data.byteslice(written, MAX_WRITE_SIZE)
-        sftp.write!(handle, @real_pos, chunk)
+        sftp.write!(handle, @pos, chunk)
         written += chunk.bytesize
-        @real_pos += chunk.bytesize
-        @pos = @real_pos
+        self.pos = @pos + chunk.bytesize unless chunk.empty?
         break if written >= size
       end
       size
