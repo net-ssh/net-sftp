@@ -68,6 +68,10 @@ module Net; module SFTP
     # the server has not yet responded to will be represented here.
     attr_reader :pending_requests
 
+    # The extensions the server advertised in its FXP_VERSION packet, as a
+    # hash of name => data (e.g. "posix-rename@openssh.com" => "1").
+    attr_reader :extensions
+
     # Creates a new Net::SFTP instance atop the given Net::SSH connection.
     # This will return immediately, before the SFTP connection has been properly
     # initialized. Once the connection is ready, the given block will be called.
@@ -81,6 +85,7 @@ module Net; module SFTP
       @input      = Net::SSH::Buffer.new
       self.logger = session.logger
       @state      = :closed
+      @extensions = {}
       @pending_requests = {}
 
       connect(&block)
@@ -932,11 +937,11 @@ module Net; module SFTP
         negotiated_version = [server_version, HIGHEST_PROTOCOL_VERSION_SUPPORTED].min
         info { "negotiated version is #{negotiated_version}" }
 
-        extensions = {}
+        @extensions = {}
         until packet.eof?
           name = packet.read_string
           data = packet.read_string
-          extensions[name] = data
+          @extensions[name] = data
         end
 
         @protocol = Protocol.load(self, negotiated_version)
