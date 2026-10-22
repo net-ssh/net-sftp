@@ -21,7 +21,7 @@ class StartTest < Net::SFTP::TestCase
   def test_with_block_and_options
     ssh = mock('ssh')
     ssh.expects(:close)
-    Net::SSH.expects(:start).with('host', 'user', auth_methods: ["password"]).returns(ssh)
+    Net::SSH.expects(:start).with('host', 'user', {auth_methods: ["password"]}).returns(ssh)
 
     sftp = mock('sftp')
     Net::SFTP::Session.expects(:new).with(ssh, 3).returns(sftp)
