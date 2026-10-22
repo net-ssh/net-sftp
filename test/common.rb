@@ -36,8 +36,8 @@ class Net::SFTP::TestCase < Minitest::Test
       Net::SSH::Buffer.from(*args).to_s
     end
 
-    def sftp(options={}, version=nil)
-      @sftp ||= Net::SFTP::Session.new(connection(options), version)
+    def sftp(options={}, version=nil, min_version: nil)
+      @sftp ||= Net::SFTP::Session.new(connection(options), version, min_version: min_version)
     end
 
     def expect_sftp_session(opts={})
