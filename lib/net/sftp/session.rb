@@ -75,12 +75,17 @@ module Net; module SFTP
     #
     #   sftp = Net::SFTP::Session.new(ssh)
     #   sftp.loop { sftp.opening? }
-    def initialize(session, version = nil, &block)
-      @session    = session
-      @version    = version
-      @input      = Net::SSH::Buffer.new
-      self.logger = session.logger
-      @state      = :closed
+    #
+    # +version+ is the protocol version to offer the server. The server picks
+    # the version actually used, so pass +min_version+ to raise
+    # Net::SFTP::Exception instead of continuing with an older one.
+    def initialize(session, version = nil, min_version: nil, &block)
+      @session     = session
+      @version     = version
+      @min_version = min_version
+      @input       = Net::SSH::Buffer.new
+      self.logger  = session.logger
+      @state       = :closed
       @pending_requests = {}
 
       connect(&block)
@@ -931,6 +936,10 @@ module Net; module SFTP
 
         negotiated_version = [server_version, HIGHEST_PROTOCOL_VERSION_SUPPORTED].min
         info { "negotiated version is #{negotiated_version}" }
+
+        if @min_version && negotiated_version < @min_version
+          raise Net::SFTP::Exception, "negotiated sftp version #{negotiated_version}, but at least #{@min_version} is required"
+        end
 
         extensions = {}
         until packet.eof?

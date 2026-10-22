@@ -26,6 +26,22 @@ class SessionTest < Net::SFTP::TestCase
     assert_equal 0, session.send(:input).length
   end
 
+  def test_min_version_should_raise_when_server_negotiates_lower
+    expect_sftp_session :server_version => 1
+
+    Net::SSH::Test::Extensions::IO.with_test_extension do
+      error = assert_raises(Net::SFTP::Exception) { sftp({}, nil, min_version: 3).connect! }
+      assert_match(/negotiated sftp version 1, but at least 3 is required/, error.message)
+    end
+    assert_nil sftp.protocol
+  end
+
+  def test_min_version_should_accept_server_that_meets_it
+    expect_sftp_session :server_version => 3
+    assert_scripted { sftp({}, nil, min_version: 3).connect! }
+    assert_equal 3, sftp.protocol.version
+  end
+
   def test_passing_version_should_cause_same_version_to_be_passed_and_used
     version = 3
     expect_sftp_session :client_version => version, :server_version => version
