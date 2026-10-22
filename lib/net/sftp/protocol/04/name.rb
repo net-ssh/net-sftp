@@ -45,7 +45,7 @@ module Net; module SFTP; module Protocol; module V04
           "l"
         else
           "-"
-        end
+        end.dup
 
         longname << (permissions & 0400 != 0 ? "r" : "-")
         longname << (permissions & 0200 != 0 ? "w" : "-")
