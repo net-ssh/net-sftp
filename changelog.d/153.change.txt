@@ -1,0 +1,1 @@
+Accept a `Pathname` as the local or remote path for uploads and downloads. Thanks @Tietew and @til [#153, #102]
