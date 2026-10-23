@@ -1,0 +1,1 @@
+Net::SFTP now works with frozen string literals enabled: `File` reads and `Dir#glob` no longer mutate frozen strings, and `glob` no longer modifies entry names in place (adds `Name#name=`). Based on #157 by @frederikspang [#198, #157]

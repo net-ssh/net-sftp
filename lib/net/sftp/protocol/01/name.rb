@@ -5,7 +5,7 @@ module Net; module SFTP; module Protocol; module V01
   # for use when displaying directory data, and has no specified format.
   class Name
     # The name of the item on the remote server.
-    attr_reader :name
+    attr_accessor :name
 
     # The display-ready name of the item, possibly with other attributes.
     attr_reader :longname
