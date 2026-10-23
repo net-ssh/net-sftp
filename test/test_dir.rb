@@ -70,6 +70,15 @@ class DirOperationsTest < Net::SFTP::TestCase
     assert_equal %w(b.txt a/a1.txt c/c1.txt a/aa/deep.txt), names
   end
 
+  def test_glob_should_not_modify_names_in_place
+    deep = n("deep.txt".freeze)
+    expect_listing("/r", [n("sub", true)])
+    expect_listing("/r/sub", [deep])
+
+    assert_equal %w(sub/deep.txt), @dir.glob("/r", "**/*.txt").map { |e| e.name }
+    assert_equal "sub/deep.txt", deep.name
+  end
+
   private
 
     def expect_listing(path, names)
