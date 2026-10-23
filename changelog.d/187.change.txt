@@ -1,0 +1,1 @@
+Fixed `File#write` hanging on data of 256 KiB or more by sending it in 32 KiB write requests [#99, #187]

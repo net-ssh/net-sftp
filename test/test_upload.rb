@@ -66,12 +66,12 @@ class UploadTest < Net::SFTP::TestCase
       channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
       channel.sends_packet(FXP_WRITE, :long, 1, :string, "handle", :int64, 0, :string, "a" * size)
       channel.sends_packet(FXP_WRITE, :long, 2, :string, "handle", :int64, size, :string, "b" * size)
-      channel.sends_packet(FXP_WRITE, :long, 3, :string, "handle", :int64, size*2, :string, "c" * size)
       channel.gets_packet(FXP_STATUS, :long, 1, :long, 0)
-      channel.sends_packet(FXP_WRITE, :long, 4, :string, "handle", :int64, size*3, :string, "d" * size)
+      channel.sends_packet(FXP_WRITE, :long, 3, :string, "handle", :int64, size*2, :string, "c" * size)
       channel.gets_packet(FXP_STATUS, :long, 2, :long, 0)
-      channel.sends_packet(FXP_CLOSE, :long, 5, :string, "handle")
+      channel.sends_packet(FXP_WRITE, :long, 4, :string, "handle", :int64, size*3, :string, "d" * size)
       channel.gets_packet(FXP_STATUS, :long, 3, :long, 0)
+      channel.sends_packet(FXP_CLOSE, :long, 5, :string, "handle")
       channel.gets_packet(FXP_STATUS, :long, 4, :long, 0)
       channel.gets_packet(FXP_STATUS, :long, 5, :long, 0)
     end
@@ -97,10 +97,10 @@ class UploadTest < Net::SFTP::TestCase
       channel.sends_packet(FXP_WRITE, :long, 1, :string, "handle", :int64, 0, :string, "a" * size)
       channel.sends_packet(FXP_WRITE, :long, 2, :string, "handle", :int64, size, :string, "b" * size)
       channel.sends_packet(FXP_WRITE, :long, 3, :string, "handle", :int64, size*2, :string, "c" * size)
-      channel.sends_packet(FXP_WRITE, :long, 4, :string, "handle", :int64, size*3, :string, "d" * size)
       channel.gets_packet(FXP_STATUS, :long, 1, :long, 0)
-      channel.sends_packet(FXP_CLOSE, :long, 5, :string, "handle")
+      channel.sends_packet(FXP_WRITE, :long, 4, :string, "handle", :int64, size*3, :string, "d" * size)
       channel.gets_packet(FXP_STATUS, :long, 2, :long, 0)
+      channel.sends_packet(FXP_CLOSE, :long, 5, :string, "handle")
       channel.gets_packet(FXP_STATUS, :long, 3, :long, 0)
       channel.gets_packet(FXP_STATUS, :long, 4, :long, 0)
       channel.gets_packet(FXP_STATUS, :long, 5, :long, 0)
@@ -160,6 +160,24 @@ class UploadTest < Net::SFTP::TestCase
 
     assert_scripted_command do
       sftp.upload(StringIO.new("this is some text"), "/path/to/remote")
+    end
+  end
+
+  def test_upload_should_reject_nonpositive_requests_and_read_size
+    session = stub("sftp", :logger => nil)
+
+    [{ :requests => 0 }, { :requests => -1 }, { :requests => "many" },
+     { :read_size => 0 }, { :read_size => -1 }].each do |opts|
+      assert_raises(ArgumentError, opts.inspect) do
+        Net::SFTP::Operations::Upload.new(session, StringIO.new, "/path/to/remote", opts)
+      end
+    end
+  end
+
+  def test_upload_with_nil_requests_and_read_size_should_use_defaults
+    expect_file_transfer("/path/to/local", "/path/to/remote", "here are the contents")
+    assert_scripted_command do
+      sftp.upload("/path/to/local", "/path/to/remote", :requests => nil, :read_size => nil)
     end
   end
 

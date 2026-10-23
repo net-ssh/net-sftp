@@ -1,0 +1,1 @@
+`File#gets(limit)` no longer makes an extra remote read when the buffered data already satisfies the limit, and `gets(0)` returns an empty string like `IO#gets`. Thanks @OskarEichler [#165]
