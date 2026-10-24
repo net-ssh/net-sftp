@@ -22,9 +22,7 @@ Gem::Specification.new do |spec|
     "README.rdoc"
   ]
 
-  spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
-  spec.bindir        = "exe"
-  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
+  spec.files         = `git ls-files -z lib changelog.d CHANGES.txt LICENSE.txt README.rdoc`.split("\x0")
   spec.require_paths = ["lib"]
 
   if spec.respond_to? :specification_version then
