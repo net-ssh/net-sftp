@@ -85,13 +85,6 @@ Then, when install the gem, do so with high security:
 
 If you don't add the public key, you'll see an error like "Couldn't verify data signature". If you're still having trouble let me know and I'll give you a hand.
 
-Or, if you prefer to do it the hard way (sans Rubygems):
-
-* tar xzf net-ssh-*.tgz
-* cd net-ssh-*
-* ruby setup.rb config
-* ruby setup.rb install (might need sudo privileges)
-
 == LICENSE:
 
 (The MIT License)
