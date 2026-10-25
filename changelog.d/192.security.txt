@@ -1,0 +1,1 @@
+A server can no longer make the client allocate without bound, or hang, by sending an ACL, extended attribute or directory listing count larger than the packet holds; such packets now raise `Net::SFTP::Exception`.

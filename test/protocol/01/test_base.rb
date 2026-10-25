@@ -204,6 +204,11 @@ class Protocol::V01::TestBase < Net::SFTP::TestCase
     assert_raises(NotImplementedError) { @base.unblock("handle", 100, 200) }
   end
 
+  def test_parse_name_packet_should_reject_count_larger_than_remaining_data
+    packet = Net::SSH::Buffer.from(:long, 500_000, :string, "name1", :string, "long1", :long, 0)
+    assert_raises(Net::SFTP::Exception) { @base.parse_name_packet(packet) }
+  end
+
   private
 
     def driver
