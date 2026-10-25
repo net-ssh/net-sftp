@@ -33,6 +33,12 @@ class SessionTest < Net::SFTP::TestCase
     assert_equal version, sftp.protocol.version
   end
 
+  def test_passing_version_should_cap_negotiation_when_server_reports_higher
+    expect_sftp_session :client_version => 3, :server_version => 6
+    assert_scripted { sftp({}, 3).connect! }
+    assert_equal 3, sftp.protocol.version
+  end
+
 
   def test_second_version_packet_should_raise
     expect_sftp_session :server_version => 3 do |channel|
