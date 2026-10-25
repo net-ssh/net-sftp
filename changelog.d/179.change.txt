@@ -1,1 +1,0 @@
-SFTP request ids now wrap around at the uint32 limit, skipping ids still awaiting a response, instead of growing past it so that responses on very long-lived sessions could no longer be matched to their requests. Thanks @OskarEichler [#179]

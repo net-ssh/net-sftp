@@ -1,1 +1,0 @@
-`File#gets` treats a nil or negative limit as no limit, like `IO#gets`, instead of returning nil and corrupting the position (or raising for nil). Thanks @OskarEichler [#171]
