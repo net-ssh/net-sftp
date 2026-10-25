@@ -3,6 +3,14 @@ module Net; module SFTP
   # The base exception class for the SFTP system.
   class Exception < RuntimeError; end
 
+  # Raised when the SFTP channel closes while requests are pending or before
+  # the session is open, and when sending on a closed session.
+  class SessionClosedError < Net::SFTP::Exception
+    def initialize(message = "SFTP session closed")
+      super
+    end
+  end
+
   # A exception class for reporting a non-success result of an operation.
   class StatusException < Net::SFTP::Exception
 

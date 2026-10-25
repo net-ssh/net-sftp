@@ -42,6 +42,7 @@ module Net; module SFTP
     def initialize(session, type, id, &callback) #:nodoc:
       @session, @id, @type, @callback = session, id, type, callback
       @response = nil
+      @error = nil
       @properties = {}
     end
 
@@ -67,9 +68,12 @@ module Net; module SFTP
     # Waits (blocks) until the server responds to this packet. If prior
     # SFTP packets were also pending, they will be processed as well (since
     # SFTP packets are processed in the order in which they are received by
-    # the server). Returns the request object itself.
+    # the server). Returns the request object itself. Raises
+    # Net::SFTP::SessionClosedError if the channel closed before the server
+    # responded.
     def wait
       session.loop { pending? }
+      raise @error if @error
       self
     end
 
@@ -85,6 +89,12 @@ module Net; module SFTP
         @response = Response.new(self, data)
 
         callback.call(@response) if callback
+      end
+
+      # Marks this request as failed without a response; #wait will raise
+      # +error+.
+      def fail!(error) #:nodoc:
+        @error = error
       end
   end
 

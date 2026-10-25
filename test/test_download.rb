@@ -63,6 +63,32 @@ class DownloadTest < Net::SFTP::TestCase
     assert_equal text, file.string
   end
 
+  def test_download_should_raise_when_channel_closed_by_server
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/remote", :long, 0x01, :long, 0)
+      channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+      expect_fstat(channel, 1, "handle")
+      channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, 0, :long, 32_000)
+      channel.gets_packet(FXP_DATA, :long, 2, :string, "partial")
+      channel.sends_packet(FXP_READ, :long, 3, :string, "handle", :int64, 7, :long, 31_993)
+      channel.sends_packet(FXP_READ, :long, 4, :string, "handle", :int64, 32_000, :long, 32_000)
+      channel.gets_close
+      channel.sends_close
+    end
+
+    file = StringIO.new
+    File.stubs(:open).with("/path/to/local", "wb", 0644).returns(file)
+
+    assert_scripted do
+      sftp.connect!
+      Timeout.timeout(5) do
+        assert_raises(Net::SFTP::SessionClosedError) { sftp.download!("/path/to/remote", "/path/to/local") }
+      end
+      flush_channel_close
+    end
+    assert_equal "partial", file.string
+  end
+
   def test_download_large_file_should_handle_too_large_read_size
     local = "/path/to/local"
     remote = "/path/to/remote"

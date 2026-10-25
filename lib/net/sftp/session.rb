@@ -823,6 +823,7 @@ module Net; module SFTP
       def send_packet(type, *args)
         data = Net::SSH::Buffer.from(*args)
         msg = Net::SSH::Buffer.from(:long, data.length+1, :byte, type, :raw, data)
+        raise SessionClosedError unless channel
         channel.send_data(msg.to_s)
       end
 
@@ -869,6 +870,7 @@ module Net; module SFTP
       def when_channel_confirmed(channel)
         debug { "requesting sftp subsystem" }
         @state = :subsystem
+        channel.on_close(&method(:when_channel_closed))
         channel.subsystem("sftp", &method(:when_subsystem_started))
       end
 
@@ -885,17 +887,29 @@ module Net; module SFTP
         channel.on_data { |c,data| input.append(data) }
         channel.on_extended_data { |c,t,data| debug { data } }
 
-        channel.on_close(&method(:when_channel_closed))
         channel.on_process(&method(:when_channel_polled))
 
         send_packet(FXP_INIT, :long, @version || HIGHEST_PROTOCOL_VERSION_SUPPORTED)
       end
 
-      # Called when the SSH server closes the underlying channel.
+      # Called when the SSH server closes the underlying channel. Raises
+      # SessionClosedError out of the event loop if requests were still pending
+      # or the session had not finished opening; the pending requests are
+      # failed with the same error.
       def when_channel_closed(channel)
         debug { "sftp channel closed" }
+        was_opening = opening?
         @channel = nil
-        @state = :closed
+        begin
+          # Data that arrived in the same read as the close has not been polled yet.
+          when_channel_polled(channel)
+        ensure
+          @state = :closed
+          failed, @pending_requests = @pending_requests, {}
+          error = SessionClosedError.new
+          failed.each_value { |request| request.fail!(error) }
+        end
+        raise error if was_opening || failed.any?
       end
 
       # Called whenever Net::SSH polls the SFTP channel for pending activity.
