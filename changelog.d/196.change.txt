@@ -1,0 +1,1 @@
+Added a `:min_version` option to `Net::SFTP.start` and `Net::SFTP::Session.new` that raises `Net::SFTP::Exception` when the server negotiates an older SFTP protocol version.
