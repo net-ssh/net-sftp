@@ -34,6 +34,18 @@ class SessionTest < Net::SFTP::TestCase
   end
 
 
+  def test_second_version_packet_should_raise
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.gets_packet(FXP_VERSION, :long, 1)
+    end
+
+    Net::SSH::Test::Extensions::IO.with_test_extension do
+      error = assert_raises(Net::SFTP::Exception) { sftp.connect! }
+      assert_match(/unexpected FXP_VERSION/, error.message)
+    end
+    assert_equal 3, sftp.protocol.version
+  end
+
   def test_v1_open_read_only_that_succeeds_should_invoke_callback
     expect_open("/path/to/file", "r", nil, :server_version => 1)
     assert_successful_open("/path/to/file")

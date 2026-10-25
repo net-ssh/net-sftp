@@ -924,6 +924,12 @@ module Net; module SFTP
       # version negotiation, instantiating the appropriate Protocol instance
       # and invoking the callback given to #connect, if any.
       def do_version(packet)
+        # Negotiation happens once. A later FXP_VERSION would swap the protocol
+        # driver and drop every pending request.
+        unless state == :init
+          raise Net::SFTP::Exception, "unexpected FXP_VERSION packet while session is #{state}"
+        end
+
         debug { "negotiating sftp protocol version, mine is #{HIGHEST_PROTOCOL_VERSION_SUPPORTED}" }
 
         server_version = packet.read_long
