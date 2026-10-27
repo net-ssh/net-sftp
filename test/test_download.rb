@@ -1,5 +1,6 @@
 require "common"
 require "tmpdir"
+require "timeout"
 
 class DownloadTest < Net::SFTP::TestCase
   FXP_DATA_CHUNK_SIZE = 1024
@@ -58,7 +59,7 @@ class DownloadTest < Net::SFTP::TestCase
 
     file = prepare_large_file_download(local, remote, text)
 
-    assert_scripted_command { sftp.download(remote, local, :read_size => 1024) }
+    assert_scripted_command { sftp.download(remote, local, :read_size => 1024, :requests => 1) }
     assert_equal text, file.string
   end
 
@@ -71,7 +72,7 @@ class DownloadTest < Net::SFTP::TestCase
     too_large_read_size = FXP_DATA_CHUNK_SIZE + 1
     file = prepare_large_file_download(local, remote, text, too_large_read_size)
 
-    assert_scripted_command { sftp.download(remote, local, :read_size => too_large_read_size) }
+    assert_scripted_command { sftp.download(remote, local, :read_size => too_large_read_size, :requests => 1) }
     assert_equal text, file.string
   end
 
@@ -83,7 +84,7 @@ class DownloadTest < Net::SFTP::TestCase
     file = prepare_large_file_download(local, remote, text)
 
     assert_scripted_command do
-      sftp.download(remote, local, :read_size => 1024) do |*args|
+      sftp.download(remote, local, :read_size => 1024, :requests => 1) do |*args|
         record_progress(args)
       end
     end
@@ -172,6 +173,110 @@ class DownloadTest < Net::SFTP::TestCase
     end
   end
 
+  def test_download_file_should_keep_requests_reads_in_flight
+    text = "0123456789abcdef" * 256
+    chunks = (0...4).map { |n| text.byteslice(n * 1024, 1024) }
+
+    expect_sftp_session :server_version => 3 do |channel|
+      expect_open(channel)
+      channel.sends_packet(FXP_READ, :long, 1, :string, "handle", :int64, 0, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 1, :string, chunks[0])
+      channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, 1024, :long, 1024)
+      channel.sends_packet(FXP_READ, :long, 3, :string, "handle", :int64, 2048, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 2, :string, chunks[1])
+      channel.sends_packet(FXP_READ, :long, 4, :string, "handle", :int64, 3072, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 3, :string, chunks[2])
+      channel.sends_packet(FXP_READ, :long, 5, :string, "handle", :int64, 4096, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 4, :string, chunks[3])
+      channel.sends_packet(FXP_READ, :long, 6, :string, "handle", :int64, 5120, :long, 1024)
+      channel.gets_packet(FXP_STATUS, :long, 5, :long, 1)
+      channel.gets_packet(FXP_STATUS, :long, 6, :long, 1)
+      expect_close(channel, 7)
+    end
+
+    io = StringIO.new
+    assert_pipelined_download { sftp.download("/path/to/remote", io, :read_size => 1024, :requests => 2) }
+    assert_equal text, io.string
+  end
+
+  def test_download_file_should_write_out_of_order_replies_in_order
+    text = "0123456789abcdef" * 192
+    chunks = (0...3).map { |n| text.byteslice(n * 1024, 1024) }
+
+    expect_sftp_session :server_version => 3 do |channel|
+      expect_open(channel)
+      channel.sends_packet(FXP_READ, :long, 1, :string, "handle", :int64, 0, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 1, :string, chunks[0])
+      channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, 1024, :long, 1024)
+      channel.sends_packet(FXP_READ, :long, 3, :string, "handle", :int64, 2048, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 3, :string, chunks[2])
+      channel.sends_packet(FXP_READ, :long, 4, :string, "handle", :int64, 3072, :long, 1024)
+      channel.sends_packet(FXP_READ, :long, 5, :string, "handle", :int64, 4096, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 2, :string, chunks[1])
+      channel.sends_packet(FXP_READ, :long, 6, :string, "handle", :int64, 5120, :long, 1024)
+      channel.gets_packet(FXP_STATUS, :long, 4, :long, 1)
+      channel.gets_packet(FXP_STATUS, :long, 5, :long, 1)
+      channel.gets_packet(FXP_STATUS, :long, 6, :long, 1)
+      expect_close(channel, 7)
+    end
+
+    sink = WriteOnlySink.new
+    assert_pipelined_download do
+      sftp.download("/path/to/remote", sink, :read_size => 1024, :requests => 3) do |*args|
+        record_progress(args)
+      end
+    end
+
+    assert_equal text, sink.data
+    assert_progress_reported_open :remote => "/path/to/remote"
+    assert_progress_reported_get     0, chunks[0]
+    assert_progress_reported_get  1024, chunks[1]
+    assert_progress_reported_get  2048, chunks[2]
+    assert_progress_reported_close
+    assert_progress_reported_finish
+    assert_no_more_reported_events
+  end
+
+  def test_download_file_should_rerequest_the_rest_of_a_short_read
+    text = "0123456789abcdef" * 128
+
+    expect_sftp_session :server_version => 3 do |channel|
+      expect_open(channel)
+      channel.sends_packet(FXP_READ, :long, 1, :string, "handle", :int64, 0, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 1, :string, text.byteslice(0, 1000))
+      channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, 1000, :long, 24)
+      channel.sends_packet(FXP_READ, :long, 3, :string, "handle", :int64, 1024, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 3, :string, text.byteslice(1024, 1024))
+      channel.sends_packet(FXP_READ, :long, 4, :string, "handle", :int64, 2048, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 2, :string, text.byteslice(1000, 24))
+      channel.sends_packet(FXP_READ, :long, 5, :string, "handle", :int64, 3072, :long, 1024)
+      channel.gets_packet(FXP_STATUS, :long, 4, :long, 1)
+      channel.gets_packet(FXP_STATUS, :long, 5, :long, 1)
+      expect_close(channel, 6)
+    end
+
+    io = StringIO.new
+    assert_pipelined_download { sftp.download("/path/to/remote", io, :read_size => 1024, :requests => 2) }
+    assert_equal text, io.string
+  end
+
+  def test_download_file_should_fail_when_data_follows_eof
+    expect_sftp_session :server_version => 3 do |channel|
+      expect_open(channel)
+      channel.sends_packet(FXP_READ, :long, 1, :string, "handle", :int64, 0, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 1, :string, "x" * 1024)
+      channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, 1024, :long, 1024)
+      channel.sends_packet(FXP_READ, :long, 3, :string, "handle", :int64, 2048, :long, 1024)
+      channel.gets_packet(FXP_STATUS, :long, 2, :long, 1)
+      channel.gets_packet(FXP_DATA, :long, 3, :string, "y" * 1024)
+    end
+
+    e = assert_raises(Net::SFTP::Exception) do
+      assert_pipelined_download { sftp.download("/path/to/remote", StringIO.new, :read_size => 1024, :requests => 2) }
+    end
+    assert_match(/EOF at 1024/, e.message)
+  end
+
   UNSAFE_NAMES = {
     "parent_relative" => "../x",
     "grandparent" => "../..",
@@ -255,7 +360,7 @@ class DownloadTest < Net::SFTP::TestCase
         channel.gets_packet(FXP_STATUS, :long, 3, :long, 1)
         channel.sends_packet(FXP_CLOSE, :long, 5, :string, "dir1")
         channel.gets_packet(FXP_DATA, :long, 4, :string, text)
-        channel.sends_packet(FXP_READ, :long, 6, :string, "file1", :int64, text.bytesize, :long, 32_000)
+        channel.sends_packet(FXP_READ, :long, 6, :string, "file1", :int64, text.bytesize, :long, 32_000 - text.bytesize)
         channel.gets_packet(FXP_STATUS, :long, 5, :long, 0)
         channel.gets_packet(FXP_STATUS, :long, 6, :long, 1)
         channel.sends_packet(FXP_CLOSE, :long, 7, :string, "file1")
@@ -268,6 +373,37 @@ class DownloadTest < Net::SFTP::TestCase
   end
 
   private
+
+    class WriteOnlySink
+      attr_reader :data
+
+      def initialize
+        @data = +""
+      end
+
+      def write(chunk)
+        @data << chunk
+        chunk.bytesize
+      end
+
+      def close; end
+    end
+
+    # A client that stops issuing reads early would otherwise wait on the
+    # script forever instead of failing.
+    def assert_pipelined_download(&block)
+      Timeout.timeout(10) { assert_scripted_command(&block) }
+    end
+
+    def expect_open(channel)
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/remote", :long, 0x01, :long, 0)
+      channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+    end
+
+    def expect_close(channel, id)
+      channel.sends_packet(FXP_CLOSE, :long, id, :string, "handle")
+      channel.gets_packet(FXP_STATUS, :long, id, :long, 0)
+    end
 
     def nofollow
       defined?(File::NOFOLLOW) ? [{ :flags => File::NOFOLLOW }] : []
@@ -314,29 +450,36 @@ class DownloadTest < Net::SFTP::TestCase
         channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
         channel.sends_packet(FXP_READ, :long, 1, :string, "handle", :int64, 0, :long, 32_000)
         channel.gets_packet_in_two(opts[:fragment_len], FXP_DATA, :long, 1, :string, text)
-        channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, text.bytesize, :long, 32_000)
+        channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, text.bytesize, :long, 32_000 - text.bytesize)
+        channel.sends_packet(FXP_READ, :long, 3, :string, "handle", :int64, 32_000, :long, 32_000)
         channel.gets_packet(FXP_STATUS, :long, 2, :long, 1)
-        channel.sends_packet(FXP_CLOSE, :long, 3, :string, "handle")
-        channel.gets_packet(FXP_STATUS, :long, 3, :long, 0)
+        channel.gets_packet(FXP_STATUS, :long, 3, :long, 1)
+        channel.sends_packet(FXP_CLOSE, :long, 4, :string, "handle")
+        channel.gets_packet(FXP_STATUS, :long, 4, :long, 0)
       end
     end
 
-    def prepare_large_file_download(local, remote, text, requested_chunk_size = FXP_DATA_CHUNK_SIZE)
+    # Scripts a download with one read in flight from a server that never
+    # returns more than FXP_DATA_CHUNK_SIZE bytes per read.
+    def prepare_large_file_download(local, remote, text, read_size = FXP_DATA_CHUNK_SIZE)
       expect_sftp_session :server_version => 3 do |channel|
         channel.sends_packet(FXP_OPEN, :long, 0, :string, remote, :long, 0x01, :long, 0)
         channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+        id = 1
         offset = 0
-        data_packet_count = (text.bytesize / FXP_DATA_CHUNK_SIZE.to_f).ceil
-        data_packet_count.times do |n|
-          payload = text[n*FXP_DATA_CHUNK_SIZE,FXP_DATA_CHUNK_SIZE]
-          channel.sends_packet(FXP_READ, :long, n+1, :string, "handle", :int64, offset, :long, requested_chunk_size)
+        length = read_size
+        while offset < text.bytesize
+          payload = text.byteslice(offset, [length, FXP_DATA_CHUNK_SIZE].min)
+          channel.sends_packet(FXP_READ, :long, id, :string, "handle", :int64, offset, :long, length)
+          channel.gets_packet(FXP_DATA, :long, id, :string, payload)
           offset += payload.bytesize
-          channel.gets_packet(FXP_DATA, :long, n+1, :string, payload)
+          length = payload.bytesize < length ? length - payload.bytesize : read_size
+          id += 1
         end
-        channel.sends_packet(FXP_READ, :long, data_packet_count + 1, :string, "handle", :int64, offset, :long, requested_chunk_size)
-        channel.gets_packet(FXP_STATUS, :long, data_packet_count + 1, :long, 1)
-        channel.sends_packet(FXP_CLOSE, :long, data_packet_count + 2, :string, "handle")
-        channel.gets_packet(FXP_STATUS, :long, data_packet_count + 2, :long, 0)
+        channel.sends_packet(FXP_READ, :long, id, :string, "handle", :int64, offset, :long, length)
+        channel.gets_packet(FXP_STATUS, :long, id, :long, 1)
+        channel.sends_packet(FXP_CLOSE, :long, id + 1, :string, "handle")
+        channel.gets_packet(FXP_STATUS, :long, id + 1, :long, 0)
       end
 
       file = StringIO.new
@@ -414,7 +557,7 @@ class DownloadTest < Net::SFTP::TestCase
         channel.sends_packet(FXP_READDIR, :long, 9, :string, "dir2")
 
         channel.gets_packet(FXP_DATA, :long, 6, :string, file1_contents)
-        channel.sends_packet(FXP_READ, :long, 10, :string, "file1", :int64, file1_contents.bytesize, :long, 32_000)
+        channel.sends_packet(FXP_READ, :long, 10, :string, "file1", :int64, file1_contents.bytesize, :long, 32_000 - file1_contents.bytesize)
 
         channel.gets_packet(FXP_STATUS, :long, 7, :long, 0)
         channel.gets_packet(FXP_HANDLE, :long, 8, :string, "file2")
@@ -427,7 +570,7 @@ class DownloadTest < Net::SFTP::TestCase
         channel.sends_packet(FXP_CLOSE, :long, 13, :string, "file1")
 
         channel.gets_packet(FXP_DATA, :long, 11, :string, file2_contents)
-        channel.sends_packet(FXP_READ, :long, 14, :string, "file2", :int64, file2_contents.bytesize, :long, 32_000)
+        channel.sends_packet(FXP_READ, :long, 14, :string, "file2", :int64, file2_contents.bytesize, :long, 32_000 - file2_contents.bytesize)
 
         channel.gets_packet(FXP_STATUS, :long, 12, :long, 0)
         channel.gets_packet(FXP_STATUS, :long, 13, :long, 0)

@@ -49,9 +49,12 @@ module Net; module SFTP; module Operations
   # * <tt>:progress</tt> - either a block or an object to act as a progress
   #   callback. See the discussion of "progress monitoring" below.
   # * <tt>:requests</tt> - the number of pending SFTP requests to allow at
-  #   any given time. When downloading an entire directory tree recursively,
-  #   this will default to 16. Setting this higher might improve throughput.
-  #   Reducing it will reduce throughput.
+  #   any given time. When downloading a single file, this is the number of
+  #   reads kept in flight and defaults to 64. When downloading an entire
+  #   directory tree recursively, it is the number of files and directories
+  #   transferred at once and defaults to 16. Setting this higher might
+  #   improve throughput, particularly on high-latency links. Reducing it
+  #   will reduce throughput.
   # * <tt>:read_size</tt> - the maximum number of bytes to read at a time
   #   from the source. Increasing this value might improve throughput. It
   #   defaults to 32,000 bytes.
@@ -210,7 +213,8 @@ module Net; module SFTP; module Operations
 
       # A simple struct for encapsulating information about a single remote
       # file or directory that needs to be downloaded.
-      Entry = Struct.new(:remote, :local, :directory, :size, :handle, :offset, :sink)
+      Entry = Struct.new(:remote, :local, :directory, :size, :handle, :offset, :sink,
+                         :next_read, :pending, :window, :chunks, :eof)
 
       #--
       # "ruby -w" hates private attributes, so we have to do these longhand
@@ -231,10 +235,15 @@ module Net; module SFTP; module Operations
         @read_size ||= positive_option(:read_size, DEFAULT_READ_SIZE)
       end
 
-      # The number of simultaneou SFTP requests to use to effect the download.
-      # Defaults to 16 for recursive downloads.
+      # The number of simultaneous SFTP requests to use to effect the download.
+      # Defaults to 16 for recursive downloads and 64 for single files.
       def requests
-        @requests ||= positive_option(:requests, recursive? ? 16 : 2)
+        @requests ||= positive_option(:requests, recursive? ? 16 : 64)
+      end
+
+      # The most reads a single file may have outstanding at once.
+      def read_window_limit
+        recursive? ? 1 : requests
       end
 
       def positive_option(name, default)
@@ -346,7 +355,7 @@ module Net; module SFTP; module Operations
         process_next_entry
       end
 
-      # Called when a file has been opened. This will call #download_next_chunk
+      # Called when a file has been opened. This will call #request_reads
       # to initiate the data transfer.
       def on_open(response)
         entry = response.request[:entry]
@@ -355,37 +364,84 @@ module Net; module SFTP; module Operations
         entry.handle = response[:handle]
         entry.sink = entry.local.respond_to?(:write) ? entry.local : open_local_file(entry)
         entry.offset = 0
+        entry.next_read = 0
+        entry.pending = 0
+        entry.window = 1
+        entry.chunks = {}
 
-        download_next_chunk(entry)
+        request_reads(entry)
       end
 
-      # Initiates a read of the next #read_size bytes from the file.
-      def download_next_chunk(entry)
-        request = sftp.read(entry.handle, entry.offset, read_size, &method(:on_read))
+      # Keeps up to entry.window reads of #read_size bytes outstanding until
+      # the server reports EOF. The window starts at one and grows with each
+      # data reply, so small files don't cost a burst of reads past their end.
+      def request_reads(entry)
+        while !entry.eof && entry.pending < entry.window
+          read_range(entry, entry.next_read, read_size)
+          entry.next_read += read_size
+        end
+      end
+
+      def read_range(entry, offset, length)
+        entry.pending += 1
+        request = sftp.read(entry.handle, offset, length, &method(:on_read))
         request[:entry] = entry
-        request[:offset] = entry.offset
+        request[:offset] = offset
+        request[:length] = length
       end
 
-      # Called when a read from a file finishes. If the read was successful
-      # and returned data, this will call #download_next_chunk to read the
-      # next bit from the file. Otherwise the file will be closed.
+      # Called when a read from a file finishes. Replies can arrive out of
+      # order, so data is buffered until everything before it has been
+      # written. Once the server has reported EOF and no reads are left
+      # outstanding, the file is closed.
       def on_read(response)
         entry = response.request[:entry]
+        entry.pending -= 1
 
         if response.eof?
-          update_progress(:close, entry)
-          # An IO passed in by the caller is theirs to close.
-          entry.sink.close unless entry.sink.equal?(local)
-          request = sftp.close(entry.handle, &method(:on_close))
-          request[:entry] = entry
+          entry.eof = true
         elsif !response.ok?
           raise StatusException.new(response, "read #{entry.remote}")
         else
-          entry.offset += response[:data].bytesize
-          update_progress(:get, entry, response.request[:offset], response[:data])
-          entry.sink.write(response[:data])
-          download_next_chunk(entry)
+          offset = response.request[:offset]
+          length = response.request[:length]
+          data = response[:data]
+
+          if data.empty? || data.bytesize > length
+            raise Net::SFTP::Exception, "read #{entry.remote} returned #{data.bytesize} bytes for a #{length} byte request"
+          end
+
+          # Servers may return less than asked for without being at EOF, and
+          # the reads after this one have already been sent.
+          read_range(entry, offset + data.bytesize, length - data.bytesize) if data.bytesize < length
+
+          entry.chunks[offset] = data
+          write_buffered_chunks(entry)
+          entry.window += 1 if entry.window < read_window_limit
         end
+
+        request_reads(entry)
+        close_file(entry) if entry.pending.zero?
+      end
+
+      def write_buffered_chunks(entry)
+        while (data = entry.chunks.delete(entry.offset))
+          update_progress(:get, entry, entry.offset, data)
+          entry.sink.write(data)
+          entry.offset += data.bytesize
+        end
+      end
+
+      def close_file(entry)
+        if entry.chunks.any?
+          raise Net::SFTP::Exception, "read #{entry.remote} hit EOF at #{entry.offset} but the server returned data beyond it"
+        end
+
+        update_progress(:close, entry)
+        # An IO passed in by the caller is theirs to close.
+        entry.sink.close unless entry.sink.equal?(local)
+        request = sftp.close(entry.handle, &method(:on_close))
+        request[:entry] = entry
       end
 
       # Called when a file handle is closed.
