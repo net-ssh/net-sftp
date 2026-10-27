@@ -52,6 +52,11 @@ class Net::SFTP::TestCase < Minitest::Test
       end
     end
 
+    def log_warnings_to(io)
+      sftp.logger = Logger.new(io)
+      sftp.logger.level = Logger::WARN
+    end
+
     def assert_scripted_command
       assert_scripted do
         sftp.connect!

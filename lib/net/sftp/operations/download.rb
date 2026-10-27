@@ -58,6 +58,17 @@ module Net; module SFTP; module Operations
   # * <tt>:read_size</tt> - the maximum number of bytes to read at a time
   #   from the source. Increasing this value might improve throughput. It
   #   defaults to 32,000 bytes.
+  # * <tt>:preserve</tt> - if true, the local files and directories get the
+  #   access and modification times of the remote ones, and their permissions
+  #   are set exactly, even on files that already exist and regardless of the
+  #   umask.
+  #
+  # Like OpenSSH's sftp client, new local files and directories are created
+  # with the permissions of the remote ones, without setuid, setgid and sticky
+  # bits and subject to the umask. Nothing is set when +local+ is an IO object.
+  # If the remote attributes can't be read, the download goes ahead with
+  # default permissions; if they can't be applied locally, a warning is logged
+  # and the download still succeeds.
   #
   # == Progress Monitoring
   #
@@ -158,6 +169,7 @@ module Net; module SFTP; module Operations
       @progress = progress || options[:progress]
       @options = options
       @active = 0
+      @directories = []
       @properties = options[:properties] || {}
       requests
       read_size
@@ -214,7 +226,7 @@ module Net; module SFTP; module Operations
       # A simple struct for encapsulating information about a single remote
       # file or directory that needs to be downloaded.
       Entry = Struct.new(:remote, :local, :directory, :size, :handle, :offset, :sink,
-                         :next_read, :pending, :window, :chunks, :eof)
+                         :next_read, :pending, :window, :chunks, :eof, :attributes)
 
       #--
       # "ruby -w" hates private attributes, so we have to do these longhand
@@ -246,6 +258,10 @@ module Net; module SFTP; module Operations
         recursive? ? 1 : requests
       end
 
+      def preserve?
+        options[:preserve]
+      end
+
       def positive_option(name, default)
         value = (options[name] || default).to_i
         raise ArgumentError, ":#{name} must be positive" unless value > 0
@@ -263,7 +279,12 @@ module Net; module SFTP; module Operations
           if entry.directory
             update_progress(:mkdir, entry.local)
             refuse_symlink!(entry.local) if server_named?(entry) && ::File.symlink?(entry.local)
-            ::Dir.mkdir(entry.local) unless ::File.directory?(entry.local)
+            created = !::File.directory?(entry.local)
+            ::Dir.mkdir(entry.local, local_permissions(entry, 0777) | 0300) if created
+            if created || preserve?
+              @directories << entry
+              stat_directory(entry) unless entry.attributes
+            end
             request = sftp.opendir(entry.remote, &method(:on_opendir))
             request[:entry] = entry
           else
@@ -271,7 +292,64 @@ module Net; module SFTP; module Operations
           end
         end
 
-        update_progress(:finish) if !active?
+        if !active?
+          set_directory_attributes
+          update_progress(:finish)
+        end
+      end
+
+      # Only entries listed by readdir come with attributes.
+      def stat_directory(entry)
+        @active += 1
+        sftp.stat(entry.remote) do |response|
+          @active -= 1
+          entry.attributes = remote_attributes(response, "stat #{entry.remote}")
+          process_next_entry
+        end
+      end
+
+      # Without the remote attributes the download goes ahead with default
+      # permissions and no times, as it would for a server that never sent any.
+      def remote_attributes(response, operation)
+        return response[:attrs] if response.ok?
+
+        debug { "#{operation} failed, using default attributes: #{response}" }
+        nil
+      end
+
+      # Deepest directories first, after their contents; setting attributes on
+      # a directory doesn't change its parent's modification time.
+      def set_directory_attributes
+        @directories.reverse_each do |entry|
+          next unless entry.attributes
+
+          permissions = local_permissions(entry, 0777)
+          permissions &= ~::File.umask unless preserve?
+          set_local_attributes(entry, permissions)
+        end
+        @directories.clear
+      end
+
+      # setuid, setgid and sticky bits are never applied, matching OpenSSH.
+      def local_permissions(entry, default)
+        permissions = entry.attributes && entry.attributes.permissions
+        permissions ? permissions & 0777 : default
+      end
+
+      # Like OpenSSH's sftp client, failing to set attributes only warns; the
+      # data has already been transferred.
+      def set_local_attributes(entry, permissions)
+        attempt_local("chmod", entry) { ::File.chmod(permissions, entry.local) } if permissions
+
+        attributes = entry.attributes
+        return unless preserve? && attributes && attributes.atime && attributes.mtime
+        attempt_local("utime", entry) { ::File.utime(attributes.atime, attributes.mtime, entry.local) }
+      end
+
+      def attempt_local(operation, entry)
+        yield
+      rescue SystemCallError => e
+        lwarn { "#{operation} #{entry.local} failed: #{e.message}" }
       end
 
       # Called when a remote directory is "opened" for reading, e.g. to
@@ -299,7 +377,9 @@ module Net; module SFTP; module Operations
           response[:names].each do |item|
             next if item.name == "." || item.name == ".."
             validate_entry_name!(entry, item.name)
-            stack << Entry.new(::File.join(entry.remote, item.name), ::File.join(entry.local, item.name), item.directory?, item.attributes.size)
+            child = Entry.new(::File.join(entry.remote, item.name), ::File.join(entry.local, item.name), item.directory?, item.attributes.size)
+            child.attributes = item.attributes
+            stack << child
           end
 
           # take this opportunity to enqueue more requests
@@ -325,11 +405,13 @@ module Net; module SFTP; module Operations
         entry.local != local
       end
 
+      # Like OpenSSH, the file is always created writable by its owner.
       def open_local_file(entry)
-        return ::File.open(entry.local, "wb") unless server_named?(entry) && defined?(::File::NOFOLLOW)
+        permissions = local_permissions(entry, 0666) | 0200
+        return ::File.open(entry.local, "wb", permissions) unless server_named?(entry) && defined?(::File::NOFOLLOW)
 
         begin
-          ::File.open(entry.local, "wb", :flags => ::File::NOFOLLOW)
+          ::File.open(entry.local, "wb", permissions, :flags => ::File::NOFOLLOW)
         rescue SystemCallError
           raise unless ::File.symlink?(entry.local)
           refuse_symlink!(entry.local)
@@ -362,6 +444,22 @@ module Net; module SFTP; module Operations
         raise StatusException.new(response, "open #{entry.remote}") unless response.ok?
 
         entry.handle = response[:handle]
+        if entry.attributes || entry.local.respond_to?(:write)
+          start_download(entry)
+        else
+          request = sftp.fstat(entry.handle, &method(:on_fstat))
+          request[:entry] = entry
+        end
+      end
+
+      # Called when the attributes of a file opened by #open_file arrive.
+      def on_fstat(response)
+        entry = response.request[:entry]
+        entry.attributes = remote_attributes(response, "fstat #{entry.remote}")
+        start_download(entry)
+      end
+
+      def start_download(entry)
         entry.sink = entry.local.respond_to?(:write) ? entry.local : open_local_file(entry)
         entry.offset = 0
         entry.next_read = 0
@@ -440,6 +538,9 @@ module Net; module SFTP; module Operations
         update_progress(:close, entry)
         # An IO passed in by the caller is theirs to close.
         entry.sink.close unless entry.sink.equal?(local)
+        unless entry.local.respond_to?(:write)
+          set_local_attributes(entry, preserve? ? local_permissions(entry, nil) : nil)
+        end
         request = sftp.close(entry.handle, &method(:on_close))
         request[:entry] = entry
       end
