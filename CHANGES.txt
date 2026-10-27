@@ -1,3 +1,14 @@
+=== 4.1.0
+
+* BREAKING: Require Ruby 2.6 or later. Bundler on older Rubies resolves to 4.0.2. [#207]
+* BREAKING: `upload` and `download` no longer close an IO object passed in as the local side; `download` flushes it instead. Callers that relied on the close must close it themselves. [#202]
+* Security: An `FXP_VERSION` packet after the session is open now raises `Net::SFTP::Exception` instead of switching protocol version mid-session and dropping pending requests. [#193]
+* Security: A server can no longer make the client allocate without bound, or hang, by sending an ACL, extended attribute or directory listing count larger than the packet holds; such packets now raise `Net::SFTP::Exception`. [#192]
+* Single-file downloads keep up to `:requests` reads in flight (default 64) instead of waiting for each 32 KB reply, so large downloads are no longer bound by round-trip time. [#204]
+* `upload!` and `download!` now give new files and directories the source's permissions (masked to 0777, subject to the umask) like OpenSSH's sftp client, so executables stay executable and private files are no longer created world-readable. The new `:preserve` option also copies access and modification times and sets permissions exactly. As with OpenSSH, attributes are best effort: if they can't be read the transfer uses default permissions, and if they can't be set a warning is logged and the transfer still succeeds. [#203]
+* Added `Net::SFTP::Session#extensions`, the extensions the server advertised in its `FXP_VERSION` packet (such as `posix-rename@openssh.com`). [#195]
+* The `:version` option now caps the negotiated SFTP protocol version; servers that always reply with their own version (OpenSSH replies 3) used to be negotiated at that version instead of the one requested. [#194]
+
 === 4.0.2
 
 * Security: Recursive downloads refuse to follow an existing local symlink at a server-named path instead of writing through it. The local path passed by the caller may still be a symlink. Suggested in #162 by srosenhamer [#186]

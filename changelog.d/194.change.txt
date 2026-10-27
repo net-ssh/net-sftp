@@ -1,1 +1,0 @@
-The `:version` option now caps the negotiated SFTP protocol version; servers that always reply with their own version (OpenSSH replies 3) used to be negotiated at that version instead of the one requested.

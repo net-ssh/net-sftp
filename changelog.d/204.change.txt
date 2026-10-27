@@ -1,1 +1,0 @@
-Single-file downloads keep up to `:requests` reads in flight (default 64) instead of waiting for each 32 KB reply, so large downloads are no longer bound by round-trip time.

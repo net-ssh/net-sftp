@@ -1,1 +1,0 @@
-Added `Net::SFTP::Session#extensions`, the extensions the server advertised in its `FXP_VERSION` packet (such as `posix-rename@openssh.com`).

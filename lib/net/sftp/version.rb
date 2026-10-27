@@ -49,10 +49,10 @@ module Net
       MAJOR = 4
 
       # The minor component of this version of the Net::SFTP library
-      MINOR = 0
+      MINOR = 1
 
       # The tiny component of this version of the Net::SFTP library
-      TINY  = 2
+      TINY  = 0
 
       # The prerelease component of this version of the Net::SFTP library
       # nil allowed
