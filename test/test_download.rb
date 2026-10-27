@@ -285,6 +285,22 @@ class DownloadTest < Net::SFTP::TestCase
     end
   end
 
+  def test_download_file_should_flush_a_caller_supplied_file
+    remote = "/path/to/remote"
+    text = "this is some text\n"
+
+    expect_file_transfer(remote, text)
+
+    with_tmpdir do |tmp|
+      path = File.join(tmp, "local")
+      File.open(path, "wb") do |local|
+        assert_scripted_command { sftp.download(remote, local) }
+        assert !local.closed?
+        assert_equal text, File.binread(path)
+      end
+    end
+  end
+
   def test_download_directory_to_buffer_should_fail
     expect_sftp_session :server_version => 3
     Net::SSH::Test::Extensions::IO.with_test_extension do
