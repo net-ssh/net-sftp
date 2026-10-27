@@ -10,6 +10,13 @@ class UploadTest < Net::SFTP::TestCase
     assert_scripted_command { sftp.upload("/path/to/local", "/path/to/remote") }
   end
 
+  def test_upload_file_should_close_the_local_file_it_opened
+    file = expect_file_transfer("/path/to/local", "/path/to/remote", "here are the contents")
+
+    assert_scripted_command { sftp.upload("/path/to/local", "/path/to/remote") }
+    assert file.closed?
+  end
+
   def test_upload_file_should_handle_Pathname
     local = Pathname.new("/path/to/local").freeze
     remote = Pathname.new("/path/to/remote").freeze
@@ -158,9 +165,9 @@ class UploadTest < Net::SFTP::TestCase
       channel.gets_packet(FXP_STATUS, :long, 2, :long, 0)
     end
 
-    assert_scripted_command do
-      sftp.upload(StringIO.new("this is some text"), "/path/to/remote")
-    end
+    source = StringIO.new("this is some text")
+    assert_scripted_command { sftp.upload(source, "/path/to/remote") }
+    assert !source.closed?
   end
 
   def test_upload_should_reject_nonpositive_requests_and_read_size
@@ -236,6 +243,7 @@ class UploadTest < Net::SFTP::TestCase
       file = StringIO.new(data)
       file.stubs(:stat).returns(stub("stat", :size => data.length))
       File.stubs(:open).with(path, "rb").returns(file)
+      file
     end
 
     def expect_directory(path, entries)

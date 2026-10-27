@@ -386,7 +386,8 @@ module Net; module SFTP; module Operations
             update_progress(:close, file)
             request = sftp.close(file.handle, &method(:on_close))
             request[:file] = file
-            file.io.close
+            # An IO passed in by the caller is theirs to close.
+            file.io.close unless file.io.equal?(local)
             file.io = nil
             @uploads.delete(file)
           else
