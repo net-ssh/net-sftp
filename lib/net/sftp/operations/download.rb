@@ -536,8 +536,12 @@ module Net; module SFTP; module Operations
         end
 
         update_progress(:close, entry)
-        # An IO passed in by the caller is theirs to close.
-        entry.sink.close unless entry.sink.equal?(local)
+        # The caller's IO stays open, but is flushed so its data is written when download! returns.
+        if entry.sink.equal?(local)
+          entry.sink.flush if entry.sink.respond_to?(:flush)
+        else
+          entry.sink.close
+        end
         unless entry.local.respond_to?(:write)
           set_local_attributes(entry, preserve? ? local_permissions(entry, nil) : nil)
         end

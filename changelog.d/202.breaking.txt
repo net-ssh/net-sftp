@@ -1,1 +1,1 @@
-`upload` and `download` no longer close an IO object passed in as the local side; callers that relied on this must close it themselves.
+`upload` and `download` no longer close an IO object passed in as the local side; `download` flushes it instead. Callers that relied on the close must close it themselves.
