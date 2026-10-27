@@ -374,7 +374,8 @@ module Net; module SFTP; module Operations
 
         if response.eof?
           update_progress(:close, entry)
-          entry.sink.close
+          # An IO passed in by the caller is theirs to close.
+          entry.sink.close unless entry.sink.equal?(local)
           request = sftp.close(entry.handle, &method(:on_close))
           request[:entry] = entry
         elsif !response.ok?

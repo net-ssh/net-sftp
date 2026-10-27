@@ -20,6 +20,7 @@ class DownloadTest < Net::SFTP::TestCase
 
     assert_scripted_command { sftp.download(remote, local) }
     assert_equal text, file.string
+    assert file.closed?
   end
 
   def test_download_file_should_transfer_remote_to_local_in_spite_of_fragmentation
@@ -150,6 +151,7 @@ class DownloadTest < Net::SFTP::TestCase
 
     assert_scripted_command { sftp.download(remote, local) }
     assert_equal text, local.string
+    assert !local.closed?
   end
 
   def test_download_directory_to_buffer_should_fail
