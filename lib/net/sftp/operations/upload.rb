@@ -56,6 +56,15 @@ module Net; module SFTP; module Operations
   #   connection on packets over 256 KiB).
   # * <tt>:name</tt> - the filename to report to the progress monitor when
   #   an IO object is given as +local+. This defaults to "<memory>".
+  # * <tt>:preserve</tt> - if true, the remote files and directories get the
+  #   access and modification times of the local ones, and their permissions
+  #   are set even on files that already exist remotely.
+  #
+  # Like OpenSSH's sftp client, new remote files and directories are created
+  # with the permissions of the local ones, without setuid, setgid and sticky
+  # bits and subject to the server's umask. Nothing is set when +local+ is an
+  # IO object. If the server refuses to set the attributes after the data has
+  # been written, a warning is logged and the upload still succeeds.
   #
   # == Progress Monitoring
   #
@@ -154,6 +163,7 @@ module Net; module SFTP; module Operations
       @options = options
       @properties = options[:properties] || {}
       @active = 0
+      @directories = []
 
       self.logger = sftp.logger
 
@@ -169,7 +179,7 @@ module Net; module SFTP; module Operations
 
         @active += 1
         if @options[:mkdir]
-          sftp.mkdir(remote) do |response|
+          sftp.mkdir(remote, directory_attributes(local, remote)) do |response|
             @active -= 1
             raise StatusException.new(response, "mkdir `#{remote}'") unless response.ok?
             requests.times do
@@ -248,9 +258,13 @@ module Net; module SFTP; module Operations
         value
       end
 
+      def preserve?
+        options[:preserve]
+      end
+
       # A simple struct for recording metadata about the file currently being
       # uploaded.
-      LiveFile = Struct.new(:local, :remote, :io, :size, :handle)
+      LiveFile = Struct.new(:local, :remote, :io, :size, :handle, :attributes)
 
       # The default # of bytes to read from disk at a time.
       DEFAULT_READ_SIZE   = 32_000
@@ -268,7 +282,11 @@ module Net; module SFTP; module Operations
           if @uploads.any?
             write_next_chunk(@uploads.first)
           elsif !active?
-            update_progress(:finish)
+            if @directories.any?
+              set_directory_attributes
+            else
+              update_progress(:finish)
+            end
           end
           return false
         elsif @stack.last.empty?
@@ -288,7 +306,7 @@ module Net; module SFTP; module Operations
 
             @active += 1
             update_progress(:mkdir, rpath)
-            request = sftp.mkdir(rpath, &method(:on_mkdir))
+            request = sftp.mkdir(rpath, directory_attributes(lpath, rpath), &method(:on_mkdir))
             request[:dir] = rpath
           else
             open_file(lpath, rpath)
@@ -317,10 +335,11 @@ module Net; module SFTP; module Operations
           size = file.size
         end
 
-        metafile = LiveFile.new(name, remote, file, size)
+        attributes = local.respond_to?(:read) ? {} : attributes_for(file.stat)
+        metafile = LiveFile.new(name, remote, file, size, nil, attributes)
         update_progress(:open, metafile)
 
-        request = sftp.open(remote, "w", &method(:on_open))
+        request = sftp.open(remote, "w", attributes, &method(:on_open))
         request[:file] = metafile
       end
 
@@ -373,6 +392,49 @@ module Net; module SFTP; module Operations
         process_next_entry
       end
 
+      # setuid, setgid and sticky bits are never sent, matching OpenSSH.
+      def attributes_for(stat)
+        attributes = { :permissions => stat.mode & 0777 }
+        attributes.update(:atime => stat.atime.to_i, :mtime => stat.mtime.to_i) if preserve?
+        attributes
+      end
+
+      # The directory is created writable and searchable by its owner so its
+      # contents can be uploaded; its real attributes are set once everything
+      # else is done (see #set_directory_attributes).
+      def directory_attributes(local, remote)
+        stat = ::File.stat(local)
+        @directories << [remote, attributes_for(stat)]
+        { :permissions => (stat.mode & 0777) | 0300 }
+      end
+
+      # Deepest directories first; setting attributes on a directory doesn't
+      # change its parent's modification time.
+      def set_directory_attributes
+        @directories.reverse_each do |path, attributes|
+          @active += 1
+          sftp.setstat(path, attributes) do |response|
+            @active -= 1
+            warn_unless_ok(response, "setstat #{path}")
+            process_next_entry
+          end
+        end
+        @directories.clear
+      end
+
+      # Called when the +fsetstat+ for :preserve finishes.
+      def on_fsetstat(response)
+        @active -= 1
+        file = response.request[:file]
+        warn_unless_ok(response, "fsetstat #{file.remote}")
+      end
+
+      # Like OpenSSH's sftp client, failing to set attributes only warns; the
+      # data has already been transferred.
+      def warn_unless_ok(response, operation)
+        lwarn { "#{operation} failed: #{response}" } unless response.ok?
+      end
+
       # Attempts to send the next chunk from the given file (where +file+ is
       # a LiveFile instance).
       def write_next_chunk(file)
@@ -384,6 +446,11 @@ module Net; module SFTP; module Operations
           data = file.io.read(read_size)
           if data.nil?
             update_progress(:close, file)
+            if preserve? && file.attributes.any?
+              @active += 1
+              request = sftp.fsetstat(file.handle, file.attributes, &method(:on_fsetstat))
+              request[:file] = file
+            end
             request = sftp.close(file.handle, &method(:on_close))
             request[:file] = file
             # An IO passed in by the caller is theirs to close.
