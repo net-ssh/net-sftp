@@ -16,6 +16,7 @@ Gem::Specification.new do |spec|
   spec.homepage      = "https://github.com/net-ssh/net-sftp"
   spec.license       = "MIT"
   spec.required_rubygems_version = Gem::Requirement.new(">= 0") if spec.respond_to? :required_rubygems_version=
+  spec.required_ruby_version = ">= 2.6"
 
   spec.extra_rdoc_files = [
     "LICENSE.txt",
