@@ -46,9 +46,15 @@ class Net::SFTP::TestCase < Minitest::Test
         channel = session.opens_channel
         channel.sends_subsystem("sftp")
         channel.sends_packet(FXP_INIT, :long, opts[:client_version] || Net::SFTP::Session::HIGHEST_PROTOCOL_VERSION_SUPPORTED)
-        channel.gets_packet(FXP_VERSION, :long, opts[:server_version] || Net::SFTP::Session::HIGHEST_PROTOCOL_VERSION_SUPPORTED)
+        extensions = (opts[:extensions] || {}).flat_map { |name, data| [:string, name, :string, data] }
+        channel.gets_packet(FXP_VERSION, :long, opts[:server_version] || Net::SFTP::Session::HIGHEST_PROTOCOL_VERSION_SUPPORTED, *extensions)
         yield channel if block_given?
       end
+    end
+
+    def log_warnings_to(io)
+      sftp.logger = Logger.new(io)
+      sftp.logger.level = Logger::WARN
     end
 
     def assert_scripted_command

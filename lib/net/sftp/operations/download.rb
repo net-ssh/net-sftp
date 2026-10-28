@@ -49,12 +49,26 @@ module Net; module SFTP; module Operations
   # * <tt>:progress</tt> - either a block or an object to act as a progress
   #   callback. See the discussion of "progress monitoring" below.
   # * <tt>:requests</tt> - the number of pending SFTP requests to allow at
-  #   any given time. When downloading an entire directory tree recursively,
-  #   this will default to 16. Setting this higher might improve throughput.
-  #   Reducing it will reduce throughput.
+  #   any given time. When downloading a single file, this is the number of
+  #   reads kept in flight and defaults to 64. When downloading an entire
+  #   directory tree recursively, it is the number of files and directories
+  #   transferred at once and defaults to 16. Setting this higher might
+  #   improve throughput, particularly on high-latency links. Reducing it
+  #   will reduce throughput.
   # * <tt>:read_size</tt> - the maximum number of bytes to read at a time
   #   from the source. Increasing this value might improve throughput. It
   #   defaults to 32,000 bytes.
+  # * <tt>:preserve</tt> - if true, the local files and directories get the
+  #   access and modification times of the remote ones, and their permissions
+  #   are set exactly, even on files that already exist and regardless of the
+  #   umask.
+  #
+  # Like OpenSSH's sftp client, new local files and directories are created
+  # with the permissions of the remote ones, without setuid, setgid and sticky
+  # bits and subject to the umask. Nothing is set when +local+ is an IO object.
+  # If the remote attributes can't be read, the download goes ahead with
+  # default permissions; if they can't be applied locally, a warning is logged
+  # and the download still succeeds.
   #
   # == Progress Monitoring
   #
@@ -155,6 +169,7 @@ module Net; module SFTP; module Operations
       @progress = progress || options[:progress]
       @options = options
       @active = 0
+      @directories = []
       @properties = options[:properties] || {}
       requests
       read_size
@@ -210,7 +225,8 @@ module Net; module SFTP; module Operations
 
       # A simple struct for encapsulating information about a single remote
       # file or directory that needs to be downloaded.
-      Entry = Struct.new(:remote, :local, :directory, :size, :handle, :offset, :sink)
+      Entry = Struct.new(:remote, :local, :directory, :size, :handle, :offset, :sink,
+                         :next_read, :pending, :window, :chunks, :eof, :attributes)
 
       #--
       # "ruby -w" hates private attributes, so we have to do these longhand
@@ -231,10 +247,19 @@ module Net; module SFTP; module Operations
         @read_size ||= positive_option(:read_size, DEFAULT_READ_SIZE)
       end
 
-      # The number of simultaneou SFTP requests to use to effect the download.
-      # Defaults to 16 for recursive downloads.
+      # The number of simultaneous SFTP requests to use to effect the download.
+      # Defaults to 16 for recursive downloads and 64 for single files.
       def requests
-        @requests ||= positive_option(:requests, recursive? ? 16 : 2)
+        @requests ||= positive_option(:requests, recursive? ? 16 : 64)
+      end
+
+      # The most reads a single file may have outstanding at once.
+      def read_window_limit
+        recursive? ? 1 : requests
+      end
+
+      def preserve?
+        options[:preserve]
       end
 
       def positive_option(name, default)
@@ -254,7 +279,12 @@ module Net; module SFTP; module Operations
           if entry.directory
             update_progress(:mkdir, entry.local)
             refuse_symlink!(entry.local) if server_named?(entry) && ::File.symlink?(entry.local)
-            ::Dir.mkdir(entry.local) unless ::File.directory?(entry.local)
+            created = !::File.directory?(entry.local)
+            ::Dir.mkdir(entry.local, local_permissions(entry, 0777) | 0300) if created
+            if created || preserve?
+              @directories << entry
+              stat_directory(entry) unless entry.attributes
+            end
             request = sftp.opendir(entry.remote, &method(:on_opendir))
             request[:entry] = entry
           else
@@ -262,7 +292,64 @@ module Net; module SFTP; module Operations
           end
         end
 
-        update_progress(:finish) if !active?
+        if !active?
+          set_directory_attributes
+          update_progress(:finish)
+        end
+      end
+
+      # Only entries listed by readdir come with attributes.
+      def stat_directory(entry)
+        @active += 1
+        sftp.stat(entry.remote) do |response|
+          @active -= 1
+          entry.attributes = remote_attributes(response, "stat #{entry.remote}")
+          process_next_entry
+        end
+      end
+
+      # Without the remote attributes the download goes ahead with default
+      # permissions and no times, as it would for a server that never sent any.
+      def remote_attributes(response, operation)
+        return response[:attrs] if response.ok?
+
+        debug { "#{operation} failed, using default attributes: #{response}" }
+        nil
+      end
+
+      # Deepest directories first, after their contents; setting attributes on
+      # a directory doesn't change its parent's modification time.
+      def set_directory_attributes
+        @directories.reverse_each do |entry|
+          next unless entry.attributes
+
+          permissions = local_permissions(entry, 0777)
+          permissions &= ~::File.umask unless preserve?
+          set_local_attributes(entry, permissions)
+        end
+        @directories.clear
+      end
+
+      # setuid, setgid and sticky bits are never applied, matching OpenSSH.
+      def local_permissions(entry, default)
+        permissions = entry.attributes && entry.attributes.permissions
+        permissions ? permissions & 0777 : default
+      end
+
+      # Like OpenSSH's sftp client, failing to set attributes only warns; the
+      # data has already been transferred.
+      def set_local_attributes(entry, permissions)
+        attempt_local("chmod", entry) { ::File.chmod(permissions, entry.local) } if permissions
+
+        attributes = entry.attributes
+        return unless preserve? && attributes && attributes.atime && attributes.mtime
+        attempt_local("utime", entry) { ::File.utime(attributes.atime, attributes.mtime, entry.local) }
+      end
+
+      def attempt_local(operation, entry)
+        yield
+      rescue SystemCallError => e
+        lwarn { "#{operation} #{entry.local} failed: #{e.message}" }
       end
 
       # Called when a remote directory is "opened" for reading, e.g. to
@@ -290,7 +377,9 @@ module Net; module SFTP; module Operations
           response[:names].each do |item|
             next if item.name == "." || item.name == ".."
             validate_entry_name!(entry, item.name)
-            stack << Entry.new(::File.join(entry.remote, item.name), ::File.join(entry.local, item.name), item.directory?, item.attributes.size)
+            child = Entry.new(::File.join(entry.remote, item.name), ::File.join(entry.local, item.name), item.directory?, item.attributes.size)
+            child.attributes = item.attributes
+            stack << child
           end
 
           # take this opportunity to enqueue more requests
@@ -316,11 +405,13 @@ module Net; module SFTP; module Operations
         entry.local != local
       end
 
+      # Like OpenSSH, the file is always created writable by its owner.
       def open_local_file(entry)
-        return ::File.open(entry.local, "wb") unless server_named?(entry) && defined?(::File::NOFOLLOW)
+        permissions = local_permissions(entry, 0666) | 0200
+        return ::File.open(entry.local, "wb", permissions) unless server_named?(entry) && defined?(::File::NOFOLLOW)
 
         begin
-          ::File.open(entry.local, "wb", :flags => ::File::NOFOLLOW)
+          ::File.open(entry.local, "wb", permissions, :flags => ::File::NOFOLLOW)
         rescue SystemCallError
           raise unless ::File.symlink?(entry.local)
           refuse_symlink!(entry.local)
@@ -346,45 +437,116 @@ module Net; module SFTP; module Operations
         process_next_entry
       end
 
-      # Called when a file has been opened. This will call #download_next_chunk
+      # Called when a file has been opened. This will call #request_reads
       # to initiate the data transfer.
       def on_open(response)
         entry = response.request[:entry]
         raise StatusException.new(response, "open #{entry.remote}") unless response.ok?
 
         entry.handle = response[:handle]
+        if entry.attributes || entry.local.respond_to?(:write)
+          start_download(entry)
+        else
+          request = sftp.fstat(entry.handle, &method(:on_fstat))
+          request[:entry] = entry
+        end
+      end
+
+      # Called when the attributes of a file opened by #open_file arrive.
+      def on_fstat(response)
+        entry = response.request[:entry]
+        entry.attributes = remote_attributes(response, "fstat #{entry.remote}")
+        start_download(entry)
+      end
+
+      def start_download(entry)
         entry.sink = entry.local.respond_to?(:write) ? entry.local : open_local_file(entry)
         entry.offset = 0
+        entry.next_read = 0
+        entry.pending = 0
+        entry.window = 1
+        entry.chunks = {}
 
-        download_next_chunk(entry)
+        request_reads(entry)
       end
 
-      # Initiates a read of the next #read_size bytes from the file.
-      def download_next_chunk(entry)
-        request = sftp.read(entry.handle, entry.offset, read_size, &method(:on_read))
+      # Keeps up to entry.window reads of #read_size bytes outstanding until
+      # the server reports EOF. The window starts at one and grows with each
+      # data reply, so small files don't cost a burst of reads past their end.
+      def request_reads(entry)
+        while !entry.eof && entry.pending < entry.window
+          read_range(entry, entry.next_read, read_size)
+          entry.next_read += read_size
+        end
+      end
+
+      def read_range(entry, offset, length)
+        entry.pending += 1
+        request = sftp.read(entry.handle, offset, length, &method(:on_read))
         request[:entry] = entry
-        request[:offset] = entry.offset
+        request[:offset] = offset
+        request[:length] = length
       end
 
-      # Called when a read from a file finishes. If the read was successful
-      # and returned data, this will call #download_next_chunk to read the
-      # next bit from the file. Otherwise the file will be closed.
+      # Called when a read from a file finishes. Replies can arrive out of
+      # order, so data is buffered until everything before it has been
+      # written. Once the server has reported EOF and no reads are left
+      # outstanding, the file is closed.
       def on_read(response)
         entry = response.request[:entry]
+        entry.pending -= 1
 
         if response.eof?
-          update_progress(:close, entry)
-          entry.sink.close
-          request = sftp.close(entry.handle, &method(:on_close))
-          request[:entry] = entry
+          entry.eof = true
         elsif !response.ok?
           raise StatusException.new(response, "read #{entry.remote}")
         else
-          entry.offset += response[:data].bytesize
-          update_progress(:get, entry, response.request[:offset], response[:data])
-          entry.sink.write(response[:data])
-          download_next_chunk(entry)
+          offset = response.request[:offset]
+          length = response.request[:length]
+          data = response[:data]
+
+          if data.empty? || data.bytesize > length
+            raise Net::SFTP::Exception, "read #{entry.remote} returned #{data.bytesize} bytes for a #{length} byte request"
+          end
+
+          # Servers may return less than asked for without being at EOF, and
+          # the reads after this one have already been sent.
+          read_range(entry, offset + data.bytesize, length - data.bytesize) if data.bytesize < length
+
+          entry.chunks[offset] = data
+          write_buffered_chunks(entry)
+          entry.window += 1 if entry.window < read_window_limit
         end
+
+        request_reads(entry)
+        close_file(entry) if entry.pending.zero?
+      end
+
+      def write_buffered_chunks(entry)
+        while (data = entry.chunks.delete(entry.offset))
+          update_progress(:get, entry, entry.offset, data)
+          entry.sink.write(data)
+          entry.offset += data.bytesize
+        end
+      end
+
+      def close_file(entry)
+        if entry.chunks.any?
+          raise Net::SFTP::Exception, "read #{entry.remote} hit EOF at #{entry.offset} but the server returned data beyond it"
+        end
+
+        update_progress(:close, entry)
+        # The caller's IO stays open, but is flushed so its data is written when download! returns.
+        if entry.sink.equal?(local)
+          entry.sink.flush if entry.sink.respond_to?(:flush)
+        else
+          entry.sink.close
+        end
+        unless entry.local.respond_to?(:write)
+          set_local_attributes(entry, preserve? ? local_permissions(entry, nil) : nil)
+        end
+        request = sftp.close(entry.handle, &method(:on_close))
+        request[:entry] = entry
       end
 
       # Called when a file handle is closed.

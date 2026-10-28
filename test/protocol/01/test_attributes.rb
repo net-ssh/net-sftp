@@ -89,6 +89,16 @@ class Protocol::V01::TestAttributes < Net::SFTP::TestCase
     assert_equal af::T_UNKNOWN,      af.new.type
   end
 
+  def test_from_buffer_should_reject_extended_count_larger_than_remaining_data
+    buffer = Net::SSH::Buffer.from(:long, 0x80000000, :long, 500_000)
+    assert_raises(Net::SFTP::Exception) { attributes_factory.from_buffer(buffer) }
+  end
+
+  def test_from_buffer_should_reject_missing_extended_count
+    buffer = Net::SSH::Buffer.from(:long, 0x80000000)
+    assert_raises(Net::SFTP::Exception) { attributes_factory.from_buffer(buffer) }
+  end
+
   private
 
     def full_buffer

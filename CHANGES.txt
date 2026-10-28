@@ -1,3 +1,39 @@
+=== 4.1.0
+
+* BREAKING: Require Ruby 2.6 or later. Bundler on older Rubies resolves to 4.0.2. [#207]
+* BREAKING: `upload` and `download` no longer close an IO object passed in as the local side; `download` flushes it instead. Callers that relied on the close must close it themselves. [#202]
+* Security: An `FXP_VERSION` packet after the session is open now raises `Net::SFTP::Exception` instead of switching protocol version mid-session and dropping pending requests. [#193]
+* Security: A server can no longer make the client allocate without bound, or hang, by sending an ACL, extended attribute or directory listing count larger than the packet holds; such packets now raise `Net::SFTP::Exception`. [#192]
+* Single-file downloads keep up to `:requests` reads in flight (default 64) instead of waiting for each 32 KB reply, so large downloads are no longer bound by round-trip time. [#204]
+* `upload!` and `download!` now give new files and directories the source's permissions (masked to 0777, subject to the umask) like OpenSSH's sftp client, so executables stay executable and private files are no longer created world-readable. The new `:preserve` option also copies access and modification times and sets permissions exactly. As with OpenSSH, attributes are best effort: if they can't be read the transfer uses default permissions, and if they can't be set a warning is logged and the transfer still succeeds. [#203]
+* Added `Net::SFTP::Session#extensions`, the extensions the server advertised in its `FXP_VERSION` packet (such as `posix-rename@openssh.com`). [#195]
+* The `:version` option now caps the negotiated SFTP protocol version; servers that always reply with their own version (OpenSSH replies 3) used to be negotiated at that version instead of the one requested. [#194]
+
+=== 4.0.2
+
+* Security: Recursive downloads refuse to follow an existing local symlink at a server-named path instead of writing through it. The local path passed by the caller may still be a symlink. Suggested in #162 by srosenhamer [#186]
+* Security: Recursive downloads reject file names from the server that are not a single path component (such as `../x` or `a/b`) instead of writing outside the target directory. Reported in #162 by srosenhamer [#185, #162]
+* Net::SFTP now works with frozen string literals enabled: `File` reads and `Dir#glob` no longer mutate frozen strings, and `glob` no longer modifies entry names in place (adds `Name#name=`). Based on #157 by @frederikspang [#198, #157]
+* `File#read` and `File#gets` no longer loop forever when the server returns an empty data packet, and `read` with a negative length raises `ArgumentError` like `IO#read`. Based on #174 by @OskarEichler [#189, #174]
+* Show fields an SFTP v4+ server omitted as `?` in directory listings (`longname`), like `ls -l` does, instead of blank, `-` or `---------` [#188]
+* Fixed `File#write` hanging on data of 256 KiB or more by sending it in 32 KiB write requests [#99, #187]
+* SFTP request ids now wrap around at the uint32 limit, skipping ids still awaiting a response, instead of growing past it so that responses on very long-lived sessions could no longer be matched to their requests. Thanks @OskarEichler [#179]
+* Uploads keep exactly `:requests` writes in flight (one more was sent before, so the default is now 2 rather than 3), and a zero, negative or non-numeric `:requests` or `:read_size` on `upload` or `download` now raises `ArgumentError` when the transfer is set up instead of stalling. Thanks @OskarEichler [#178]
+* Reconnecting a closed `Net::SFTP::Session` now discards partially received packet data from the old channel, so stale bytes are no longer parsed as the start of the new channel's first packet. Thanks @OskarEichler [#177]
+* Don't crash formatting a directory listing (`longname`) when an SFTP v4+ server omits the modification time, size or permissions, and don't show omitted permissions as `rwxrwxrwx`. Thanks @OskarEichler [#175, #146]
+* `Dir#glob` no longer lists every subdirectory for a pattern without `/` (which can only match top-level names), saving a round trip per directory and no longer failing on unreadable subdirectories. Thanks @OskarEichler [#173, #180]
+* `File#gets` no longer rescans the whole line after each chunk, so reading very long lines is no longer quadratic (a 16 MiB line ending in `"\r\n"` went from about 5 s to 0.01 s). Thanks @OskarEichler [#172]
+* `File#gets` treats a nil or negative limit as no limit, like `IO#gets`, instead of returning nil and corrupting the position (or raising for nil). Thanks @OskarEichler [#171]
+* Fixed SFTP v5/v6 `open` ignoring `IO::TRUNC` and `IO::CREAT` in numeric flags: `IO::WRONLY | IO::TRUNC` now requests `TRUNCATE_EXISTING` instead of opening without truncation, and read-only opens with `IO::CREAT` now request `OPEN_OR_CREATE`. Thanks @OskarEichler [#170]
+* Include the server's error message in `StatusException` and `Response#to_s` for SFTP protocol v3 and later, instead of only the status code. Thanks @OskarEichler [#169, #156]
+* Fixed SFTP v4+ attribute serialization raising `TypeError` when nanoseconds were given for only some timestamps (e.g. `atime_nseconds` with `mtime` but no `mtime_nseconds`); the missing subsecond fields are now sent as 0. Thanks @OskarEichler [#168]
+* `Net::SFTP.start` with a block now closes the SSH session when the block exits with `break`, `return` or `throw`, instead of leaking it. Thanks @OskarEichler [#167]
+* Attributes objects now copy the hash they are given, so a frozen hash no longer raises `FrozenError` and the caller's hash is no longer modified by the default `:type` or by cached owner/group/uid/gid lookups. Thanks @OskarEichler [#166]
+* `File#gets(limit)` no longer makes an extra remote read when the buffered data already satisfies the limit, and `gets(0)` returns an empty string like `IO#gets`. Thanks @OskarEichler [#165]
+* `File#puts` now behaves like `IO#puts`: with no arguments it writes a newline (it used to write nothing), `nil` and `false` are written instead of raising, objects with `to_ary` are expanded, and a recursive array no longer overflows the stack. Thanks @OskarEichler [#164]
+* Fixed `Net::SFTP::Operations::File#write` writing at the read-ahead offset instead of the current position after a buffered read (e.g. `read(2)` on an `r+` file), which corrupted data. Thanks @OskarEichler [#163]
+* Accept a `Pathname` as the local or remote path for uploads and downloads. Thanks @Tietew and @til [#153, #102]
+
 === 4.0.1
 
 * Allow net-ssh 8 [#181]
