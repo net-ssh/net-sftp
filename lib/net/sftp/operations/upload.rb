@@ -47,8 +47,9 @@ module Net; module SFTP; module Operations
   #   callback. See the discussion of "progress monitoring" below.
   # * <tt>:requests</tt> - the number of pending SFTP requests to allow at
   #   any given time. When uploading an entire directory tree recursively,
-  #   this will default to 16, otherwise it will default to 2. Setting this
-  #   higher might improve throughput. Reducing it will reduce throughput.
+  #   this will default to 16, otherwise it will default to 64, like OpenSSH's
+  #   sftp client. Setting this higher might improve throughput. Reducing it
+  #   will reduce throughput.
   # * <tt>:read_size</tt> - the maximum number of bytes to read at a time
   #   from the source. Increasing this value might improve throughput. It
   #   defaults to 32,000 bytes. Each chunk is sent as one write request, so
@@ -265,13 +266,13 @@ module Net; module SFTP; module Operations
 
       # A simple struct for recording metadata about the file currently being
       # uploaded.
-      LiveFile = Struct.new(:local, :remote, :io, :size, :handle, :attributes)
+      LiveFile = Struct.new(:local, :remote, :io, :size, :handle, :attributes, :pending, :error)
 
       # The default # of bytes to read from disk at a time.
       DEFAULT_READ_SIZE   = 32_000
 
       # The number of readers to use when uploading a single file.
-      SINGLE_FILE_READERS = 2
+      SINGLE_FILE_READERS = 64
 
       # The number of readers to use when uploading a directory.
       RECURSIVE_READERS   = 16
@@ -337,7 +338,7 @@ module Net; module SFTP; module Operations
         end
 
         attributes = local.respond_to?(:read) ? {} : attributes_for(file.stat)
-        metafile = LiveFile.new(name, remote, file, size, nil, attributes)
+        metafile = LiveFile.new(name, remote, file, size, nil, attributes, 0)
         update_progress(:open, metafile)
 
         request = sftp.open(remote, "w", attributes, &method(:on_open))
@@ -373,14 +374,25 @@ module Net; module SFTP; module Operations
         end
       end
 
-      # Called when a +write+ request finishes. Raises StatusException if the
-      # write failed, otherwise it calls #write_next_chunk to continue the
-      # write.
+      # Called when a +write+ request finishes. The first failed write stops
+      # the file from being read further and is recorded, to be raised once
+      # the file is closed. The file is closed once the whole file has been
+      # sent or a write has failed, and no writes are left outstanding.
       def on_write(response)
         @active -= 1
         file = response.request[:file]
-        raise StatusException.new(response, "write #{file.remote}") unless response.ok?
-        write_next_chunk(file)
+        file.pending -= 1
+
+        if !response.ok? && !file.error
+          file.error = StatusException.new(response, "write #{file.remote}")
+          stop_reading(file)
+        end
+
+        if file.io.nil? && file.pending.zero?
+          close_file(file)
+        elsif !file.error
+          write_next_chunk(file)
+        end
       end
 
       # Called when a +close+ request finishes. Raises a StatusException if the
@@ -389,6 +401,7 @@ module Net; module SFTP; module Operations
       def on_close(response)
         @active -= 1
         file = response.request[:file]
+        raise file.error if file.error
         raise StatusException.new(response, "close #{file.remote}") unless response.ok?
         process_next_entry
       end
@@ -442,28 +455,47 @@ module Net; module SFTP; module Operations
         if file.io.nil?
           process_next_entry
         else
-          @active += 1
           offset = file.io.pos
           data = file.io.read(read_size) unless @aborted
           if data.nil?
-            update_progress(:close, file)
-            if preserve? && file.attributes.any?
-              @active += 1
-              request = sftp.fsetstat(file.handle, file.attributes, &method(:on_fsetstat))
-              request[:file] = file
+            stop_reading(file)
+            if file.pending.zero?
+              close_file(file)
+            else
+              process_next_entry
             end
-            request = sftp.close(file.handle, &method(:on_close))
-            request[:file] = file
-            # An IO passed in by the caller is theirs to close.
-            file.io.close unless file.io.equal?(local)
-            file.io = nil
-            @uploads.delete(file)
           else
+            @active += 1
+            file.pending += 1
             update_progress(:put, file, offset, data)
             request = sftp.write(file.handle, offset, data, &method(:on_write))
             request[:file] = file
           end
         end
+      end
+
+      def stop_reading(file)
+        # An IO passed in by the caller is theirs to close.
+        file.io.close unless file.io.equal?(local)
+        file.io = nil
+        @uploads.delete(file)
+      end
+
+      # Like OpenSSH's sftp client, CLOSE waits for every write to be
+      # acknowledged, so a failed write is raised once and the remote handle
+      # is not leaked.
+      def close_file(file)
+        @active += 1
+        unless file.error
+          update_progress(:close, file)
+          if preserve? && file.attributes.any?
+            @active += 1
+            request = sftp.fsetstat(file.handle, file.attributes, &method(:on_fsetstat))
+            request[:file] = file
+          end
+        end
+        request = sftp.close(file.handle, &method(:on_close))
+        request[:file] = file
       end
 
       # Returns all directory entries for the given path, removing the '.'
