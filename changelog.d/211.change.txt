@@ -1,0 +1,1 @@
+`abort!` now stops uploads and downloads: no new write or read is sent, the requests in flight finish and the open files are closed, so `wait` returns once their replies arrive. Previously the transfer kept running to the end, and an upload reported `:finish` twice.

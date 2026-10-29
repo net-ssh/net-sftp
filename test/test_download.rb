@@ -155,6 +155,59 @@ class DownloadTest < Net::SFTP::TestCase
     assert !local.closed?
   end
 
+  def test_abort_should_stop_reading_and_close_the_file
+    remote = "/path/to/remote"
+    text = "a" * FXP_DATA_CHUNK_SIZE
+
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, remote, :long, 0x01, :long, 0)
+      channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+      channel.sends_packet(FXP_READ, :long, 1, :string, "handle", :int64, 0, :long, FXP_DATA_CHUNK_SIZE)
+      channel.gets_packet(FXP_DATA, :long, 1, :string, text)
+      channel.sends_packet(FXP_CLOSE, :long, 2, :string, "handle")
+      channel.gets_packet(FXP_STATUS, :long, 2, :long, 0)
+    end
+
+    local = StringIO.new
+
+    assert_scripted_command do
+      sftp.download(remote, local, :read_size => FXP_DATA_CHUNK_SIZE) do |*args|
+        record_progress(args)
+        args[1].abort! if args[0] == :get
+      end
+    end
+
+    assert_equal text, local.string
+    assert_progress_reported_open(:remote => remote)
+    assert_progress_reported_get(0, text, :remote => remote)
+    assert_progress_reported_close(:remote => remote)
+    assert_progress_reported_finish
+    assert_no_more_reported_events
+  end
+
+  def test_abort_with_open_in_flight_should_leave_local_file_untouched
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/remote", :long, 0x01, :long, 0)
+      channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+      channel.sends_packet(FXP_CLOSE, :long, 1, :string, "handle")
+      channel.gets_packet(FXP_STATUS, :long, 1, :long, 0)
+    end
+
+    File.expects(:open).never
+
+    assert_scripted_command do
+      sftp.download("/path/to/remote", "/path/to/local") do |*args|
+        record_progress(args)
+        args[1].abort! if args[0] == :open
+      end
+    end
+
+    assert_progress_reported_open(:remote => "/path/to/remote")
+    assert_progress_reported_close(:remote => "/path/to/remote")
+    assert_progress_reported_finish
+    assert_no_more_reported_events
+  end
+
   def test_download_file_should_create_local_file_with_remote_permissions_except_setuid
     with_tmpdir do |tmp|
       expect_file_transfer("/path/to/remote", "text", :fstat => 0104750)

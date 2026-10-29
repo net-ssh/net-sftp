@@ -163,6 +163,7 @@ module Net; module SFTP; module Operations
       @options = options
       @properties = options[:properties] || {}
       @active = 0
+      @aborted = false
       @directories = []
 
       self.logger = sftp.logger
@@ -209,11 +210,11 @@ module Net; module SFTP; module Operations
       @active > 0 || @stack.any?
     end
 
-    # Forces the transfer to stop.
+    # Forces the transfer to stop. Writes already sent are left to finish,
+    # then each open file is closed, so #wait returns once that is done.
     def abort!
-      @active = 0
+      @aborted = true
       @stack.clear
-      @uploads.clear
     end
 
     # Blocks until the upload has completed.
@@ -443,7 +444,7 @@ module Net; module SFTP; module Operations
         else
           @active += 1
           offset = file.io.pos
-          data = file.io.read(read_size)
+          data = file.io.read(read_size) unless @aborted
           if data.nil?
             update_progress(:close, file)
             if preserve? && file.attributes.any?
