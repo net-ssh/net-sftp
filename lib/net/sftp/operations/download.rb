@@ -226,7 +226,7 @@ module Net; module SFTP; module Operations
       # A simple struct for encapsulating information about a single remote
       # file or directory that needs to be downloaded.
       Entry = Struct.new(:remote, :local, :directory, :size, :handle, :offset, :sink,
-                         :next_read, :pending, :window, :chunks, :eof, :attributes)
+                         :next_read, :pending, :window, :chunks, :eof, :attributes, :error)
 
       #--
       # "ruby -w" hates private attributes, so we have to do these longhand
@@ -490,24 +490,24 @@ module Net; module SFTP; module Operations
 
       # Called when a read from a file finishes. Replies can arrive out of
       # order, so data is buffered until everything before it has been
-      # written. Once the server has reported EOF and no reads are left
-      # outstanding, the file is closed.
+      # written. Once the server has reported EOF or a read has failed, and
+      # no reads are left outstanding, the file is closed.
       def on_read(response)
         entry = response.request[:entry]
         entry.pending -= 1
 
-        if response.eof?
+        if entry.error
+          # The rest of the file is no longer wanted.
+        elsif response.eof?
           entry.eof = true
         elsif !response.ok?
-          raise StatusException.new(response, "read #{entry.remote}")
+          entry.error = StatusException.new(response, "read #{entry.remote}")
+        elsif response[:data].empty? || response[:data].bytesize > response.request[:length]
+          entry.error = Net::SFTP::Exception.new("read #{entry.remote} returned #{response[:data].bytesize} bytes for a #{response.request[:length]} byte request")
         else
           offset = response.request[:offset]
           length = response.request[:length]
           data = response[:data]
-
-          if data.empty? || data.bytesize > length
-            raise Net::SFTP::Exception, "read #{entry.remote} returned #{data.bytesize} bytes for a #{length} byte request"
-          end
 
           # Servers may return less than asked for without being at EOF, and
           # the reads after this one have already been sent.
@@ -518,8 +518,12 @@ module Net; module SFTP; module Operations
           entry.window += 1 if entry.window < read_window_limit
         end
 
-        request_reads(entry)
-        close_file(entry) if entry.pending.zero?
+        if entry.error
+          close_failed_file(entry) if entry.pending.zero?
+        else
+          request_reads(entry)
+          close_file(entry) if entry.pending.zero?
+        end
       end
 
       def write_buffered_chunks(entry)
@@ -553,8 +557,17 @@ module Net; module SFTP; module Operations
       def on_close(response)
         @active -= 1
         entry = response.request[:entry]
+        raise entry.error if entry.error
         raise StatusException.new(response, "close #{entry.remote}") unless response.ok?
         process_next_entry
+      end
+
+      # Waiting for every reply before raising keeps the remote handle from
+      # leaking and the error from being raised again by each later reply.
+      def close_failed_file(entry)
+        entry.sink.close unless entry.sink.equal?(local)
+        request = sftp.close(entry.handle, &method(:on_close))
+        request[:entry] = entry
       end
 
       # If a progress callback or object has been set, this will report

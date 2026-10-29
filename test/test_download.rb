@@ -423,6 +423,45 @@ class DownloadTest < Net::SFTP::TestCase
     assert_match(/EOF at 1024/, e.message)
   end
 
+  def test_download_file_should_raise_a_failed_read_once_after_closing_the_file
+    text = "0123456789abcdef" * 128
+
+    expect_sftp_session :server_version => 3 do |channel|
+      expect_open(channel)
+      channel.sends_packet(FXP_READ, :long, 1, :string, "handle", :int64, 0, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 1, :string, text.byteslice(0, 1024))
+      channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, 1024, :long, 1024)
+      channel.sends_packet(FXP_READ, :long, 3, :string, "handle", :int64, 2048, :long, 1024)
+      channel.gets_packet(FXP_DATA, :long, 2, :string, text.byteslice(1024, 1024))
+      channel.sends_packet(FXP_READ, :long, 4, :string, "handle", :int64, 3072, :long, 1024)
+      channel.sends_packet(FXP_READ, :long, 5, :string, "handle", :int64, 4096, :long, 1024)
+      channel.gets_packet(FXP_STATUS, :long, 3, :long, 4, :string, "I/O error", :string, "")
+      channel.gets_packet(FXP_DATA, :long, 4, :string, "x" * 1024)
+      channel.gets_packet(FXP_STATUS, :long, 5, :long, 4, :string, "I/O error", :string, "")
+      expect_close(channel, 6)
+    end
+
+    io = StringIO.new
+    assert_scripted do
+      Timeout.timeout(10) do
+        sftp.connect!
+        download = sftp.download("/path/to/remote", io, :read_size => 1024, :requests => 4) do |*args|
+          record_progress(args)
+        end
+        e = assert_raises(Net::SFTP::StatusException) { sftp.loop }
+        assert_equal 4, e.code
+        refute download.active?
+        sftp.loop
+      end
+    end
+
+    assert_equal text.byteslice(0, 2048), io.string
+    assert_progress_reported_open :remote => "/path/to/remote"
+    assert_progress_reported_get     0, text.byteslice(0, 1024)
+    assert_progress_reported_get  1024, text.byteslice(1024, 1024)
+    assert_no_more_reported_events
+  end
+
   UNSAFE_NAMES = {
     "parent_relative" => "../x",
     "grandparent" => "../..",
