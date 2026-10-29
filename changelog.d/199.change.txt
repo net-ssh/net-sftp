@@ -1,1 +1,0 @@
-Package only `lib`, `CHANGES.txt`, `LICENSE.txt` and `README.rdoc` in the gem, about 20% smaller. Thanks @yuri-zubov [#199]

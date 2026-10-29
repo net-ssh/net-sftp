@@ -1,1 +1,0 @@
-A read error during a single-file download is raised once, after the outstanding reads complete and the handle is closed, instead of once per in-flight read [#212]

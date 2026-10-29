@@ -1,3 +1,10 @@
+=== 4.1.1
+
+* A read error during a single-file download is raised once, after the outstanding reads complete and the handle is closed, instead of once per in-flight read [#212]
+* `abort!` now stops uploads and downloads: no new write or read is sent, the requests in flight finish and the open files are closed, so `wait` returns once their replies arrive. Previously the transfer kept running to the end, and an upload reported `:finish` twice. [#211]
+* Single-file uploads keep up to `:requests` writes in flight (default 64, like OpenSSH's sftp client, previously 2) so large uploads are no longer bound by round-trip time. The file is closed once every write is acknowledged, and a failed write is raised once, after the close. [#210]
+* Package only `lib`, `CHANGES.txt`, `LICENSE.txt` and `README.rdoc` in the gem, about 20% smaller. Thanks @yuri-zubov [#199]
+
 === 4.1.0
 
 * BREAKING: Require Ruby 2.6 or later. Bundler on older Rubies resolves to 4.0.2. [#207]
