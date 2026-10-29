@@ -47,8 +47,9 @@ module Net; module SFTP; module Operations
   #   callback. See the discussion of "progress monitoring" below.
   # * <tt>:requests</tt> - the number of pending SFTP requests to allow at
   #   any given time. When uploading an entire directory tree recursively,
-  #   this will default to 16, otherwise it will default to 2. Setting this
-  #   higher might improve throughput. Reducing it will reduce throughput.
+  #   this will default to 16, otherwise it will default to 64, like OpenSSH's
+  #   sftp client. Setting this higher might improve throughput. Reducing it
+  #   will reduce throughput.
   # * <tt>:read_size</tt> - the maximum number of bytes to read at a time
   #   from the source. Increasing this value might improve throughput. It
   #   defaults to 32,000 bytes. Each chunk is sent as one write request, so
@@ -271,7 +272,7 @@ module Net; module SFTP; module Operations
       DEFAULT_READ_SIZE   = 32_000
 
       # The number of readers to use when uploading a single file.
-      SINGLE_FILE_READERS = 2
+      SINGLE_FILE_READERS = 64
 
       # The number of readers to use when uploading a directory.
       RECURSIVE_READERS   = 16
