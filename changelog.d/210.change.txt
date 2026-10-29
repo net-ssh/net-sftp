@@ -1,0 +1,1 @@
+Single-file uploads keep up to `:requests` writes in flight (default 64, like OpenSSH's sftp client, previously 2) so large uploads are no longer bound by round-trip time.
