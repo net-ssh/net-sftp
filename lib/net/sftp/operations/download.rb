@@ -169,6 +169,7 @@ module Net; module SFTP; module Operations
       @progress = progress || options[:progress]
       @options = options
       @active = 0
+      @aborted = false
       @directories = []
       @properties = options[:properties] || {}
       requests
@@ -196,9 +197,10 @@ module Net; module SFTP; module Operations
       @active > 0 || stack.any?
     end
 
-    # Forces the transfer to stop.
+    # Forces the transfer to stop. Reads already sent are left to finish,
+    # then each open file is closed, so #wait returns once that is done.
     def abort!
-      @active = 0
+      @aborted = true
       @stack.clear
     end
 
@@ -368,7 +370,7 @@ module Net; module SFTP; module Operations
       # and #process_next_entry is called.
       def on_readdir(response)
         entry = response.request[:parent]
-        if response.eof?
+        if response.eof? || @aborted
           request = sftp.close(entry.handle, &method(:on_closedir))
           request[:parent] = entry
         elsif !response.ok?
@@ -444,7 +446,7 @@ module Net; module SFTP; module Operations
         raise StatusException.new(response, "open #{entry.remote}") unless response.ok?
 
         entry.handle = response[:handle]
-        if entry.attributes || entry.local.respond_to?(:write)
+        if @aborted || entry.attributes || entry.local.respond_to?(:write)
           start_download(entry)
         else
           request = sftp.fstat(entry.handle, &method(:on_fstat))
@@ -460,6 +462,8 @@ module Net; module SFTP; module Operations
       end
 
       def start_download(entry)
+        return close_aborted_file(entry) if @aborted
+
         entry.sink = entry.local.respond_to?(:write) ? entry.local : open_local_file(entry)
         entry.offset = 0
         entry.next_read = 0
@@ -474,7 +478,7 @@ module Net; module SFTP; module Operations
       # the server reports EOF. The window starts at one and grows with each
       # data reply, so small files don't cost a burst of reads past their end.
       def request_reads(entry)
-        while !entry.eof && entry.pending < entry.window
+        while !entry.eof && !@aborted && entry.pending < entry.window
           read_range(entry, entry.next_read, read_size)
           entry.next_read += read_size
         end
@@ -511,7 +515,7 @@ module Net; module SFTP; module Operations
 
           # Servers may return less than asked for without being at EOF, and
           # the reads after this one have already been sent.
-          read_range(entry, offset + data.bytesize, length - data.bytesize) if data.bytesize < length
+          read_range(entry, offset + data.bytesize, length - data.bytesize) if data.bytesize < length && !@aborted
 
           entry.chunks[offset] = data
           write_buffered_chunks(entry)
@@ -531,7 +535,7 @@ module Net; module SFTP; module Operations
       end
 
       def close_file(entry)
-        if entry.chunks.any?
+        if entry.chunks.any? && !@aborted
           raise Net::SFTP::Exception, "read #{entry.remote} hit EOF at #{entry.offset} but the server returned data beyond it"
         end
 
@@ -545,6 +549,13 @@ module Net; module SFTP; module Operations
         unless entry.local.respond_to?(:write)
           set_local_attributes(entry, preserve? ? local_permissions(entry, nil) : nil)
         end
+        request = sftp.close(entry.handle, &method(:on_close))
+        request[:entry] = entry
+      end
+
+      # The local file is left untouched: it may hold an earlier copy.
+      def close_aborted_file(entry)
+        update_progress(:close, entry)
         request = sftp.close(entry.handle, &method(:on_close))
         request[:entry] = entry
       end

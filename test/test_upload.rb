@@ -120,6 +120,37 @@ class UploadTest < Net::SFTP::TestCase
     end
   end
 
+  def test_abort_should_stop_writing_and_close_the_file
+    size = Net::SFTP::Operations::Upload::DEFAULT_READ_SIZE
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/remote", :long, 0x1A, :long, 0x04, :long, 0644)
+      channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+      channel.sends_packet(FXP_WRITE, :long, 1, :string, "handle", :int64, 0, :string, "a" * size)
+      channel.sends_packet(FXP_WRITE, :long, 2, :string, "handle", :int64, size, :string, "b" * size)
+      channel.gets_packet(FXP_STATUS, :long, 1, :long, 0)
+      channel.sends_packet(FXP_CLOSE, :long, 3, :string, "handle")
+      channel.gets_packet(FXP_STATUS, :long, 2, :long, 0)
+      channel.gets_packet(FXP_STATUS, :long, 3, :long, 0)
+    end
+
+    file = expect_file("/path/to/local", "a" * size + "b" * size + "c" * size + "d" * size)
+
+    assert_scripted_command do
+      sftp.upload("/path/to/local", "/path/to/remote", :requests => 2) do |*args|
+        record_progress(args)
+        args[1].abort! if args[0] == :put && args[3] == size
+      end
+    end
+
+    assert file.closed?
+    assert_progress_reported_open(:remote => "/path/to/remote")
+    assert_progress_reported_put(0, "a" * size, :remote => "/path/to/remote")
+    assert_progress_reported_put(size, "b" * size, :remote => "/path/to/remote")
+    assert_progress_reported_close(:remote => "/path/to/remote")
+    assert_progress_reported_finish
+    assert_no_more_reported_events
+  end
+
   def test_upload_directory_should_mirror_directory_structure_remotely
     prepare_directory
 
