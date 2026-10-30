@@ -69,4 +69,22 @@ class StartTest < Net::SFTP::TestCase
 
     assert_equal sftp, Net::SFTP.start('host', 'user')
   end
+
+  def test_with_block_should_raise_if_channel_closed_before_version
+    story do |session|
+      channel = session.opens_channel
+      channel.sends_subsystem("sftp")
+      channel.sends_packet(FXP_INIT, :long, Net::SFTP::Session::HIGHEST_PROTOCOL_VERSION_SUPPORTED)
+      channel.gets_close
+    end
+
+    called = false
+    assert_scripted do
+      Net::SSH.expects(:start).with('host', 'user', {}).returns(connection)
+      assert_raises(Net::SFTP::SessionClosedError) do
+        Net::SFTP.start('host', 'user') { called = true }
+      end
+    end
+    refute called
+  end
 end

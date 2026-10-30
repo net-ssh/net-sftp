@@ -19,7 +19,7 @@ class SessionTest < Net::SFTP::TestCase
     ssh.expects(:open_channel).twice.returns(mock("channel"))
     session = Net::SFTP::Session.new(ssh)
     session.send(:input).append("partial packet")
-    session.send(:when_channel_closed, nil)
+    assert_raises(Net::SFTP::SessionClosedError) { session.send(:when_channel_closed, nil) }
 
     session.connect
 
@@ -37,6 +37,89 @@ class SessionTest < Net::SFTP::TestCase
     expect_sftp_session :server_version => 3, :extensions => extensions
     assert_scripted { sftp.connect! }
     assert_equal extensions, sftp.extensions
+  end
+
+  def test_channel_closed_by_server_should_fail_pending_sync_request
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/file", :long, 0x01, :long, 0)
+      channel.gets_close
+      channel.sends_close
+    end
+
+    assert_scripted do
+      sftp.connect!
+      Timeout.timeout(5) do
+        assert_raises(Net::SFTP::SessionClosedError) { sftp.open!("/path/to/file") }
+      end
+      flush_channel_close
+    end
+    assert sftp.closed?
+  end
+
+  def test_channel_closed_by_server_should_fail_pending_async_request
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/file", :long, 0x01, :long, 0)
+      channel.gets_close
+      channel.sends_close
+    end
+
+    called = false
+    request = nil
+    assert_scripted do
+      sftp.connect!
+      request = sftp.open("/path/to/file") { called = true }
+      Timeout.timeout(5) do
+        assert_raises(Net::SFTP::SessionClosedError) { sftp.loop }
+      end
+      flush_channel_close
+      refute request.pending?
+      assert_raises(Net::SFTP::SessionClosedError) { request.wait }
+    end
+    refute called
+  end
+
+  def test_send_after_channel_closed_by_server_should_raise_session_closed
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.gets_close
+      channel.sends_close
+    end
+
+    assert_scripted do
+      sftp.connect!
+      sftp.loop { !sftp.closed? }
+    end
+    e = assert_raises(Net::SFTP::SessionClosedError) { sftp.open!("/path/to/file") }
+    assert_equal "SFTP session closed", e.message
+  end
+
+  def test_channel_closed_before_version_should_fail_connect
+    story do |session|
+      channel = session.opens_channel
+      channel.sends_subsystem("sftp")
+      channel.sends_packet(FXP_INIT, :long, Net::SFTP::Session::HIGHEST_PROTOCOL_VERSION_SUPPORTED)
+      channel.gets_close
+      channel.sends_close
+    end
+
+    assert_scripted do
+      Timeout.timeout(5) do
+        assert_raises(Net::SFTP::SessionClosedError) { sftp.connect! }
+      end
+      flush_channel_close
+    end
+  end
+
+  def test_close_channel_with_nothing_pending_should_not_raise
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_close
+      channel.gets_close
+    end
+
+    assert_scripted do
+      sftp.connect!
+      sftp.close_channel
+    end
+    assert sftp.closed?
   end
 
   def test_passing_version_should_cause_same_version_to_be_passed_and_used

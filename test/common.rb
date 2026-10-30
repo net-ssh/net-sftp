@@ -1,6 +1,7 @@
 require 'minitest/autorun'
 require 'mocha/minitest'
 require 'stringio'
+require 'timeout'
 require 'pathname'
 
 begin
@@ -63,6 +64,11 @@ class Net::SFTP::TestCase < Minitest::Test
         yield
         sftp.loop
       end
+    end
+
+    # Net::SSH sends its CHANNEL_CLOSE reply on the loop iteration after the one that raised.
+    def flush_channel_close
+      sftp.session.loop
     end
 
     def assert_progress_reported_open(expect={})
