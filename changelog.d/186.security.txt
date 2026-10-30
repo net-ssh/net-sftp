@@ -1,1 +1,0 @@
-Recursive downloads refuse to follow an existing local symlink at a server-named path instead of writing through it. The local path passed by the caller may still be a symlink. Suggested in #162 by srosenhamer [#186]

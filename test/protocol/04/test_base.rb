@@ -69,6 +69,11 @@ class Protocol::V04::TestBase < Protocol::V03::TestBase
     assert_equal 0, @base.stat("/path/to/file", 1234)
   end
 
+  def test_parse_name_packet_should_reject_count_larger_than_remaining_data
+    packet = Net::SSH::Buffer.from(:long, 500_000, :string, "name1", :long, 0, :byte, 1)
+    assert_raises(Net::SFTP::Exception) { @base.parse_name_packet(packet) }
+  end
+
   private
 
     def driver

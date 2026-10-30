@@ -1,3 +1,4 @@
+require 'pathname'
 require 'net/ssh/loggable'
 
 module Net; module SFTP; module Operations
@@ -46,8 +47,9 @@ module Net; module SFTP; module Operations
   #   callback. See the discussion of "progress monitoring" below.
   # * <tt>:requests</tt> - the number of pending SFTP requests to allow at
   #   any given time. When uploading an entire directory tree recursively,
-  #   this will default to 16, otherwise it will default to 2. Setting this
-  #   higher might improve throughput. Reducing it will reduce throughput.
+  #   this will default to 16, otherwise it will default to 64, like OpenSSH's
+  #   sftp client. Setting this higher might improve throughput. Reducing it
+  #   will reduce throughput.
   # * <tt>:read_size</tt> - the maximum number of bytes to read at a time
   #   from the source. Increasing this value might improve throughput. It
   #   defaults to 32,000 bytes. Each chunk is sent as one write request, so
@@ -55,6 +57,15 @@ module Net; module SFTP; module Operations
   #   connection on packets over 256 KiB).
   # * <tt>:name</tt> - the filename to report to the progress monitor when
   #   an IO object is given as +local+. This defaults to "<memory>".
+  # * <tt>:preserve</tt> - if true, the remote files and directories get the
+  #   access and modification times of the local ones, and their permissions
+  #   are set even on files that already exist remotely.
+  #
+  # Like OpenSSH's sftp client, new remote files and directories are created
+  # with the permissions of the local ones, without setuid, setgid and sticky
+  # bits and subject to the server's umask. Nothing is set when +local+ is an
+  # IO object. If the server refuses to set the attributes after the data has
+  # been written, a warning is logged and the upload still succeeds.
   #
   # == Progress Monitoring
   #
@@ -143,6 +154,9 @@ module Net; module SFTP; module Operations
     # This will return immediately, and requires that the SSH event loop be
     # run in order to effect the upload. (See #wait.)
     def initialize(sftp, local, remote, options={}, &progress) #:nodoc:
+      local = local.to_path if local.is_a?(Pathname)
+      remote = remote.to_path if remote.is_a?(Pathname)
+
       @sftp = sftp
       @local = local
       @remote = remote
@@ -150,6 +164,8 @@ module Net; module SFTP; module Operations
       @options = options
       @properties = options[:properties] || {}
       @active = 0
+      @aborted = false
+      @directories = []
 
       self.logger = sftp.logger
 
@@ -165,7 +181,7 @@ module Net; module SFTP; module Operations
 
         @active += 1
         if @options[:mkdir]
-          sftp.mkdir(remote) do |response|
+          sftp.mkdir(remote, directory_attributes(local, remote)) do |response|
             @active -= 1
             raise StatusException.new(response, "mkdir `#{remote}'") unless response.ok?
             requests.times do
@@ -195,11 +211,11 @@ module Net; module SFTP; module Operations
       @active > 0 || @stack.any?
     end
 
-    # Forces the transfer to stop.
+    # Forces the transfer to stop. Writes already sent are left to finish,
+    # then each open file is closed, so #wait returns once that is done.
     def abort!
-      @active = 0
+      @aborted = true
       @stack.clear
-      @uploads.clear
     end
 
     # Blocks until the upload has completed.
@@ -244,15 +260,19 @@ module Net; module SFTP; module Operations
         value
       end
 
+      def preserve?
+        options[:preserve]
+      end
+
       # A simple struct for recording metadata about the file currently being
       # uploaded.
-      LiveFile = Struct.new(:local, :remote, :io, :size, :handle)
+      LiveFile = Struct.new(:local, :remote, :io, :size, :handle, :attributes, :pending, :error)
 
       # The default # of bytes to read from disk at a time.
       DEFAULT_READ_SIZE   = 32_000
 
       # The number of readers to use when uploading a single file.
-      SINGLE_FILE_READERS = 2
+      SINGLE_FILE_READERS = 64
 
       # The number of readers to use when uploading a directory.
       RECURSIVE_READERS   = 16
@@ -264,7 +284,11 @@ module Net; module SFTP; module Operations
           if @uploads.any?
             write_next_chunk(@uploads.first)
           elsif !active?
-            update_progress(:finish)
+            if @directories.any?
+              set_directory_attributes
+            else
+              update_progress(:finish)
+            end
           end
           return false
         elsif @stack.last.empty?
@@ -284,7 +308,7 @@ module Net; module SFTP; module Operations
 
             @active += 1
             update_progress(:mkdir, rpath)
-            request = sftp.mkdir(rpath, &method(:on_mkdir))
+            request = sftp.mkdir(rpath, directory_attributes(lpath, rpath), &method(:on_mkdir))
             request[:dir] = rpath
           else
             open_file(lpath, rpath)
@@ -313,10 +337,11 @@ module Net; module SFTP; module Operations
           size = file.size
         end
 
-        metafile = LiveFile.new(name, remote, file, size)
+        attributes = local.respond_to?(:read) ? {} : attributes_for(file.stat)
+        metafile = LiveFile.new(name, remote, file, size, nil, attributes, 0)
         update_progress(:open, metafile)
 
-        request = sftp.open(remote, "w", &method(:on_open))
+        request = sftp.open(remote, "w", attributes, &method(:on_open))
         request[:file] = metafile
       end
 
@@ -349,14 +374,25 @@ module Net; module SFTP; module Operations
         end
       end
 
-      # Called when a +write+ request finishes. Raises StatusException if the
-      # write failed, otherwise it calls #write_next_chunk to continue the
-      # write.
+      # Called when a +write+ request finishes. The first failed write stops
+      # the file from being read further and is recorded, to be raised once
+      # the file is closed. The file is closed once the whole file has been
+      # sent or a write has failed, and no writes are left outstanding.
       def on_write(response)
         @active -= 1
         file = response.request[:file]
-        raise StatusException.new(response, "write #{file.remote}") unless response.ok?
-        write_next_chunk(file)
+        file.pending -= 1
+
+        if !response.ok? && !file.error
+          file.error = StatusException.new(response, "write #{file.remote}")
+          stop_reading(file)
+        end
+
+        if file.io.nil? && file.pending.zero?
+          close_file(file)
+        elsif !file.error
+          write_next_chunk(file)
+        end
       end
 
       # Called when a +close+ request finishes. Raises a StatusException if the
@@ -365,8 +401,52 @@ module Net; module SFTP; module Operations
       def on_close(response)
         @active -= 1
         file = response.request[:file]
+        raise file.error if file.error
         raise StatusException.new(response, "close #{file.remote}") unless response.ok?
         process_next_entry
+      end
+
+      # setuid, setgid and sticky bits are never sent, matching OpenSSH.
+      def attributes_for(stat)
+        attributes = { :permissions => stat.mode & 0777 }
+        attributes.update(:atime => stat.atime.to_i, :mtime => stat.mtime.to_i) if preserve?
+        attributes
+      end
+
+      # The directory is created writable and searchable by its owner so its
+      # contents can be uploaded; its real attributes are set once everything
+      # else is done (see #set_directory_attributes).
+      def directory_attributes(local, remote)
+        stat = ::File.stat(local)
+        @directories << [remote, attributes_for(stat)]
+        { :permissions => (stat.mode & 0777) | 0300 }
+      end
+
+      # Deepest directories first; setting attributes on a directory doesn't
+      # change its parent's modification time.
+      def set_directory_attributes
+        @directories.reverse_each do |path, attributes|
+          @active += 1
+          sftp.setstat(path, attributes) do |response|
+            @active -= 1
+            warn_unless_ok(response, "setstat #{path}")
+            process_next_entry
+          end
+        end
+        @directories.clear
+      end
+
+      # Called when the +fsetstat+ for :preserve finishes.
+      def on_fsetstat(response)
+        @active -= 1
+        file = response.request[:file]
+        warn_unless_ok(response, "fsetstat #{file.remote}")
+      end
+
+      # Like OpenSSH's sftp client, failing to set attributes only warns; the
+      # data has already been transferred.
+      def warn_unless_ok(response, operation)
+        lwarn { "#{operation} failed: #{response}" } unless response.ok?
       end
 
       # Attempts to send the next chunk from the given file (where +file+ is
@@ -375,22 +455,47 @@ module Net; module SFTP; module Operations
         if file.io.nil?
           process_next_entry
         else
-          @active += 1
           offset = file.io.pos
-          data = file.io.read(read_size)
+          data = file.io.read(read_size) unless @aborted
           if data.nil?
-            update_progress(:close, file)
-            request = sftp.close(file.handle, &method(:on_close))
-            request[:file] = file
-            file.io.close
-            file.io = nil
-            @uploads.delete(file)
+            stop_reading(file)
+            if file.pending.zero?
+              close_file(file)
+            else
+              process_next_entry
+            end
           else
+            @active += 1
+            file.pending += 1
             update_progress(:put, file, offset, data)
             request = sftp.write(file.handle, offset, data, &method(:on_write))
             request[:file] = file
           end
         end
+      end
+
+      def stop_reading(file)
+        # An IO passed in by the caller is theirs to close.
+        file.io.close unless file.io.equal?(local)
+        file.io = nil
+        @uploads.delete(file)
+      end
+
+      # Like OpenSSH's sftp client, CLOSE waits for every write to be
+      # acknowledged, so a failed write is raised once and the remote handle
+      # is not leaked.
+      def close_file(file)
+        @active += 1
+        unless file.error
+          update_progress(:close, file)
+          if preserve? && file.attributes.any?
+            @active += 1
+            request = sftp.fsetstat(file.handle, file.attributes, &method(:on_fsetstat))
+            request[:file] = file
+          end
+        end
+        request = sftp.close(file.handle, &method(:on_close))
+        request[:file] = file
       end
 
       # Returns all directory entries for the given path, removing the '.'

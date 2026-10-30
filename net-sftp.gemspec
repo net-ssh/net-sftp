@@ -16,15 +16,14 @@ Gem::Specification.new do |spec|
   spec.homepage      = "https://github.com/net-ssh/net-sftp"
   spec.license       = "MIT"
   spec.required_rubygems_version = Gem::Requirement.new(">= 0") if spec.respond_to? :required_rubygems_version=
+  spec.required_ruby_version = ">= 2.6"
 
   spec.extra_rdoc_files = [
     "LICENSE.txt",
     "README.rdoc"
   ]
 
-  spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
-  spec.bindir        = "exe"
-  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
+  spec.files         = `git ls-files -z lib CHANGES.txt LICENSE.txt README.rdoc`.split("\x0")
   spec.require_paths = ["lib"]
 
   if spec.respond_to? :specification_version then

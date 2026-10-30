@@ -1,5 +1,6 @@
 require 'net/ssh/loggable'
 require 'net/sftp/constants'
+require 'net/sftp/protocol/bounded_read'
 
 module Net; module SFTP; module Protocol
 
@@ -10,6 +11,7 @@ module Net; module SFTP; module Protocol
     include Net::SSH::Loggable
     include Net::SFTP::Constants
     include Net::SFTP::Constants::PacketTypes
+    include Net::SFTP::Protocol::BoundedRead
 
     # The SFTP session object that acts as client to this protocol instance
     attr_reader :session

@@ -1,1 +1,0 @@
-`Dir#glob` no longer lists every subdirectory for a pattern without `/` (which can only match top-level names), saving a round trip per directory and no longer failing on unreadable subdirectories. Thanks @OskarEichler [#173, #180]
