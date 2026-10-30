@@ -1,0 +1,1 @@
+Removed the `setup.rb` installer, which has not worked since Ruby 2.2 and was LGPL-licensed, and the stale `Manifest` from the gem.
