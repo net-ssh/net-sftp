@@ -1,1 +1,0 @@
-`File#read` and `File#gets` no longer loop forever when the server returns an empty data packet, and `read` with a negative length raises `ArgumentError` like `IO#read`. Based on #174 by @OskarEichler [#189, #174]

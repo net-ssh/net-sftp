@@ -26,6 +26,19 @@ class SessionTest < Net::SFTP::TestCase
     assert_equal 0, session.send(:input).length
   end
 
+  def test_extensions_should_be_empty_when_server_advertises_none
+    expect_sftp_session :server_version => 3
+    assert_scripted { sftp.connect! }
+    assert_equal({}, sftp.extensions)
+  end
+
+  def test_extensions_should_expose_those_advertised_by_server
+    extensions = { "posix-rename@openssh.com" => "1", "statvfs@openssh.com" => "2" }
+    expect_sftp_session :server_version => 3, :extensions => extensions
+    assert_scripted { sftp.connect! }
+    assert_equal extensions, sftp.extensions
+  end
+
   def test_passing_version_should_cause_same_version_to_be_passed_and_used
     version = 3
     expect_sftp_session :client_version => version, :server_version => version
@@ -33,6 +46,24 @@ class SessionTest < Net::SFTP::TestCase
     assert_equal version, sftp.protocol.version
   end
 
+  def test_passing_version_should_cap_negotiation_when_server_reports_higher
+    expect_sftp_session :client_version => 3, :server_version => 6
+    assert_scripted { sftp({}, 3).connect! }
+    assert_equal 3, sftp.protocol.version
+  end
+
+
+  def test_second_version_packet_should_raise
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.gets_packet(FXP_VERSION, :long, 1)
+    end
+
+    Net::SSH::Test::Extensions::IO.with_test_extension do
+      error = assert_raises(Net::SFTP::Exception) { sftp.connect! }
+      assert_match(/unexpected FXP_VERSION/, error.message)
+    end
+    assert_equal 3, sftp.protocol.version
+  end
 
   def test_v1_open_read_only_that_succeeds_should_invoke_callback
     expect_open("/path/to/file", "r", nil, :server_version => 1)

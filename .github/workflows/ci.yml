@@ -6,7 +6,8 @@ permissions:
   contents: read
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # setup-ruby has no builds of Ruby 3.1 and older for ubuntu-latest (26.04).
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -21,3 +22,16 @@ jobs:
           bundler-cache: true
       - name: Run Tests
         run: bundle exec rake test
+  frozen-string-literal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '4.0'
+          bundler-cache: true
+      - name: Run Tests with frozen string literals
+        run: bundle exec rake test
+        env:
+          RUBYOPT: --enable-frozen-string-literal

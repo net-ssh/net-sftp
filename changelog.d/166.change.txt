@@ -1,1 +1,0 @@
-Attributes objects now copy the hash they are given, so a frozen hash no longer raises `FrozenError` and the caller's hash is no longer modified by the default `:type` or by cached owner/group/uid/gid lookups. Thanks @OskarEichler [#166]

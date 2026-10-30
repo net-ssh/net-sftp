@@ -1,1 +1,0 @@
-`File#puts` now behaves like `IO#puts`: with no arguments it writes a newline (it used to write nothing), `nil` and `false` are written instead of raising, objects with `to_ary` are expanded, and a recursive array no longer overflows the stack. Thanks @OskarEichler [#164]

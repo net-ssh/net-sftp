@@ -35,6 +35,9 @@ In a nutshell:
     # download a file or directory from the remote host
     sftp.download!("/path/to/remote", "/path/to/local")
 
+    # also copy access and modification times (permissions are always copied)
+    sftp.download!("/path/to/remote", "/path/to/local", :preserve => true)
+
     # grab data off the remote host directly to a buffer
     data = sftp.download!("/path/to/remote")
 

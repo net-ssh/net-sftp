@@ -60,6 +60,11 @@ class Protocol::V04::TestAttributes < Net::SFTP::TestCase
     assert_nil attributes.extended
   end
 
+  def test_from_buffer_should_reject_acl_count_larger_than_remaining_data
+    buffer = Net::SSH::Buffer.from(:long, 0x40, :byte, 1, :string, raw(:long, 500_000))
+    assert_raises(Net::SFTP::Exception) { attributes_factory.from_buffer(buffer) }
+  end
+
   def test_attributes_to_s_should_build_binary_representation
     attributes = attributes_factory.new(
       :type => 9,

@@ -68,6 +68,10 @@ module Net; module SFTP
     # the server has not yet responded to will be represented here.
     attr_reader :pending_requests
 
+    # The extensions the server advertised in its FXP_VERSION packet, as a
+    # hash of name => data (e.g. "posix-rename@openssh.com" => "1").
+    attr_reader :extensions
+
     # Creates a new Net::SFTP instance atop the given Net::SSH connection.
     # This will return immediately, before the SFTP connection has been properly
     # initialized. Once the connection is ready, the given block will be called.
@@ -81,6 +85,7 @@ module Net; module SFTP
       @input      = Net::SSH::Buffer.new
       self.logger = session.logger
       @state      = :closed
+      @extensions = {}
       @pending_requests = {}
 
       connect(&block)
@@ -924,19 +929,27 @@ module Net; module SFTP
       # version negotiation, instantiating the appropriate Protocol instance
       # and invoking the callback given to #connect, if any.
       def do_version(packet)
+        # Negotiation happens once. A later FXP_VERSION would swap the protocol
+        # driver and drop every pending request.
+        unless state == :init
+          raise Net::SFTP::Exception, "unexpected FXP_VERSION packet while session is #{state}"
+        end
+
         debug { "negotiating sftp protocol version, mine is #{HIGHEST_PROTOCOL_VERSION_SUPPORTED}" }
 
         server_version = packet.read_long
         debug { "server reports sftp version #{server_version}" }
 
-        negotiated_version = [server_version, HIGHEST_PROTOCOL_VERSION_SUPPORTED].min
+        # Servers reply with their own version whatever we offered (OpenSSH
+        # always says 3), so cap at the version we offered as well.
+        negotiated_version = [server_version, @version, HIGHEST_PROTOCOL_VERSION_SUPPORTED].compact.min
         info { "negotiated version is #{negotiated_version}" }
 
-        extensions = {}
+        @extensions = {}
         until packet.eof?
           name = packet.read_string
           data = packet.read_string
-          extensions[name] = data
+          @extensions[name] = data
         end
 
         @protocol = Protocol.load(self, negotiated_version)
