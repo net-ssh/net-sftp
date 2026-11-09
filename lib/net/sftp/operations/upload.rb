@@ -385,7 +385,7 @@ module Net; module SFTP; module Operations
 
         if !response.ok? && !file.error
           file.error = StatusException.new(response, "write #{file.remote}")
-          stop_reading(file)
+          stop_reading(file) if file.io
         end
 
         if file.io.nil? && file.pending.zero?
