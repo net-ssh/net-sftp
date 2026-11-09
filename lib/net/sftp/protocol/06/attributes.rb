@@ -1,4 +1,4 @@
-require 'net/sftp/protocol/04/attributes'
+require 'net/sftp/protocol/05/attributes'
 
 module Net; module SFTP; module Protocol; module V06
 
@@ -38,8 +38,7 @@ module Net; module SFTP; module Protocol; module V06
   # Likewise, when the server sends an Attributes object, all of the
   # above attributes are exposed as methods (though not all will be set with
   # non-nil values from the server).
-  class Attributes < V04::Attributes
-    F_BITS              = 0x00000200
+  class Attributes < V05::Attributes
     F_ALLOCATION_SIZE   = 0x00000400
     F_TEXT_HINT         = 0x00000800
     F_MIME_TYPE         = 0x00001000
