@@ -1,0 +1,1 @@
+A write that fails after the local file reached EOF now raises `Net::SFTP::StatusException` and closes the remote file, instead of raising `NoMethodError`. Reported by @yxhuvud [#214, #213]

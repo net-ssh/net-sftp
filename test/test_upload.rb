@@ -189,6 +189,28 @@ class UploadTest < Net::SFTP::TestCase
     assert_no_more_reported_events
   end
 
+  def test_upload_file_should_raise_a_write_failing_after_eof_and_close_the_file
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/remote", :long, 0x1A, :long, 0x04, :long, 0644)
+      channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
+      channel.sends_packet(FXP_WRITE, :long, 1, :string, "handle", :int64, 0, :string, "hello")
+      channel.gets_packet(FXP_STATUS, :long, 1, :long, 4, :string, "No space left on device", :string, "")
+      channel.sends_packet(FXP_CLOSE, :long, 2, :string, "handle")
+      channel.gets_packet(FXP_STATUS, :long, 2, :long, 0)
+    end
+    file = expect_file("/path/to/local", "hello")
+
+    assert_scripted do
+      sftp.connect!
+      sftp.upload("/path/to/local", "/path/to/remote")
+      e = assert_raises(Net::SFTP::StatusException) { sftp.loop }
+      assert_equal 4, e.code
+      assert_match(/write \/path\/to\/remote/, e.message)
+    end
+
+    assert file.closed?
+  end
+
   def test_upload_directory_should_mirror_directory_structure_remotely
     prepare_directory
 
