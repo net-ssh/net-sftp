@@ -1,3 +1,9 @@
+=== 4.2.0
+
+* BREAKING: Raise `Net::SFTP::SessionClosedError` when the server closes the SFTP channel: pending requests, `download!`/`upload!` and the event loop now fail instead of hanging, sending afterwards no longer raises `NoMethodError`, and `connect!`/`Net::SFTP.start` raise if the channel closes before the version handshake. Code that relied on the previous silent return now gets an exception. Reported by @kapso (#94) and @rngtng (#115) [#201, #94, #115]
+* A write that fails after the local file reached EOF now raises `Net::SFTP::StatusException` and closes the remote file, instead of raising `NoMethodError`. Reported by @yxhuvud [#214, #213]
+* Removed the `setup.rb` installer, which has not worked since Ruby 2.2 and was LGPL-licensed, and the stale `Manifest` from the gem. [#197]
+
 === 4.1.1
 
 * A read error during a single-file download is raised once, after the outstanding reads complete and the handle is closed, instead of once per in-flight read [#212]
