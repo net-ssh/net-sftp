@@ -47,8 +47,10 @@
 
 === 4.0.0
 
+* No breaking API changes in net-sftp itself; the major version marks allowing net-ssh 7, whose interface net-sftp exposes. net-ssh 5 and 6 are still supported (`>= 5.0.0, < 8.0.0`). Upgrading to net-ssh 7 drops Ruby 2.5, see net-ssh's 7.0.0 changes. [#142]
 * Allow net-ssh 7
-* Fix multibyte string write [#110]
+* Fix multibyte string write: `File#write` advances the position by bytes, not characters, and returns the byte count [#110]
+* The gem is signed with a new certificate; see README.rdoc for the current `net-sftp-public_cert.pem`
 
 === 3.0.0
 
