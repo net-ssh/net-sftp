@@ -1,0 +1,1 @@
+The default `:read_size` for uploads and downloads is now 32768 bytes (was 32000), aligned to filesystem blocks like OpenSSH's sftp client. Thanks @np422
