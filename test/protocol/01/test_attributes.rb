@@ -61,6 +61,15 @@ class Protocol::V01::TestAttributes < Net::SFTP::TestCase
     assert_equal "jamis", attributes.owner
   end
 
+  def test_owner_lookup_should_not_modify_the_given_hash
+    input = { :uid => 100 }
+    attributes = attributes_factory.new(input)
+    attributes.expects(:require).with("etc")
+    Etc.expects(:getpwuid).with(100).returns(mock('user', :name => "jamis"))
+    assert_equal "jamis", attributes.owner
+    assert_equal({ :uid => 100 }, input)
+  end
+
   def test_group_should_translate_from_gid
     attributes = attributes_factory.new(:gid => 200)
     attributes.expects(:require).with("etc")
@@ -78,6 +87,16 @@ class Protocol::V01::TestAttributes < Net::SFTP::TestCase
     assert_equal af::T_FIFO,         af.new(:permissions =>  010755).type
     assert_equal af::T_UNKNOWN,      af.new(:permissions =>    0755).type
     assert_equal af::T_UNKNOWN,      af.new.type
+  end
+
+  def test_from_buffer_should_reject_extended_count_larger_than_remaining_data
+    buffer = Net::SSH::Buffer.from(:long, 0x80000000, :long, 500_000)
+    assert_raises(Net::SFTP::Exception) { attributes_factory.from_buffer(buffer) }
+  end
+
+  def test_from_buffer_should_reject_missing_extended_count
+    buffer = Net::SSH::Buffer.from(:long, 0x80000000)
+    assert_raises(Net::SFTP::Exception) { attributes_factory.from_buffer(buffer) }
   end
 
   private

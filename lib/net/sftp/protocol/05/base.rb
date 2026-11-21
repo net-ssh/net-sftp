@@ -35,25 +35,28 @@ module Net; module SFTP; module Protocol; module V05
     def open(path, flags, options)
       flags = normalize_open_flags(flags)
 
-      sftp_flags, desired_access = if flags & (IO::WRONLY | IO::RDWR) != 0
-          open = if flags & (IO::CREAT | IO::EXCL) == (IO::CREAT | IO::EXCL)
+      sftp_flags = if flags & (IO::CREAT | IO::EXCL) == (IO::CREAT | IO::EXCL)
             FV5::CREATE_NEW
           elsif flags & (IO::CREAT | IO::TRUNC) == (IO::CREAT | IO::TRUNC)
             FV5::CREATE_TRUNCATE
           elsif flags & IO::CREAT == IO::CREAT
             FV5::OPEN_OR_CREATE
+          elsif flags & IO::TRUNC == IO::TRUNC
+            FV5::TRUNCATE_EXISTING
           else
             FV5::OPEN_EXISTING
           end
+
+      desired_access = if flags & (IO::WRONLY | IO::RDWR) != 0
           access = ACE::Mask::WRITE_DATA | ACE::Mask::WRITE_ATTRIBUTES
           access |= ACE::Mask::READ_DATA | ACE::Mask::READ_ATTRIBUTES if (flags & IO::RDWR) == IO::RDWR
           if flags & IO::APPEND == IO::APPEND
-            open |= FV5::APPEND_DATA
+            sftp_flags |= FV5::APPEND_DATA
             access |= ACE::Mask::APPEND_DATA
           end
-          [open, access]
+          access
         else
-          [FV5::OPEN_EXISTING, ACE::Mask::READ_DATA | ACE::Mask::READ_ATTRIBUTES]
+          ACE::Mask::READ_DATA | ACE::Mask::READ_ATTRIBUTES
         end
 
       attributes = attribute_factory.new(options)

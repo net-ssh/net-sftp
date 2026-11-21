@@ -38,7 +38,46 @@ class DirOperationsTest < Net::SFTP::TestCase
     assert_equal %w(e3/e3e2 e5/e5e2), @dir.glob("/path/to/remote", "**/e?e2").map { |e| e.name }
   end
 
+  def test_glob_without_slash_should_not_list_subdirectories
+    expect_listing("/r", [n("a.txt"), n("sub", true), n("b.rb")])
+
+    assert_equal %w(a.txt), @dir.glob("/r", "*.txt").map { |e| e.name }
+  end
+
+  def test_glob_without_slash_should_not_fail_on_unreadable_subdirectory
+    expect_listing("/r", [n("a.txt"), n("locked", true)])
+    response = stub("response", code: 3, message: "permission denied")
+    @sftp.stubs(:opendir!).with("/r/locked").raises(Net::SFTP::StatusException.new(response))
+
+    assert_equal %w(a.txt locked), @dir.glob("/r", "*").map { |e| e.name }
+  end
+
+  def test_glob_with_slash_should_descend_into_subdirectories
+    expect_listing("/r", [n("a.txt"), n("sub", true)])
+    expect_listing("/r/sub", [n("b.txt"), n("c.rb")])
+
+    assert_equal %w(sub/b.txt), @dir.glob("/r", "sub/*.txt").map { |e| e.name }
+  end
+
+  def test_glob_should_yield_matches_in_breadth_first_order
+    expect_listing("/r", [n("a", true), n("b.txt"), n("c", true)])
+    expect_listing("/r/a", [n("a1.txt"), n("aa", true)])
+    expect_listing("/r/c", [n("c1.txt")])
+    expect_listing("/r/a/aa", [n("deep.txt")])
+
+    names = []
+    @dir.glob("/r", "**/*.txt") { |e| names << e.name }
+    assert_equal %w(b.txt a/a1.txt c/c1.txt a/aa/deep.txt), names
+  end
+
   private
+
+    def expect_listing(path, names)
+      handle = "handle:#{path}"
+      @sftp.expects(:opendir!).with(path).returns(handle)
+      @sftp.expects(:readdir!).with(handle).returns([n(".", true), n("..", true)] + names, nil).times(2)
+      @sftp.expects(:close!).with(handle)
+    end
 
     def n(name, directory=false)
       Net::SFTP::Protocol::V01::Name.new(name.to_s, "longname for #{name}",

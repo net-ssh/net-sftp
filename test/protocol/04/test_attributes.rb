@@ -60,6 +60,11 @@ class Protocol::V04::TestAttributes < Net::SFTP::TestCase
     assert_nil attributes.extended
   end
 
+  def test_from_buffer_should_reject_acl_count_larger_than_remaining_data
+    buffer = Net::SSH::Buffer.from(:long, 0x40, :byte, 1, :string, raw(:long, 500_000))
+    assert_raises(Net::SFTP::Exception) { attributes_factory.from_buffer(buffer) }
+  end
+
   def test_attributes_to_s_should_build_binary_representation
     attributes = attributes_factory.new(
       :type => 9,
@@ -106,6 +111,25 @@ class Protocol::V04::TestAttributes < Net::SFTP::TestCase
   def test_attributes_without_subsecond_times_should_serialize_without_subsecond_times
     attributes = attributes_factory.new(:atime => 100)
     assert_equal Net::SSH::Buffer.from(:long, 0x8, :byte, 1, :int64, 100).to_s, attributes.to_s
+  end
+
+  def test_new_should_accept_a_frozen_hash
+    attributes = attributes_factory.new({ :size => 5 }.freeze)
+    assert_equal attributes_factory::T_REGULAR, attributes.type
+    assert_equal Net::SSH::Buffer.from(:long, 0x1, :byte, 1, :int64, 5).to_s, attributes.to_s
+  end
+
+  def test_new_should_not_add_the_default_type_to_the_given_hash
+    input = { :size => 5 }
+    attributes_factory.new(input)
+    assert_equal({ :size => 5 }, input)
+  end
+
+  def test_attributes_with_mixed_subsecond_times_should_zero_fill_missing_nseconds
+    attributes = attributes_factory.new(:atime => 100, :atime_nseconds => 123, :mtime => 200)
+    assert_equal Net::SSH::Buffer.from(:long, 0x128, :byte, 1,
+      :int64, 100, :long, 123,
+      :int64, 200, :long, 0).to_s, attributes.to_s
   end
 
   def test_directory_should_be_true_only_when_type_is_directory

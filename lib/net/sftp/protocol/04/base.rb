@@ -28,7 +28,8 @@ module Net; module SFTP; module Protocol; module V04
     def parse_name_packet(packet)
       names = []
 
-      packet.read_long.times do
+      # Each entry is a string, the attribute flags and the type, at least 9 bytes.
+      read_bounded_count!(packet, 9, "name").times do
         filename = packet.read_string
         attrs    = attribute_factory.from_buffer(packet)
         names   << name_factory.new(filename, attrs)

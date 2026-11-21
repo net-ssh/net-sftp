@@ -1,4 +1,5 @@
 require 'net/ssh/buffer'
+require 'net/sftp/protocol/bounded_read'
 
 module Net; module SFTP; module Protocol; module V01
 
@@ -38,6 +39,8 @@ module Net; module SFTP; module Protocol; module V01
     T_CHAR_DEVICE  = 7
     T_BLOCK_DEVICE = 8
     T_FIFO         = 9
+
+    extend Net::SFTP::Protocol::BoundedRead
 
     class <<self
       # Returns the array of attribute meta-data that defines the structure of
@@ -106,7 +109,8 @@ module Net; module SFTP; module Protocol; module V01
         # Parse the hash of extended data from the buffer.
         def parse_extended(buffer)
           extended = Hash.new
-          buffer.read_long.times do
+          # Each pair is two strings, at least 8 bytes.
+          read_bounded_count!(buffer, 8, "extended attribute").times do
             extended[buffer.read_string] = buffer.read_string
           end
           extended
@@ -150,7 +154,7 @@ module Net; module SFTP; module Protocol; module V01
     # * :mtime:: the modification time of the file (integer, seconds since epoch)
     # * :extended:: a hash of name/value pairs identifying extended info
     def initialize(attributes={})
-      @attributes = attributes
+      @attributes = attributes.dup
     end
 
     # Returns the user-id of the user that owns the file, or +nil+ if that

@@ -28,6 +28,12 @@ class Protocol::V01::TestBase < Net::SFTP::TestCase
     assert_equal({ :code => 15 }, @base.parse_status_packet(packet))
   end
 
+  def test_parse_status_packet_should_not_read_beyond_code
+    packet = Net::SSH::Buffer.from(:long, 4, :string, "Disk full", :string, "en")
+    assert_equal({ :code => 4 }, @base.parse_status_packet(packet))
+    assert_equal 4, packet.position
+  end
+
   def test_parse_data_packet_should_read_string_from_packet_and_return_data_in_hash
     packet = Net::SSH::Buffer.from(:string, "here is a string")
     assert_equal({ :data => "here is a string" }, @base.parse_data_packet(packet))
@@ -196,6 +202,11 @@ class Protocol::V01::TestBase < Net::SFTP::TestCase
 
   def test_unblock_should_raise_not_implemented_error
     assert_raises(NotImplementedError) { @base.unblock("handle", 100, 200) }
+  end
+
+  def test_parse_name_packet_should_reject_count_larger_than_remaining_data
+    packet = Net::SSH::Buffer.from(:long, 500_000, :string, "name1", :string, "long1", :long, 0)
+    assert_raises(Net::SFTP::Exception) { @base.parse_name_packet(packet) }
   end
 
   private
