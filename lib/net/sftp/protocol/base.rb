@@ -1,5 +1,6 @@
 require 'net/ssh/loggable'
 require 'net/sftp/constants'
+require 'net/sftp/protocol/bounded_read'
 
 module Net; module SFTP; module Protocol
 
@@ -10,6 +11,7 @@ module Net; module SFTP; module Protocol
     include Net::SSH::Loggable
     include Net::SFTP::Constants
     include Net::SFTP::Constants::PacketTypes
+    include Net::SFTP::Protocol::BoundedRead
 
     # The SFTP session object that acts as client to this protocol instance
     attr_reader :session
@@ -19,6 +21,7 @@ module Net; module SFTP; module Protocol
       @session = session
       self.logger = session.logger
       @request_id_counter = -1
+      @request_ids_wrapped = false
     end
 
     # Attept to parse the given packet. If the packet is of an unsupported
@@ -41,7 +44,12 @@ module Net; module SFTP; module Protocol
       # A new request identifier will be allocated to this request, and will
       # be returned.
       def send_request(type, *args)
-        @request_id_counter += 1
+        begin
+          previous_request_id = @request_id_counter
+          @request_id_counter = (@request_id_counter + 1) & 0xffffffff
+          @request_ids_wrapped = true if previous_request_id == 0xffffffff
+        end while @request_ids_wrapped && session.pending_requests.key?(@request_id_counter)
+
         session.send_packet(type, :long, @request_id_counter, *args)
         return @request_id_counter
       end

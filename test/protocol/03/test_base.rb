@@ -8,6 +8,17 @@ class Protocol::V03::TestBase < Protocol::V02::TestBase
 
   undef test_readlink_should_raise_not_implemented_error
   undef test_symlink_should_raise_not_implemented_error
+  undef test_parse_status_packet_should_not_read_beyond_code
+
+  def test_parse_status_packet_should_read_code_message_and_language
+    packet = Net::SSH::Buffer.from(:long, 4, :string, "Disk full", :string, "en")
+    assert_equal({ :code => 4, :message => "Disk full", :language => "en" }, @base.parse_status_packet(packet))
+  end
+
+  def test_parse_status_packet_should_accept_packet_without_language
+    packet = Net::SSH::Buffer.from(:long, 4, :string, "Disk full")
+    assert_equal({ :code => 4, :message => "Disk full", :language => nil }, @base.parse_status_packet(packet))
+  end
 
   def test_readlink_should_send_readlink_packet
     @session.expects(:send_packet).with(FXP_READLINK, :long, 0, :string, "/path/to/link")

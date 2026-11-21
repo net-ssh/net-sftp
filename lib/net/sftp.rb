@@ -34,18 +34,24 @@ module Net
     #   set the SFTP protocol version to be used)
     def self.start(host, user, ssh_options={}, sftp_options={}, &block)
       session = Net::SSH.start(host, user, ssh_options)
-      # We only use a single option here, but this leaves room for more later
-      # without breaking the external API.
-      version = sftp_options.fetch(:version, nil)
-      sftp = Net::SFTP::Session.new(session, version, &block).connect!
+      begin
+        # We only use a single option here, but this leaves room for more later
+        # without breaking the external API.
+        version = sftp_options.fetch(:version, nil)
+        sftp = Net::SFTP::Session.new(session, version, &block).connect!
 
-      if block_given?
-        sftp.loop
-        session.close
-        return nil
+        if block_given?
+          sftp.loop
+          return nil
+        end
+
+        sftp
+      rescue Object
+        failed = true
+        raise
+      ensure
+        session.close if block_given? && !failed
       end
-
-      sftp
     rescue Object => anything
       begin
         session.shutdown!

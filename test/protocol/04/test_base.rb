@@ -28,6 +28,13 @@ class Protocol::V04::TestBase < Protocol::V03::TestBase
     assert_equal 0550, names.last.attributes.permissions
   end
 
+  def test_parse_name_packet_with_only_type_attribute_should_format_longname
+    packet = Net::SSH::Buffer.from(:long, 1, :string, "name1", :long, 0, :byte, 1)
+    names = @base.parse_name_packet(packet)[:names]
+
+    assert_equal "-????????? ?        ?               ?            ? name1", names.first.longname
+  end
+
   undef test_fstat_should_ignore_flags_parameter
   undef test_lstat_should_ignore_flags_parameter
   undef test_stat_should_ignore_flags_parameter
@@ -60,6 +67,11 @@ class Protocol::V04::TestBase < Protocol::V03::TestBase
   def test_stat_with_custom_flags_should_send_stat_packet_with_given_flags
     @session.expects(:send_packet).with(FXP_STAT, :long, 0, :string, "/path/to/file", :long, 1234)
     assert_equal 0, @base.stat("/path/to/file", 1234)
+  end
+
+  def test_parse_name_packet_should_reject_count_larger_than_remaining_data
+    packet = Net::SSH::Buffer.from(:long, 500_000, :string, "name1", :long, 0, :byte, 1)
+    assert_raises(Net::SFTP::Exception) { @base.parse_name_packet(packet) }
   end
 
   private

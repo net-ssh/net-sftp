@@ -13,6 +13,115 @@ class SessionTest < Net::SFTP::TestCase
     end
   end
 
+  def test_reconnect_should_discard_partial_input_from_the_closed_channel
+    ssh = mock("ssh")
+    ssh.stubs(:logger).returns(nil)
+    ssh.expects(:open_channel).twice.returns(mock("channel"))
+    session = Net::SFTP::Session.new(ssh)
+    session.send(:input).append("partial packet")
+    assert_raises(Net::SFTP::SessionClosedError) { session.send(:when_channel_closed, nil) }
+
+    session.connect
+
+    assert_equal 0, session.send(:input).length
+  end
+
+  def test_extensions_should_be_empty_when_server_advertises_none
+    expect_sftp_session :server_version => 3
+    assert_scripted { sftp.connect! }
+    assert_equal({}, sftp.extensions)
+  end
+
+  def test_extensions_should_expose_those_advertised_by_server
+    extensions = { "posix-rename@openssh.com" => "1", "statvfs@openssh.com" => "2" }
+    expect_sftp_session :server_version => 3, :extensions => extensions
+    assert_scripted { sftp.connect! }
+    assert_equal extensions, sftp.extensions
+  end
+
+  def test_channel_closed_by_server_should_fail_pending_sync_request
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/file", :long, 0x01, :long, 0)
+      channel.gets_close
+      channel.sends_close
+    end
+
+    assert_scripted do
+      sftp.connect!
+      Timeout.timeout(5) do
+        assert_raises(Net::SFTP::SessionClosedError) { sftp.open!("/path/to/file") }
+      end
+      flush_channel_close
+    end
+    assert sftp.closed?
+  end
+
+  def test_channel_closed_by_server_should_fail_pending_async_request
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/file", :long, 0x01, :long, 0)
+      channel.gets_close
+      channel.sends_close
+    end
+
+    called = false
+    request = nil
+    assert_scripted do
+      sftp.connect!
+      request = sftp.open("/path/to/file") { called = true }
+      Timeout.timeout(5) do
+        assert_raises(Net::SFTP::SessionClosedError) { sftp.loop }
+      end
+      flush_channel_close
+      refute request.pending?
+      assert_raises(Net::SFTP::SessionClosedError) { request.wait }
+    end
+    refute called
+  end
+
+  def test_send_after_channel_closed_by_server_should_raise_session_closed
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.gets_close
+      channel.sends_close
+    end
+
+    assert_scripted do
+      sftp.connect!
+      sftp.loop { !sftp.closed? }
+    end
+    e = assert_raises(Net::SFTP::SessionClosedError) { sftp.open!("/path/to/file") }
+    assert_equal "SFTP session closed", e.message
+  end
+
+  def test_channel_closed_before_version_should_fail_connect
+    story do |session|
+      channel = session.opens_channel
+      channel.sends_subsystem("sftp")
+      channel.sends_packet(FXP_INIT, :long, Net::SFTP::Session::HIGHEST_PROTOCOL_VERSION_SUPPORTED)
+      channel.gets_close
+      channel.sends_close
+    end
+
+    assert_scripted do
+      Timeout.timeout(5) do
+        assert_raises(Net::SFTP::SessionClosedError) { sftp.connect! }
+      end
+      flush_channel_close
+    end
+  end
+
+  def test_close_channel_with_nothing_pending_should_not_raise
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_close
+      channel.gets_close
+    end
+
+    assert_scripted do
+      sftp.connect!
+      sftp.close_channel
+    end
+    assert sftp.closed?
+  end
+
   def test_passing_version_should_cause_same_version_to_be_passed_and_used
     version = 3
     expect_sftp_session :client_version => version, :server_version => version
@@ -20,6 +129,24 @@ class SessionTest < Net::SFTP::TestCase
     assert_equal version, sftp.protocol.version
   end
 
+  def test_passing_version_should_cap_negotiation_when_server_reports_higher
+    expect_sftp_session :client_version => 3, :server_version => 6
+    assert_scripted { sftp({}, 3).connect! }
+    assert_equal 3, sftp.protocol.version
+  end
+
+
+  def test_second_version_packet_should_raise
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.gets_packet(FXP_VERSION, :long, 1)
+    end
+
+    Net::SSH::Test::Extensions::IO.with_test_extension do
+      error = assert_raises(Net::SFTP::Exception) { sftp.connect! }
+      assert_match(/unexpected FXP_VERSION/, error.message)
+    end
+    assert_equal 3, sftp.protocol.version
+  end
 
   def test_v1_open_read_only_that_succeeds_should_invoke_callback
     expect_open("/path/to/file", "r", nil, :server_version => 1)
@@ -389,6 +516,34 @@ class SessionTest < Net::SFTP::TestCase
 
     response = assert_synchronous_command(:remove!, "/path/to/file")
     assert response.ok?
+  end
+
+  def test_remove_bang_should_raise_exception_with_server_message
+    expect_sftp_session :server_version => 3 do |channel|
+      channel.sends_packet(FXP_REMOVE, :long, 0, :string, "/path/to/file")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 3, :string, "Permission denied by policy", :string, "en")
+    end
+
+    error = assert_raises(Net::SFTP::StatusException) do
+      assert_synchronous_command(:remove!, "/path/to/file")
+    end
+    assert_equal 3, error.code
+    assert_equal "Permission denied by policy", error.description
+    assert_includes error.message, "Permission denied by policy"
+    assert_equal "Permission denied by policy (permission denied, 3)", error.response.to_s
+  end
+
+  def test_v1_remove_bang_should_raise_exception_with_code_description
+    expect_sftp_session :server_version => 1 do |channel|
+      channel.sends_packet(FXP_REMOVE, :long, 0, :string, "/path/to/file")
+      channel.gets_packet(FXP_STATUS, :long, 0, :long, 3)
+    end
+
+    error = assert_raises(Net::SFTP::StatusException) do
+      assert_synchronous_command(:remove!, "/path/to/file")
+    end
+    assert_equal "permission denied", error.description
+    assert_includes error.message, '(3, "permission denied")'
   end
 
   def test_mkdir_should_send_mkdir_packet

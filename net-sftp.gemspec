@@ -16,31 +16,30 @@ Gem::Specification.new do |spec|
   spec.homepage      = "https://github.com/net-ssh/net-sftp"
   spec.license       = "MIT"
   spec.required_rubygems_version = Gem::Requirement.new(">= 0") if spec.respond_to? :required_rubygems_version=
+  spec.required_ruby_version = ">= 2.6"
 
   spec.extra_rdoc_files = [
     "LICENSE.txt",
     "README.rdoc"
   ]
 
-  spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
-  spec.bindir        = "exe"
-  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
+  spec.files         = `git ls-files -z lib CHANGES.txt LICENSE.txt README.rdoc`.split("\x0")
   spec.require_paths = ["lib"]
 
   if spec.respond_to? :specification_version then
     spec.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      spec.add_runtime_dependency(%q<net-ssh>, [">= 5.0.0", "< 8.0.0"])
+      spec.add_runtime_dependency(%q<net-ssh>, [">= 5.0.0", "< 9.0.0"])
       spec.add_development_dependency(%q<minitest>, [">= 5"])
       spec.add_development_dependency(%q<mocha>, [">= 0"])
     else
-      spec.add_dependency(%q<net-ssh>, [">= 5.0.0", "< 8.0.0"])
+      spec.add_dependency(%q<net-ssh>, [">= 5.0.0", "< 9.0.0"])
       spec.add_dependency(%q<minitest>, [">= 5"])
       spec.add_dependency(%q<mocha>, [">= 0"])
     end
   else
-    spec.add_dependency(%q<net-ssh>, [">= 5.0.0", "< 8.0.0"])
+    spec.add_dependency(%q<net-ssh>, [">= 5.0.0", "< 9.0.0"])
     spec.add_dependency(%q<minitest>, [">= 5"])
     spec.add_dependency(%q<test-unit>, [">= 0"])
     spec.add_dependency(%q<mocha>, [">= 0"])

@@ -68,6 +68,10 @@ module Net; module SFTP
     # the server has not yet responded to will be represented here.
     attr_reader :pending_requests
 
+    # The extensions the server advertised in its FXP_VERSION packet, as a
+    # hash of name => data (e.g. "posix-rename@openssh.com" => "1").
+    attr_reader :extensions
+
     # Creates a new Net::SFTP instance atop the given Net::SSH connection.
     # This will return immediately, before the SFTP connection has been properly
     # initialized. Once the connection is ready, the given block will be called.
@@ -81,6 +85,7 @@ module Net; module SFTP
       @input      = Net::SSH::Buffer.new
       self.logger = session.logger
       @state      = :closed
+      @extensions = {}
       @pending_requests = {}
 
       connect(&block)
@@ -268,6 +273,10 @@ module Net; module SFTP
       # have been opened for writing via #open. Returns immediately with a
       # Request object. If a block is given, it will be invoked when the
       # server responds.
+      #
+      # +data+ is sent as a single request, so it must stay within the
+      # server's packet limit (OpenSSH drops the connection on packets over
+      # 256 KiB). Net::SFTP::Operations::File#write splits large data for you.
       #
       #   request = sftp.write(handle, 0, "hello, world!\n")
       #   request.wait
@@ -772,6 +781,7 @@ module Net; module SFTP
         when :closed
           @state = :opening
           @channel = session.open_channel(&method(:when_channel_confirmed))
+          @input = Net::SSH::Buffer.new
           @packet_length = nil
           @protocol = nil
           @on_ready = Array(block)
@@ -813,6 +823,7 @@ module Net; module SFTP
       def send_packet(type, *args)
         data = Net::SSH::Buffer.from(*args)
         msg = Net::SSH::Buffer.from(:long, data.length+1, :byte, type, :raw, data)
+        raise SessionClosedError unless channel
         channel.send_data(msg.to_s)
       end
 
@@ -859,6 +870,7 @@ module Net; module SFTP
       def when_channel_confirmed(channel)
         debug { "requesting sftp subsystem" }
         @state = :subsystem
+        channel.on_close(&method(:when_channel_closed))
         channel.subsystem("sftp", &method(:when_subsystem_started))
       end
 
@@ -875,17 +887,29 @@ module Net; module SFTP
         channel.on_data { |c,data| input.append(data) }
         channel.on_extended_data { |c,t,data| debug { data } }
 
-        channel.on_close(&method(:when_channel_closed))
         channel.on_process(&method(:when_channel_polled))
 
         send_packet(FXP_INIT, :long, @version || HIGHEST_PROTOCOL_VERSION_SUPPORTED)
       end
 
-      # Called when the SSH server closes the underlying channel.
+      # Called when the SSH server closes the underlying channel. Raises
+      # SessionClosedError out of the event loop if requests were still pending
+      # or the session had not finished opening; the pending requests are
+      # failed with the same error.
       def when_channel_closed(channel)
         debug { "sftp channel closed" }
+        was_opening = opening?
         @channel = nil
-        @state = :closed
+        begin
+          # Data that arrived in the same read as the close has not been polled yet.
+          when_channel_polled(channel)
+        ensure
+          @state = :closed
+          failed, @pending_requests = @pending_requests, {}
+          error = SessionClosedError.new
+          failed.each_value { |request| request.fail!(error) }
+        end
+        raise error if was_opening || failed.any?
       end
 
       # Called whenever Net::SSH polls the SFTP channel for pending activity.
@@ -919,19 +943,27 @@ module Net; module SFTP
       # version negotiation, instantiating the appropriate Protocol instance
       # and invoking the callback given to #connect, if any.
       def do_version(packet)
+        # Negotiation happens once. A later FXP_VERSION would swap the protocol
+        # driver and drop every pending request.
+        unless state == :init
+          raise Net::SFTP::Exception, "unexpected FXP_VERSION packet while session is #{state}"
+        end
+
         debug { "negotiating sftp protocol version, mine is #{HIGHEST_PROTOCOL_VERSION_SUPPORTED}" }
 
         server_version = packet.read_long
         debug { "server reports sftp version #{server_version}" }
 
-        negotiated_version = [server_version, HIGHEST_PROTOCOL_VERSION_SUPPORTED].min
+        # Servers reply with their own version whatever we offered (OpenSSH
+        # always says 3), so cap at the version we offered as well.
+        negotiated_version = [server_version, @version, HIGHEST_PROTOCOL_VERSION_SUPPORTED].compact.min
         info { "negotiated version is #{negotiated_version}" }
 
-        extensions = {}
+        @extensions = {}
         until packet.eof?
           name = packet.read_string
           data = packet.read_string
-          extensions[name] = data
+          @extensions[name] = data
         end
 
         @protocol = Protocol.load(self, negotiated_version)

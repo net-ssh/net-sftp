@@ -2,7 +2,8 @@ require 'common'
 
 class Protocol::TestBase < Net::SFTP::TestCase
   def setup
-    @base = Net::SFTP::Protocol::Base.new(stub('session', :logger => nil))
+    @session = stub('session', :logger => nil, :pending_requests => {})
+    @base = Net::SFTP::Protocol::Base.new(@session)
   end
 
   def test_parse_with_status_packet_should_delegate_to_parse_status_packet
@@ -38,5 +39,22 @@ class Protocol::TestBase < Net::SFTP::TestCase
   def test_parse_with_unknown_packet_should_raise_exception
     packet = stub('packet', :type => FXP_WRITE)
     assert_raises(NotImplementedError) { @base.parse(packet) }
+  end
+
+  def test_send_request_should_wrap_request_ids_at_uint32_boundary
+    @base.instance_variable_set(:@request_id_counter, 0xfffffffe)
+    @session.expects(:send_packet).with(FXP_READ, :long, 0xffffffff)
+    @session.expects(:send_packet).with(FXP_READ, :long, 0)
+
+    assert_equal 0xffffffff, @base.send(:send_request, FXP_READ)
+    assert_equal 0, @base.send(:send_request, FXP_READ)
+  end
+
+  def test_send_request_should_skip_an_id_that_is_still_pending
+    @base.instance_variable_set(:@request_id_counter, 0xffffffff)
+    @session.stubs(:pending_requests).returns(0 => true)
+    @session.expects(:send_packet).with(FXP_READ, :long, 1)
+
+    assert_equal 1, @base.send(:send_request, FXP_READ)
   end
 end
