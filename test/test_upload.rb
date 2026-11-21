@@ -68,13 +68,15 @@ class UploadTest < Net::SFTP::TestCase
 
   def test_upload_file_should_read_chunks_of_size(requested_size=nil)
     size = requested_size || Net::SFTP::Operations::Upload::DEFAULT_READ_SIZE
+    # A short last chunk keeps the upload within the 128 KiB window Net::SSH::Test channels open with.
+    tail = "d" * (size / 2)
     expect_sftp_session :server_version => 3 do |channel|
       channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/remote", :long, 0x1A, :long, 0x04, :long, 0644)
       channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
       channel.sends_packet(FXP_WRITE, :long, 1, :string, "handle", :int64, 0, :string, "a" * size)
       channel.sends_packet(FXP_WRITE, :long, 2, :string, "handle", :int64, size, :string, "b" * size)
       channel.sends_packet(FXP_WRITE, :long, 3, :string, "handle", :int64, size*2, :string, "c" * size)
-      channel.sends_packet(FXP_WRITE, :long, 4, :string, "handle", :int64, size*3, :string, "d" * size)
+      channel.sends_packet(FXP_WRITE, :long, 4, :string, "handle", :int64, size*3, :string, tail)
       channel.gets_packet(FXP_STATUS, :long, 1, :long, 0)
       channel.gets_packet(FXP_STATUS, :long, 2, :long, 0)
       channel.gets_packet(FXP_STATUS, :long, 3, :long, 0)
@@ -83,7 +85,7 @@ class UploadTest < Net::SFTP::TestCase
       channel.gets_packet(FXP_STATUS, :long, 5, :long, 0)
     end
 
-    expect_file("/path/to/local", "a" * size + "b" * size + "c" * size + "d" * size)
+    expect_file("/path/to/local", "a" * size + "b" * size + "c" * size + tail)
 
     assert_scripted_command do
       opts = {}
@@ -98,6 +100,8 @@ class UploadTest < Net::SFTP::TestCase
 
   def test_upload_file_with_custom_requests_should_start_that_many_writes
     size = Net::SFTP::Operations::Upload::DEFAULT_READ_SIZE
+    # A short last chunk keeps the upload within the 128 KiB window Net::SSH::Test channels open with.
+    tail = "d" * (size / 2)
     expect_sftp_session :server_version => 3 do |channel|
       channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/remote", :long, 0x1A, :long, 0x04, :long, 0644)
       channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
@@ -105,7 +109,7 @@ class UploadTest < Net::SFTP::TestCase
       channel.sends_packet(FXP_WRITE, :long, 2, :string, "handle", :int64, size, :string, "b" * size)
       channel.sends_packet(FXP_WRITE, :long, 3, :string, "handle", :int64, size*2, :string, "c" * size)
       channel.gets_packet(FXP_STATUS, :long, 1, :long, 0)
-      channel.sends_packet(FXP_WRITE, :long, 4, :string, "handle", :int64, size*3, :string, "d" * size)
+      channel.sends_packet(FXP_WRITE, :long, 4, :string, "handle", :int64, size*3, :string, tail)
       channel.gets_packet(FXP_STATUS, :long, 2, :long, 0)
       channel.gets_packet(FXP_STATUS, :long, 3, :long, 0)
       channel.gets_packet(FXP_STATUS, :long, 4, :long, 0)
@@ -113,7 +117,7 @@ class UploadTest < Net::SFTP::TestCase
       channel.gets_packet(FXP_STATUS, :long, 5, :long, 0)
     end
 
-    expect_file("/path/to/local", "a" * size + "b" * size + "c" * size + "d" * size)
+    expect_file("/path/to/local", "a" * size + "b" * size + "c" * size + tail)
 
     assert_scripted_command do
       sftp.upload("/path/to/local", "/path/to/remote", :requests => 3)

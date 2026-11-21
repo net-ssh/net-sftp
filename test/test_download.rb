@@ -68,10 +68,10 @@ class DownloadTest < Net::SFTP::TestCase
       channel.sends_packet(FXP_OPEN, :long, 0, :string, "/path/to/remote", :long, 0x01, :long, 0)
       channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
       expect_fstat(channel, 1, "handle")
-      channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, 0, :long, 32_000)
+      channel.sends_packet(FXP_READ, :long, 2, :string, "handle", :int64, 0, :long, 32_768)
       channel.gets_packet(FXP_DATA, :long, 2, :string, "partial")
-      channel.sends_packet(FXP_READ, :long, 3, :string, "handle", :int64, 7, :long, 31_993)
-      channel.sends_packet(FXP_READ, :long, 4, :string, "handle", :int64, 32_000, :long, 32_000)
+      channel.sends_packet(FXP_READ, :long, 3, :string, "handle", :int64, 7, :long, 32_768 - 7)
+      channel.sends_packet(FXP_READ, :long, 4, :string, "handle", :int64, 32_768, :long, 32_768)
       channel.gets_close
       channel.sends_close
     end
@@ -340,11 +340,11 @@ class DownloadTest < Net::SFTP::TestCase
         channel.sends_packet(FXP_READDIR, :long, 8, :string, "dir2")
         channel.gets_packet(FXP_STATUS, :long, 6, :long, 0)
         channel.gets_packet(FXP_HANDLE, :long, 7, :string, "file")
-        channel.sends_packet(FXP_READ, :long, 9, :string, "file", :int64, 0, :long, 32_000)
+        channel.sends_packet(FXP_READ, :long, 9, :string, "file", :int64, 0, :long, 32_768)
         channel.gets_packet(FXP_STATUS, :long, 8, :long, 1)
         channel.sends_packet(FXP_CLOSE, :long, 10, :string, "dir2")
         channel.gets_packet(FXP_DATA, :long, 9, :string, "text")
-        channel.sends_packet(FXP_READ, :long, 11, :string, "file", :int64, 4, :long, 32_000 - 4)
+        channel.sends_packet(FXP_READ, :long, 11, :string, "file", :int64, 4, :long, 32_768 - 4)
         channel.gets_packet(FXP_STATUS, :long, 10, :long, 0)
         channel.gets_packet(FXP_STATUS, :long, 11, :long, 1)
         channel.sends_packet(FXP_CLOSE, :long, 12, :string, "file")
@@ -620,11 +620,11 @@ class DownloadTest < Net::SFTP::TestCase
         channel.sends_packet(FXP_OPEN, :long, 2, :string, "/path/to/remote/file1", :long, 0x01, :long, 0)
         channel.sends_packet(FXP_READDIR, :long, 3, :string, "dir1")
         channel.gets_packet(FXP_HANDLE, :long, 2, :string, "file1")
-        channel.sends_packet(FXP_READ, :long, 4, :string, "file1", :int64, 0, :long, 32_000)
+        channel.sends_packet(FXP_READ, :long, 4, :string, "file1", :int64, 0, :long, 32_768)
         channel.gets_packet(FXP_STATUS, :long, 3, :long, 1)
         channel.sends_packet(FXP_CLOSE, :long, 5, :string, "dir1")
         channel.gets_packet(FXP_DATA, :long, 4, :string, text)
-        channel.sends_packet(FXP_READ, :long, 6, :string, "file1", :int64, text.bytesize, :long, 32_000 - text.bytesize)
+        channel.sends_packet(FXP_READ, :long, 6, :string, "file1", :int64, text.bytesize, :long, 32_768 - text.bytesize)
         channel.gets_packet(FXP_STATUS, :long, 5, :long, 0)
         channel.gets_packet(FXP_STATUS, :long, 6, :long, 1)
         channel.sends_packet(FXP_CLOSE, :long, 7, :string, "file1")
@@ -731,10 +731,10 @@ class DownloadTest < Net::SFTP::TestCase
         channel.gets_packet(FXP_HANDLE, :long, 0, :string, "handle")
         expect_fstat(channel, 1, "handle", *opts[:fstat]) if opts[:fstat]
         id = opts[:fstat] ? 2 : 1
-        channel.sends_packet(FXP_READ, :long, id, :string, "handle", :int64, 0, :long, 32_000)
+        channel.sends_packet(FXP_READ, :long, id, :string, "handle", :int64, 0, :long, 32_768)
         channel.gets_packet_in_two(opts[:fragment_len], FXP_DATA, :long, id, :string, text)
-        channel.sends_packet(FXP_READ, :long, id + 1, :string, "handle", :int64, text.bytesize, :long, 32_000 - text.bytesize)
-        channel.sends_packet(FXP_READ, :long, id + 2, :string, "handle", :int64, 32_000, :long, 32_000)
+        channel.sends_packet(FXP_READ, :long, id + 1, :string, "handle", :int64, text.bytesize, :long, 32_768 - text.bytesize)
+        channel.sends_packet(FXP_READ, :long, id + 2, :string, "handle", :int64, 32_768, :long, 32_768)
         channel.gets_packet(FXP_STATUS, :long, id + 1, :long, 1)
         channel.gets_packet(FXP_STATUS, :long, id + 2, :long, 1)
         channel.sends_packet(FXP_CLOSE, :long, id + 3, :string, "handle")
@@ -831,7 +831,7 @@ class DownloadTest < Net::SFTP::TestCase
         channel.sends_packet(FXP_READDIR, :long, 6, :string, "dir2")
 
         channel.gets_packet(FXP_HANDLE, :long, 4, :string, "file1")
-        channel.sends_packet(FXP_READ, :long, 7, :string, "file1", :int64, 0, :long, 32_000)
+        channel.sends_packet(FXP_READ, :long, 7, :string, "file1", :int64, 0, :long, 32_768)
 
         channel.gets_packet(FXP_STATUS, :long, 5, :long, 1)
         channel.sends_packet(FXP_CLOSE, :long, 8, :string, "dir1")
@@ -845,11 +845,11 @@ class DownloadTest < Net::SFTP::TestCase
         channel.sends_packet(FXP_READDIR, :long, 10, :string, "dir2")
 
         channel.gets_packet(FXP_DATA, :long, 7, :string, file1_contents)
-        channel.sends_packet(FXP_READ, :long, 11, :string, "file1", :int64, file1_contents.bytesize, :long, 32_000 - file1_contents.bytesize)
+        channel.sends_packet(FXP_READ, :long, 11, :string, "file1", :int64, file1_contents.bytesize, :long, 32_768 - file1_contents.bytesize)
 
         channel.gets_packet(FXP_STATUS, :long, 8, :long, 0)
         channel.gets_packet(FXP_HANDLE, :long, 9, :string, "file2")
-        channel.sends_packet(FXP_READ, :long, 12, :string, "file2", :int64, 0, :long, 32_000)
+        channel.sends_packet(FXP_READ, :long, 12, :string, "file2", :int64, 0, :long, 32_768)
 
         channel.gets_packet(FXP_STATUS, :long, 10, :long, 1)
         channel.sends_packet(FXP_CLOSE, :long, 13, :string, "dir2")
@@ -858,7 +858,7 @@ class DownloadTest < Net::SFTP::TestCase
         channel.sends_packet(FXP_CLOSE, :long, 14, :string, "file1")
 
         channel.gets_packet(FXP_DATA, :long, 12, :string, file2_contents)
-        channel.sends_packet(FXP_READ, :long, 15, :string, "file2", :int64, file2_contents.bytesize, :long, 32_000 - file2_contents.bytesize)
+        channel.sends_packet(FXP_READ, :long, 15, :string, "file2", :int64, file2_contents.bytesize, :long, 32_768 - file2_contents.bytesize)
 
         channel.gets_packet(FXP_STATUS, :long, 13, :long, 0)
         channel.gets_packet(FXP_STATUS, :long, 14, :long, 0)
