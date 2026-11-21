@@ -4,7 +4,7 @@ module Net; module SFTP; module Protocol; module V05
 
   # A class representing the attributes of a file or directory on the server.
   # It may be used to specify new attributes, or to query existing attributes.
-  # This particular class is specific to versions 4 and 5 of the SFTP
+  # This particular class is specific to version 5 of the SFTP
   # protocol.
   #
   # To specify new attributes, just pass a hash as the argument to the
@@ -54,7 +54,7 @@ module Net; module SFTP; module Protocol; module V05
       ]
     end
 
-    # The type of the item on the remote server. Must be one of the T_* constants.
+    # Other attributes of the item (a bit field of the ATTR_* flags in the spec).
     attr_accessor :attrib_bits
   end
 

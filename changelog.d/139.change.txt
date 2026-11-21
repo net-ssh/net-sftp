@@ -1,0 +1,1 @@
+SFTP v5 file attributes now parse the `attrib-bits` field (exposed as `Attributes#attrib_bits`), so directory listings from v5 servers such as FileCOPA are no longer garbled after the first entry. Thanks @bschmeck; reproduced by @DougEdey-Filescom [#139, #155, #78, #66]
